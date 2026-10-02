@@ -4,6 +4,7 @@
   "compilerOptions": {
     "types": ["node"],
     "lib": ["DOM", "ESNext"],
+    "jsx": "preserve",
     "noEmit": false,
     "rootDir": "..",
     "outDir": "../dist",

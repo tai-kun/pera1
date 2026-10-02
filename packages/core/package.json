@@ -21,25 +21,45 @@
     ".": {
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
+    },
+    "./core": {
+      "types": "./dist/src/core.d.ts",
+      "default": "./dist/src/core.js"
+    },
+    "./engines": {
+      "types": "./dist/src/engines.d.ts",
+      "default": "./dist/src/engines.js"
     }
   },
   "scripts": {
     "build": "tsc --project ./.config/tsconfig.build.json"
   },
   "dependencies": {
-    "i18n-error-base": "0.0.7"
+    "@tai-kun/valibot-extra-lab": "^0.0.5",
+    "call-fn-once": "^0.0.6",
+    "i18n-error-base": "0.0.7",
+    "inspect-lite": "^0.0.2",
+    "maypromise": "^0.0.4",
+    "ninja-promise": "^0.0.3",
+    "regexparam": "^3.0.0",
+    "try-capture-stack-trace": "^0.0.3",
+    "type-name": "^2.0.2"
   },
   "devDependencies": {
     "@tsconfig/node24": "24.0.5",
     "@tsconfig/strictest": "2.0.8",
     "@types/node": "24.13.6",
+    "@types/type-name": "^1.0.32",
     "@vitest/browser": "4.1.11",
     "@vitest/browser-playwright": "4.1.11",
+    "@vitest/coverage-v8": "4.1.11",
     "playwright": "1.63.0",
+    "valibot": "^1.0.0",
     "vitest": "4.1.11"
   },
   "peerDependencies": {
-    "@logtape/logtape": "^2.0.0"
+    "@logtape/logtape": "^2.0.0",
+    "valibot": "^1.0.0"
   },
   "readme": "README.md"
 }

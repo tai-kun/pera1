@@ -14,6 +14,19 @@ run = "npx vitest --config ./.config/vitest.server.ts"
 [tasks."test:client"]
 run = "npx vitest --config ./.config/vitest.client.ts"
 
+[tasks."test:coverage"]
+run = [
+  { task = "test:coverage:server" },
+  { task = "test:coverage:client" },
+]
+env = { CI = 1 }
+
+[tasks."test:coverage:server"]
+run = "npx vitest run --coverage --config ./.config/vitest.server.ts"
+
+[tasks."test:coverage:client"]
+run = "npx vitest run --coverage --config ./.config/vitest.client.ts"
+
 [tasks."test:format"]
 run = { task = "format", args = ["--check"] }
 
@@ -39,5 +52,5 @@ run = "set -e; cp ./.config/.oxlintrc.json ./.tmp-oxlintrc.json; trap 'rm -f ./.
 run = [
   "npx npm-check-updates --target minor -u --cooldown 7",
   "pnpm install",
-  "npx playwright install --with-deps",
+  "npx playwright install --with-deps chromium",
 ]

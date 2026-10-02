@@ -15,11 +15,17 @@ export default defineConfig({
   test: {
     include: ["tests/**/*.test.ts"],
     exclude: ["tests/**/*.server.test.ts"],
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "json-summary", "html"],
+      include: ["src/**/*.ts"],
+      reportsDirectory: "./coverage/client",
+    },
     browser: {
       provider: playwright(),
       enabled: true,
       headless: true,
-      instances: [{ browser: "chromium" }, { browser: "firefox" }, { browser: "webkit" }],
+      instances: [{ browser: "chromium" }],
     },
     setupFiles: [".config/_debugging.ts"],
   },

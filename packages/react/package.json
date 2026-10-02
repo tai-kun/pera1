@@ -27,19 +27,29 @@
     "build": "tsc --project ./.config/tsconfig.build.json"
   },
   "dependencies": {
-    "@pera1/core": "workspace:*"
+    "@pera1/core": "workspace:*",
+    "ninja-promise": "^0.0.3"
   },
   "devDependencies": {
     "@tsconfig/node24": "24.0.5",
     "@tsconfig/strictest": "2.0.8",
     "@types/node": "24.13.6",
+    "@types/react": "^19.2.15",
+    "@types/react-dom": "^19.2.3",
     "@vitest/browser": "4.1.11",
     "@vitest/browser-playwright": "4.1.11",
+    "@vitest/coverage-v8": "4.1.11",
     "playwright": "1.63.0",
+    "react": "^19.2.6",
+    "react-dom": "^19.2.6",
+    "valibot": "^1.0.0",
+    "vite": "^8.0.14",
     "vitest": "4.1.11"
   },
   "peerDependencies": {
-    "@logtape/logtape": "^2.0.0"
+    "@logtape/logtape": "^2.0.0",
+    "react": "^19.0.0",
+    "valibot": "^1.0.0"
   },
   "readme": "README.md"
 }
