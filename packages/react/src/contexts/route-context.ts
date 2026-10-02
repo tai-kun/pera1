@@ -8,13 +8,13 @@ export type RouteContextValue = MatchedRoute<React.ComponentType<{}>> & {
   /**
    * 現在のルートの下位に位置する子ルートを表示するための React 要素です。
    *
-   * これ以上下位にマッチする子ルートが存在しない場合は `null` になります。
+   * これ以上下位にマッチする子ルートが存在しない場合は `null` です。
    */
   readonly outlet: React.ReactElement | null;
 };
 
 /**
- * 階層的にネストされたルーターのレイアウト構造において、親ルートから子ルートへそれぞれの階層固有のルート情報伝播させるための React コンテキストです。
+ * 階層的にネストされたルーターのレイアウト構造において、親ルートから子ルートへそれぞれの階層固有のルート情報を伝播させるための React コンテキストです。
  */
 const RouteContext = /*#__PURE__*/ React.createContext<RouteContextValue | null>(null);
 

@@ -48,7 +48,7 @@ describe("_use-singleton", () => {
     expect(callCount).toBe(1);
   });
 
-  test("StrictMode でもファクトリーは1回だけ呼ばれる", async ({ expect }) => {
+  test("StrictMode でもファクトリーは 1 回だけ呼ばれる", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
 

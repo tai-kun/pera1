@@ -12,7 +12,7 @@ import type { ActionFunction, LoaderFunction, RouteDefinition } from "./route.ty
  * ルーターのスナップショット（`routerRef.current` 相当）の形状定義です。
  *
  * React の `RefObject` や Solid.js のシグナルなど、特定フレームワークのリアクティブプリミティブに依存せず、
- * すべての UI バインディング (`@pera1/react`, 将来の `@pera1/solid` など) で共有できる純粋なデータ形状です。
+ * すべての UI バインディング（`@pera1/react`、将来の `@pera1/solid` など）で共有できる純粋なデータ形状です。
  */
 export type RouterSnapshot = {
   /**
@@ -67,7 +67,7 @@ export type CreateRouterArgs<TComponent = any> = {
 /**
  * フレームワークに依存しないルーターコントローラーのインターフェースです。
  *
- * `Router` コンポーネント (React) や将来の Solid.js バインディングは、このコントローラーを
+ * `Router` コンポーネントや将来の Solid.js バインディングは、このコントローラーを
  * `useMemo` / `createMemo` などで保持し、`subscribe` + スナップショット取得関数と組み合わせて購読します。
  *
  * @template TComponent 描画対象となるコンポーネントの型です。
@@ -91,12 +91,12 @@ export interface RouterController<TComponent = any> {
   /**
    * 現在マッチしているルート階層配列を取得します。
    *
-   * @returns マッチしたルート配列、またはマッチなし (404 相当) の場合は `undefined` を返します。
+   * @returns マッチしたルート配列、またはマッチなし（404 相当）の場合は `undefined` を返します。
    */
   readonly getRoutes: () => readonly MatchedRoute<TComponent>[] | undefined;
 
   /**
-   * ルーターの最新スナップショット (submit / navigate / stores など) を取得します。
+   * ルーターの最新スナップショットを取得します。
    *
    * スナップショットオブジェクト自体の参照は安定しており、内部の `currentEntry` のみが更新されます。
    */
@@ -104,15 +104,15 @@ export interface RouterController<TComponent = any> {
 }
 
 /**
- * 宣言的なルート定義と命令的なルーティング実行エンジンを仲介・統合し、
+ * 宣言的なルート定義と命令的なルーティング実行エンジンを仲介し、統合し、
  * フレームワークに依存しないルーターのライフサイクルと状態管理を司るコントローラーを作成します。
  *
- * 元々 `Router` コンポーネント (React) の内部に閉じていたロジックを抽出したもので、
- * React (`useSyncExternalStore`) でも Solid.js (`createEffect` + `on`) でも同じ振る舞いを再利用できます。
+ * 元々 `Router` コンポーネントの内部に閉じていたロジックを抽出したもので、
+ * React（`useSyncExternalStore`）でも Solid.js（`createEffect` + `on`）でも同じ振る舞いを再利用できます。
  *
  * @template TComponent 描画対象となるコンポーネントの型です。
  * @param args エンジンとルート定義を含む引数オブジェクトです。
- * @returns ライフサイクル管理・購読・スナップショット取得のためのコントローラーです。
+ * @returns ライフサイクル管理、購読、スナップショット取得のためのコントローラーです。
  */
 export default function createRouter<TComponent = any>(
   args: CreateRouterArgs<TComponent>,
@@ -126,13 +126,13 @@ export default function createRouter<TComponent = any>(
   let ac: AbortController | null = null;
 
   /**
-   * 現在のフェーズで有効な、シングルトン構造の中断シグナルをオンデマンドで生成・回収します。
+   * 現在のフェーズで有効な、シングルトン構造の中断シグナルをオンデマンドで生成し、回収します。
    */
   function getAbortSignal(): AbortSignal {
     return (ac ||= new AbortController()).signal;
   }
 
-  // エンジンを初期化し、初期ロード時のマッチングルートおよび解決済みのデータマップを取得・登録します。
+  // エンジンを初期化し、初期ロード時のマッチングルートおよび解決済みのデータマップを取得し、登録します。
   const initialState = engine.init({
     routes,
     getSignal: getAbortSignal,
@@ -153,7 +153,7 @@ export default function createRouter<TComponent = any>(
   } satisfies RouterSnapshot;
 
   /**
-   * エンジン内部での遷移確定時に、状態を各 UI バインディングへ通知・マージするための状態更新関数です。
+   * エンジン内部での遷移確定時に、状態を各 UI バインディングへ通知し、マージするための状態更新関数です。
    */
   function updateRouter(newState?: RouterState<TComponent> | null): void {
     if (newState !== undefined) {

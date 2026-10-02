@@ -31,7 +31,7 @@ export type StartLoadersArgs = {
   readonly prevEntry: Pick<HistoryEntry, "id" | "url">;
 
   /**
-   * 遷移先（現在）の履歴エントリー情報です。
+   * 現在の遷移先の履歴エントリー情報です。
    */
   readonly currentEntry: Pick<HistoryEntry, "id" | "url">;
 
@@ -70,7 +70,7 @@ export interface StartedLoaders {
 }
 
 /**
- * 画面遷移やデータ更新の発生に伴い、現在マッチしているルートのローダー関数群を精査し、キャッシュの再利用または読み込みを動的に判定・実行する関数です。
+ * 画面遷移やデータ更新の発生に伴い、現在マッチしているルートのローダー関数群を精査し、キャッシュの再利用または読み込みを動的に判定、実行する関数です。
  *
  * @param args ローダーの評価に必要な現旧のルートおよび履歴コンテキストです。
  * @param options 直前のアクション実行コンテキストを含むオプションです。
@@ -88,7 +88,7 @@ export default function startLoaders(
     actionData: options.actionData,
   };
 
-  // マッチした配列は「子ルート（詳細度高）」から「親ルート（詳細度低）」の順にソートされているため、先頭の要素から、ルート全体の動的パスパラメーターを一括して回収できます。
+  // マッチした配列は詳細度の高い子ルートから詳細度の低い親ルートの順にソートされているため、先頭の要素から、ルート全体の動的パスパラメーターを一括して回収できます。
   const prevParams = prevRoutes?.[0]?.params || {};
   const prevRoutePathSet: ReadonlySet<string> = new Set(prevRoutes?.map((r) => r.path));
 
@@ -96,7 +96,7 @@ export default function startLoaders(
   const prevLoaderDataMap: ReadonlyMap<LoaderFunction, NinjaPromise<unknown>> | undefined =
     loaderDataStore.get(prevEntry.id);
 
-  // 今回の実行フェーズで収集・確定させる新しいローダーデータマップを初期化します。
+  // 今回の実行フェーズで収集、確定させる新しいローダーデータマップを初期化します。
   const currentLoaderDataMap = new Map<LoaderFunction, NinjaPromise<unknown>>();
   const request = RouteRequest.new("GET", currentEntry.url, signal);
 
@@ -160,7 +160,7 @@ export default function startLoaders(
     // `shouldReload` の同期的な実行結果に基づいて処理を分岐します。
     switch (should.status) {
       case "pending": {
-        // shouldReload は仕様上「同期的」に真偽値を返す必要があります（Promise を返してはならない）。
+        // shouldReload は仕様上「同期的」に真偽値を返す必要があります（Promise を返してはなりません）。
         // もし pending であれば LoaderConditionError を生成して拒否状態のプロミスとしてラップします。
         const error = new LoaderConditionError({
           url: request.url.href,
@@ -191,13 +191,13 @@ export default function startLoaders(
             break;
 
           case false:
-            // 再読み込みが不要（現状維持）と判定された場合は、前回のキャッシュプロミスをそのまま無加工で引き継ぎます。
+            // 再読み込みが不要と判定された場合は、前回のキャッシュプロミスをそのまま無加工で引き継ぎます。
             data = prevLoaderData;
 
             break;
 
           default: {
-            // 戻り値が boolean 型（true / false）ではなかった場合、仕様不適合としてエラーを割り当てます。
+            // 戻り値が boolean 型ではなかった場合、仕様不適合としてエラーを割り当てます。
             const error = new LoaderConditionError({
               url: request.url.href,
               returnValue: value,
@@ -219,7 +219,7 @@ export default function startLoaders(
     currentLoaderDataMap.set(currentLoader, data);
   }
 
-  // 今回の実行フェーズで収集・更新されたローダーデータが存在する場合、グローバルなキャッシュストアへマージして永続化します。
+  // 今回の実行フェーズで収集、更新されたローダーデータが存在する場合、グローバルなキャッシュストアへマージして永続化します。
   if (currentLoaderDataMap.size > 0) {
     loaderDataStore.set(
       currentEntry.id,

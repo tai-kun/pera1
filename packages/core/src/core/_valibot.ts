@@ -30,7 +30,7 @@ type BaseSchema = typeof safeParse extends (schema: infer TSchema, ...args: any)
  * @template TSchema 評価に使用する `valibot` 形式のスキーマ定義型です。
  * @param schema 入力値を検証するためのスキーマ定義オブジェクトです。
  * @param input 整合性を検証する対象となる未知のデータです。
- * @returns スキマの定義に完全に合致し、型付けが完了した解析済みの出力データを返します。
+ * @returns スキーマの定義に完全に合致し、型付けが完了した解析済みの出力データを返します。
  */
 export function expect<const TSchema extends BaseSchema>(
   schema: TSchema,

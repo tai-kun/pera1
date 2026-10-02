@@ -23,7 +23,7 @@ export type FulfilledLoaderData<TData = unknown> = Awaited<
 export type LoaderData<TData = unknown> = NinjaPromise<FulfilledLoaderData<TData>>;
 
 /**
- * 現在の階層のルートに紐づくローダー関数の実行結果を購読・取得するためのカスタムフックです。
+ * 現在の階層のルートに紐づくローダー関数の実行結果を購読し、取得するためのカスタムフックです。
  *
  * データの選択ロジック自体は `@pera1/core` の `selectLoaderData` に委譲しており、Solid.js 版とも共有されます。
  *

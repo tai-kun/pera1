@@ -4,7 +4,7 @@ import type { ReadonlyURL } from "./readonly-url.types.js";
 import RoutePath from "./route-path.js";
 
 /**
- * 履歴エントリーで使用される URL 文字列を検証、正規化、およびブランド化するためのスキーマを作成する関数です。
+ * 履歴エントリーで使用される URL 文字列を検証し、正規化し、ブランド化するためのスキーマを作成する関数です。
  *
  * スキーマの構築処理は一度だけ実行され、以降はシングルトンインスタンスとしてキャッシュから再利用されます。
  */
@@ -13,7 +13,7 @@ const HistoryEntryUrlSchema = () =>
     v.pipe(
       v.string(),
       v.url(),
-      // 検証を通過した URL 文字列を、読み取り専用の ReadonlyURL オブジェクトへと構造変換および正規化します。
+      // 検証を通過した URL 文字列を、読み取り専用の ReadonlyURL オブジェクトへ構造変換および正規化します。
       v.transform(function toNormalizedReadonlyURL(s): ReadonlyURL {
         const u = new URL(s);
 

@@ -4,7 +4,7 @@ import * as React from "react";
 import RouteContext, { type RouteContextValue } from "../contexts/route-context.js";
 
 /**
- * React のコンポーネントツリーから、現在の階層に紐づいているルートの文脈情報を安全に取得するためのカスタムフックです。
+ * React のコンポーネントツリーから、現在の階層に紐づいているルートの文脈情報を取得するためのカスタムフックです。
  *
  * コンテキストが供給されていない状況を検知した場合はエラーを投げます。
  *

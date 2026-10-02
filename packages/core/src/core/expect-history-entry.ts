@@ -54,7 +54,7 @@ export type HistoryEntry = {
 };
 
 /**
- * 履歴エントリーオブジェクトを検証し、仕様を満たしている場合に確定的な `HistoryEntry` 型へと変換します。
+ * 履歴エントリーオブジェクトを検証し、仕様を満たしている場合に確定的な `HistoryEntry` 型へ変換します。
  *
  * @param entry スキーマの基本構造を満たしていると予想される生の入力値です。
  * @returns すべてのプロパティーが完全に確定した `HistoryEntry` を返します。
@@ -62,7 +62,7 @@ export type HistoryEntry = {
 function expectHistoryEntry(entry: HistoryEntryLike): HistoryEntry;
 
 /**
- * 履歴エントリーオブジェクトを検証し、仕様を満たしている場合に確定的な `HistoryEntry` 型へと変換します。
+ * 履歴エントリーオブジェクトを検証し、仕様を満たしている場合に確定的な `HistoryEntry` 型へ変換します。
  *
  * @param entry スキーマの入力形式を満たすオブジェクト、または空値です。
  * @returns 入力値が空であった場合、あるいは検証の過程で必要なデータが欠落していた場合は `null` を返します。

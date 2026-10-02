@@ -13,7 +13,7 @@ import type { ActionFunction, RouteParams } from "./route.types.js";
  */
 export type ActionStartRequest = {
   /**
-   * アクションの送信先（トリガーされた現在）の正規化済み URL オブジェクトです。
+   * アクションの送信先である現在の正規化済み URL オブジェクトです。
    */
   readonly url: HistoryEntryUrl;
 
@@ -29,7 +29,7 @@ export type ActionStartRequest = {
 };
 
 /**
- * 起動されたアクションの実行コンテキストおよび非同期状態を追跡・制御するためのインターフェースです。
+ * 起動されたアクションの実行コンテキストおよび非同期状態を追跡し、制御するためのインターフェースです。
  */
 export interface StartedAction {
   /**
@@ -57,7 +57,7 @@ export interface StartedAction {
  *
  * @param routes 現在の URL にマッチしたルート情報の配列です。
  * @param request アクションを起動するための URL、フォームデータ、および中断シグナルを含むオブジェクトです。
- * @returns 実行対象のアクション関数が検出された場合は `StartedAction` オブジェクトを返し、1つも定義されていなかった場合は `null` を返します。
+ * @returns 実行対象のアクション関数が検出された場合は `StartedAction` オブジェクトを返し、1 つも定義されていなかった場合は `null` を返します。
  */
 export default function startAction(
   routes: readonly Pick<MatchedRoute, "params" | "action" | "urlPath">[],
@@ -99,7 +99,7 @@ export default function startAction(
 
   switch (actionReturn.status) {
     case "pending": {
-      // アクションの戻り値が非同期（Promise）である場合、中継用のプロミスを作成して状態変化をコントロールします。
+      // アクションの戻り値が非同期である場合、中継用のプロミスを作成して状態変化をコントロールします。
       const proxy = NinjaPromise.withResolvers();
       actionData = proxy.promise;
 
@@ -125,7 +125,7 @@ export default function startAction(
 
     case "rejected":
       // 同期的な実行の段階で既に例外が発生している場合は、特別な加工をせずそのままエラー状態を引き継ぎます。
-      // エラーハンドリングの責務は、このアクションデータを参照・購読するコンポーネント側に一任されます。
+      // エラーハンドリングの責務は、このアクションデータを参照し、購読するコンポーネント側に一任されます。
       actionData = actionReturn;
 
       break;

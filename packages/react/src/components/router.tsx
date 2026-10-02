@@ -29,7 +29,7 @@ type ComponentRendererProps = {
 };
 
 /**
- * マッチした個々のルートコンポーネントを、固有の `RouteContext` で包み込みながら再帰的にマウント・展開していくための内部レンダラーコンポーネントです。
+ * マッチした個々のルートコンポーネントを、固有の `RouteContext` で包み込みながら再帰的にマウントし、展開していくための内部レンダラーコンポーネントです。
  */
 function ComponentRenderer(props: ComponentRendererProps): React.JSX.Element | null {
   const parentRoute = React.use(RouteContext);
@@ -37,7 +37,7 @@ function ComponentRenderer(props: ComponentRendererProps): React.JSX.Element | n
   const context = {
     ...route,
     outlet,
-    // 親ルートのアクションとローダーを引き継ぐことで、`useActionData` と `useLoaderData` がデータを参照できようにします。
+    // 親ルートのアクションとローダーを引き継ぐことで、`useActionData` と `useLoaderData` がデータを参照できるようにします。
     action: route.action ?? parentRoute?.action,
     loader: route.loader ?? parentRoute?.loader,
   };
@@ -64,7 +64,7 @@ type RouteRendererProps = {
 };
 
 /**
- * マッチしたルート配列を親から子の順番へと正しく巡回し、各階層を入れ子状の React エレメントツリーへと再帰的にビルドするコンポーネントです。
+ * マッチしたルート配列を親から子の順番に巡回し、各階層を入れ子状の React エレメントツリーに再帰的に構築するコンポーネントです。
  */
 function RouteRenderer(props: RouteRendererProps): React.ReactElement {
   const { index = 0, routes } = props;
@@ -92,7 +92,7 @@ export type RouterRouteDefinitionModule = RouteDefinitionModule<string, React.Co
 export type RouterRouteDefinition = RouterRouteDefinitionObject | RouterRouteDefinitionModule;
 
 /**
- * `Router` コンポーネントに渡されるルートプロパティーの型定義です。
+ * `Router` コンポーネントのプロパティーの型定義です。
  */
 export type RouterProps = {
   /**
@@ -107,19 +107,19 @@ export type RouterProps = {
 };
 
 /**
- * 宣言的なルート定義と、命令的なルーティング実行エンジンを仲介・統合し、アプリケーションの最上位でルーティングのライフサイクルと状態管理を司るプロバイダーコンポーネントです。
+ * 宣言的なルート定義と命令的なルーティング実行エンジンを仲介し、統合し、アプリケーションの最上位でルーティングのライフサイクルと状態管理を司るプロバイダーコンポーネントです。
  *
- * 状態管理の実体は `@pera1/core` の `createRouter` に委譲しており、本コンポーネントは React へのバインディング (購読・描画) のみを担当します。
+ * 状態管理の実体は `@pera1/core` の `createRouter` に委譲しており、本コンポーネントは React へのバインディングのみを担当します。
  * 将来の `@pera1/solid` でも同じコントローラーを再利用できます。
  */
 export default function Router(props: RouterProps) {
   const { engine, routes: routesProp } = props;
 
-  // レンダリングを跨いで常に同一参照を維持し、かつ子コンポーネントから不要な再レンダリングなしでメソッドを叩けるように、ルーターコアの外部参照実体を useRef で永続管理します。
+  // レンダリングをまたいで常に同一参照を維持し、子コンポーネントの不要な再レンダリングを防ぐためにメソッドを呼び出せるように、ルーターコアの外部参照実体を `useRef` で永続的に管理します。
   const routerRef = React.useRef({} as RouterRef["current"]);
 
   // フレームワーク共通のコントローラーを useMemo でインスタンス化します。
-  // 実体 (stores / subscribers / engine 連携) は `@pera1/core` 側に集約されています。
+  // 実体（stores / subscribers / engine 連携）は `@pera1/core` 側に集約されています。
   const router = React.useMemo<{
     readonly start: () => () => void;
     readonly context: RouterContextValue;
@@ -130,7 +130,7 @@ export default function Router(props: RouterProps) {
       routes: routesProp,
     });
 
-    // 作成したスナップショットの参照を、永続化 Ref オブジェクトへと安全にマージします。
+    // 作成したスナップショットの参照を、永続化 Ref オブジェクトへマージします。
     Object.assign(routerRef.current, controller.getSnapshot());
 
     return {
@@ -143,10 +143,10 @@ export default function Router(props: RouterProps) {
     };
   }, [engine, routesProp]);
 
-  // コンポーネントのマウント時にルーターエンジンを始動させ、アンマウント時には自動的に破棄タスクを連動させます。
+  // コンポーネントのマウントしたときにルーターエンジンを始動させ、アンマウントするときには自動的に破棄処理と連動させます。
   React.useEffect(() => router.start(), [router]);
 
-  // マッチしたルート階層配列をリアクティブに常時監視します。
+  // マッチしたルート階層配列をリアクティブに監視します。
   const routes = React.useSyncExternalStore(router.context.subscribe, router.getRoutes);
 
   // 有効なルートマッチングがない場合は何も描画しません。
@@ -157,7 +157,7 @@ export default function Router(props: RouterProps) {
 
   return (
     <RouterContext value={router.context}>
-      {/* マッチルート配列は詳細度の高い「子 -> 親」の順で並んでいるため、React のネストレイアウト構造（親の中に子を入れる）に適合させるために `.toReversed()` で「親 -> 子」の順に反転させてからレンダラーへ投入します。*/}
+      {/* マッチしたルート配列は詳細度の高い「子 -> 親」の順で並んでいるため、React のネストレイアウト構造に適合させるために `.toReversed()` で「親 -> 子」の順に反転させてからレンダラーへ渡します。*/}
       <RouteRenderer routes={routes.toReversed()} />
     </RouterContext>
   );

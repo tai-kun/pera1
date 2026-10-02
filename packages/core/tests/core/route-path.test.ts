@@ -240,7 +240,7 @@ describe("境界値および特殊ケース", () => {
     expect(routePath.toString()).toBe("/path/%E5%8D%98%E8%AA%9E/&%$");
   });
 
-  test("未エンコードのみの特殊文字エンコードする", ({ expect }) => {
+  test("未エンコードの特殊文字のみをエンコードする", ({ expect }) => {
     // 準備
     const path = "/path/%E5%8D%98%E8%AA%9E/単語";
 
@@ -264,7 +264,7 @@ describe("境界値および特殊ケース", () => {
     expect(routePath.toString()).toBe("/p");
   });
 
-  test("URL形式の文字列を入力した場合ホスト名部分もパスの一部として取り込まれる", ({ expect }) => {
+  test("URL 形式の文字列を入力した場合ホスト名部分もパスの一部として取り込まれる", ({ expect }) => {
     // 準備
     const path = "http://google.com/path";
 

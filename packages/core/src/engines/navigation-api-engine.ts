@@ -61,10 +61,10 @@ export default class NavigationApiEngine implements IEngine {
   }
 
   /**
-   * 現在のページ URL に基づき、ルーターの初期状態を構築・登録します。
+   * 現在のページ URL に基づき、ルーターの初期状態を構築し、登録します。
    *
    * @param args ルート定義配列、共通データストア、初期化用のアボートシグナルを含むオブジェクトです。
-   * @returns 構築された初期の `RouterState`。適合するルートがないか、履歴が無い場合は `null` を返します。
+   * @returns 構築された初期の `RouterState` です。適合するルートがないか、履歴がない場合は `null` を返します。
    */
   init(args: IEngine.InitArgs): IEngine.InitReturn {
     const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
@@ -96,7 +96,7 @@ export default class NavigationApiEngine implements IEngine {
   /**
    * ブラウザーの継続的なナビゲーションイベント（リンククリック、フォーム送信、履歴移動）の監視を開始します。
    *
-   * @param args ルート配列、UI側への状態反映関数、各種ストア、シグナル取得関数を含むオブジェクトです。
+   * @param args ルート配列、UI 側への状態反映関数、各種ストア、シグナル取得関数を含むオブジェクトです。
    */
   start(args: IEngine.StartArgs): IEngine.StartReturn {
     const { routes, update, getSignal, actionDataStore, loaderDataStore } = args;
@@ -194,7 +194,7 @@ export default class NavigationApiEngine implements IEngine {
 
             case "fulfilled": {
               // アクションが正常終了した場合、返り値にリダイレクト指示が含まれていればその目的地へ遷移させます。
-              // リダイレクトがなければそのまま本来の目的地へとブラウザーのコミット先を書き換えます。
+              // リダイレクトがなければそのまま本来の目的地へブラウザーのコミット先を書き換えます。
               const { redirectTo = currentEntry.url } = actionResponse;
               const redirectPath = new RoutePath(redirectTo);
               controller.redirect(redirectPath.toString());
@@ -271,7 +271,7 @@ export default class NavigationApiEngine implements IEngine {
             },
           );
 
-          // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機処理（描画）は各コンポーネントに任せます。
+          // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
           update({
             entry: currentEntry,
             routes: currentRoutes,
@@ -292,7 +292,7 @@ export default class NavigationApiEngine implements IEngine {
           },
         });
       } else {
-        // 分岐 B: フォームデータがない場合 ＝ 通常の画面遷移（HTTP GET / リンククリック・戻る進む契機）
+        // 分岐 B: フォームデータがない場合 ＝ 通常の画面遷移（HTTP GET / リンククリック、戻る進む契機）
         const handler = async () => {
           const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
           if (!currentEntry) {
@@ -308,7 +308,7 @@ export default class NavigationApiEngine implements IEngine {
           const prevRoutes = matchRoutes(routes, prevEntry.url);
           const currentRoutes = destRoutes;
 
-          // キャッシュの再利用判定を含めて、移動先のローダー関数群を精査・起動します。
+          // キャッシュの再利用判定を含めて、移動先のローダー関数群を精査し、起動します。
           const startedLoaders = startLoaders({
             signal,
             prevEntry,
@@ -318,7 +318,7 @@ export default class NavigationApiEngine implements IEngine {
             loaderDataStore,
           });
 
-          // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機処理（描画）は各コンポーネントに任せます。
+          // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
           update({
             entry: currentEntry,
             routes: currentRoutes,
@@ -348,7 +348,7 @@ export default class NavigationApiEngine implements IEngine {
     // Navigation API の navigate イベントの購読を開始します。
     this.navigation.addEventListener("navigate", handleNavigate, { signal });
 
-    // セッション履歴から溢れて破棄された古い履歴エントリーのデータ（アクション・ローダーのキャッシュ）を自動削除します。
+    // セッション履歴から溢れて破棄された古い履歴エントリーのデータ（アクション、ローダーのキャッシュ）を自動削除します。
     for (const entry of this.navigation.entries()) {
       const entryId = v.expect(HistoryEntryIdSchema(), entry.id);
       if (this.subscribedEntryIds.has(entryId)) {
@@ -386,7 +386,7 @@ export default class NavigationApiEngine implements IEngine {
   }
 
   /**
-   * フォームデータまたはクエリーパラメータを、ブラウザーの Navigation API のライフサイクルに載せて命令的に送信します。
+   * フォームデータまたはクエリーパラメーターを、ブラウザーの Navigation API のライフサイクルに載せて命令的に送信します。
    *
    * @param args 送信データの種類に応じたサブミット引数です。
    */
@@ -475,7 +475,7 @@ export default class NavigationApiEngine implements IEngine {
 
         const { delta } = args;
 
-        // 現在のインデックスから相対位置（例: -1 なら 1 つ戻る）を計算し、履歴スタックに該当するインデックスが存在するか探索します。
+        // 現在のインデックスから相対位置（例: `-1` なら 1 つ戻る）を計算し、履歴スタックに該当するインデックスが存在するか探索します。
         const index = currentEntry.index + delta;
         const entry = this.navigation.entries().find((e) => e.index === index);
         if (!entry) {

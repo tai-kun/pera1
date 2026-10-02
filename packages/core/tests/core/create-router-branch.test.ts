@@ -43,7 +43,7 @@ describe("createRouter の初期状態", () => {
     expect(capturedSignal).toBeInstanceOf(AbortSignal);
   });
 
-  test("getSignal を2回呼ぶと同一シグナルを返す (シングルトン)", ({ expect }) => {
+  test("getSignal を 2 回呼ぶと同一シグナルを返す（シングルトン）", ({ expect }) => {
     // 準備
     const signals: AbortSignal[] = [];
     const engine = {
@@ -257,12 +257,12 @@ describe("createRouter の start/stop", () => {
     // getSignal を呼んで ac を生成させるために start する
     const stop = controller.start();
 
-    // 実行と検証 (例外が出ないこと)
+    // 実行と検証（例外が出ないこと）
     expect(() => stop()).not.toThrow();
     expect(spy).toHaveBeenCalled();
   });
 
-  test("start が返す stop を2回呼んでも安全", ({ expect }) => {
+  test("start が返す stop を 2 回呼んでも安全", ({ expect }) => {
     // 準備
     const stopFn = vi.fn();
     const engine = {

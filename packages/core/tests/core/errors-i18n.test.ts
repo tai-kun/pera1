@@ -13,7 +13,7 @@ import {
 } from "../../src/core/errors.js";
 
 describe("エラーメッセージの日本語化", () => {
-  test("UnreachableError の日本語メッセージ (値なし)", ({ expect }) => {
+  test("UnreachableError の日本語メッセージ（値なし）", ({ expect }) => {
     // 準備
     setGlobalConfig({ lang: "ja" });
     try {
@@ -26,7 +26,7 @@ describe("エラーメッセージの日本語化", () => {
     }
   });
 
-  test("UnreachableError の日本語メッセージ (値あり)", ({ expect }) => {
+  test("UnreachableError の日本語メッセージ（値あり）", ({ expect }) => {
     // 準備
     setGlobalConfig({ lang: "ja" });
     try {
@@ -53,7 +53,7 @@ describe("エラーメッセージの日本語化", () => {
     }
   });
 
-  test("LoaderConditionError の日本語メッセージ (Promise)", ({ expect }) => {
+  test("LoaderConditionError の日本語メッセージ（Promise）", ({ expect }) => {
     // 準備
     setGlobalConfig({ lang: "ja" });
     try {
@@ -70,7 +70,7 @@ describe("エラーメッセージの日本語化", () => {
     }
   });
 
-  test("LoaderConditionError の日本語メッセージ (非boolean)", ({ expect }) => {
+  test("LoaderConditionError の日本語メッセージ（非 boolean）", ({ expect }) => {
     // 準備
     setGlobalConfig({ lang: "ja" });
     try {
@@ -113,7 +113,7 @@ describe("エラーメッセージの日本語化", () => {
     }
   });
 
-  test("LoaderDataNotFoundError の日本語メッセージ (loaderあり)", ({ expect }) => {
+  test("LoaderDataNotFoundError の日本語メッセージ（loader あり）", ({ expect }) => {
     // 準備
     setGlobalConfig({ lang: "ja" });
     function myLoader() {}
@@ -128,7 +128,7 @@ describe("エラーメッセージの日本語化", () => {
     }
   });
 
-  test("LoaderDataNotFoundError の日本語メッセージ (匿名関数)", ({ expect }) => {
+  test("LoaderDataNotFoundError の日本語メッセージ（匿名関数）", ({ expect }) => {
     // 準備
     setGlobalConfig({ lang: "ja" });
     const anon = () => {};
@@ -145,7 +145,7 @@ describe("エラーメッセージの日本語化", () => {
     }
   });
 
-  test("LoaderDataNotFoundError の日本語メッセージ (loaderなし)", ({ expect }) => {
+  test("LoaderDataNotFoundError の日本語メッセージ（loader なし）", ({ expect }) => {
     // 準備
     setGlobalConfig({ lang: "ja" });
     try {

@@ -206,7 +206,7 @@ export class LoaderConditionError extends ErrorBase<LoaderConditionErrorMeta> {
   /**
    * `LoaderConditionError` クラスの新しいインスタンスを初期化します。
    *
-   * @param args エラーオプション、対象URL、関数の参照、および実際の戻り値を含む引数オブジェクトです。
+   * @param args エラーオプション、対象 URL、関数の参照、および実際の戻り値を含む引数オブジェクトです。
    */
   public constructor(args: LoaderConditionErrorArgs) {
     const { url, returnValue, shouldReload, ...options } = args;

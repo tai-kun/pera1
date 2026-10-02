@@ -150,7 +150,7 @@ describe("Router の分岐網羅", () => {
       root.render(<Router engine={engine} routes={[{ path: "/" }, { path: "/child" }]} />);
     });
 
-    // 検証 (親の action/loader を引き継いでいる)
+    // 検証（親の action/loader を引き継いでいる）
     expect(container.textContent).toContain("true-true");
   });
 

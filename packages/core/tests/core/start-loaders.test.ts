@@ -97,7 +97,7 @@ describe("GET 遷移時の再読み込み制御", () => {
     dataMap.set(mockLoader, cachedPromise);
 
     const dataStore = new Map();
-    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shoulReload を呼び出す
+    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shouldReload を呼び出す
 
     const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(true);
     const route = {
@@ -186,7 +186,7 @@ describe("GET 遷移時の再読み込み制御", () => {
     dataMap.set(mockLoader, cachedPromise);
 
     const dataStore = new Map();
-    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shoulReload を呼び出す
+    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shouldReload を呼び出す
 
     const mockShouldReload = vi
       .fn<ShouldReloadFunction>()
@@ -234,7 +234,7 @@ describe("POST 遷移およびアクション後の再読み込み制御", () =>
     dataMap.set(mockLoader, cachedPromise);
 
     const dataStore = new Map();
-    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shoulReload を呼び出す。
+    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shouldReload を呼び出す。
 
     const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(true);
     const route = {
@@ -270,7 +270,7 @@ describe("POST 遷移およびアクション後の再読み込み制御", () =>
   });
 });
 
-describe("shouldReload の異常系・エッジケースの振る舞い", () => {
+describe("shouldReload の異常系、エッジケースの振る舞い", () => {
   test("shouldReload が Promise などの非同期処理を返す場合、LoaderConditionError で拒否された NinjaPromise を登録する", async ({
     expect,
     signal,
@@ -285,7 +285,7 @@ describe("shouldReload の異常系・エッジケースの振る舞い", () => 
     dataMap.set(mockLoader, NinjaPromise.resolve("old-data"));
 
     const dataStore = new Map();
-    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shoulReload を呼び出す。
+    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shouldReload を呼び出す。
 
     const args: any = {
       prevRoutes: [
@@ -338,7 +338,7 @@ describe("shouldReload の異常系・エッジケースの振る舞い", () => 
     dataMap.set(mockLoader, NinjaPromise.resolve("old-data"));
 
     const dataStore = new Map();
-    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shoulReload を呼び出す。
+    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shouldReload を呼び出す。
 
     const args: any = {
       prevRoutes: [

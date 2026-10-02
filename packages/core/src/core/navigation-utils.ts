@@ -5,7 +5,7 @@ import type RoutePath from "./route-path.js";
  * 遷移先のアドレスを指定するための表現型です。
  *
  * 完全な URL パス文字列か、またはパスの各コンポーネントを部分的にパッチするためのオブジェクトのいずれかを受け入れます。
- * React (`useNavigate`) でも Solid.js でも同じ入力形状を使えるよう、core に切り出した共通型です。
+ * React の `useNavigate` でも Solid.js でも同じ入力形状を使えるよう、core に切り出した共通型です。
  */
 export type NavigateTo =
   | string
@@ -29,7 +29,7 @@ export type NavigateTo =
       /**
        * 動的にパッチを適用します。
        *
-       * @param path アプリケーション内のルーティングにおけるパスを安全に構築・解析・操作するためのオブジェクトです。
+       * @param path アプリケーション内のルーティングにおけるパスを安全に構築し、解析し、操作するためのオブジェクトです。
        */
       (route: RoutePath): void;
     };
@@ -45,7 +45,7 @@ export type NavigateOptions = {
 };
 
 /**
- * `useNavigate` (React) や将来の Solid.js 版が受け取る引数を、低レイヤーの `IEngine.NavigateArgs` に変換します。
+ * `useNavigate` や将来の Solid.js 版が受け取る引数を、低レイヤーの `IEngine.NavigateArgs` に変換します。
  *
  * フレームワーク固有のフック内での分岐ロジックを core に集約することで、React / Solid.js 間の振る舞いの乖離を防ぎます。
  *

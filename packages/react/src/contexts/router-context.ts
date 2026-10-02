@@ -4,7 +4,7 @@ import * as React from "react";
 /**
  * ルーターの実体へのアクセスを提供する、読み取り専用の Ref オブジェクト型です。
  *
- * 実体 (`RouterSnapshot`) は `@pera1/core` の `createRouter` が生成するフレームワーク共通のスナップショットです。
+ * 実体（`RouterSnapshot`）は `@pera1/core` の `createRouter` が生成するフレームワーク共通のスナップショットです。
  */
 export type RouterRef = Readonly<React.RefObject<RouterSnapshot>>;
 
@@ -29,7 +29,7 @@ export type RouterContextValue = {
 /**
  * アプリケーションの最上位からルーターのグローバル状態を子コンポーネントへ一元的に伝播させるための React コンテキストです。
  *
- * パフォーマンス最適化のためにプロバイダー自体は基本的に更新されず、子コンポーネントは `subscribe` と `useSyncExternalStore`を使って必要な部分データだけを購読します。
+ * パフォーマンス最適化のためにプロバイダー自体は更新されず、子コンポーネントは `subscribe` と `useSyncExternalStore` を使って必要な部分データだけを購読します。
  */
 const RouterContext = /*#__PURE__*/ React.createContext<RouterContextValue | null>(null);
 

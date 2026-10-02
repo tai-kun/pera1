@@ -46,7 +46,7 @@ describe("コンストラクタの分岐", () => {
       (window as any).navigation = undefined;
     });
 
-    // 実行と検証 (投げないこと)
+    // 実行と検証（投げないこと）
     expect(() => new NavigationApiEngine()).not.toThrow();
   });
 
@@ -434,7 +434,7 @@ describe("start のナビゲーションガード", () => {
   });
 });
 
-describe("start の GET 遷移 (formData なし)", () => {
+describe("start の GET 遷移（formData なし）", () => {
   test("正常な GET 遷移で update が呼ばれる", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
@@ -480,7 +480,7 @@ describe("start の GET 遷移 (formData なし)", () => {
     await using cleanup = new AsyncDisposableStack();
     let callCount = 0;
     const { navigation, listeners } = createMockNavigation({});
-    // 最初の currentEntry (ガード用) は有効、handler 内で null になるよう差し替え
+    // 最初の currentEntry（ガード用）は有効、handler 内で null になるよう差し替え
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
       vi.unstubAllGlobals();
@@ -544,7 +544,7 @@ describe("start の GET 遷移 (formData なし)", () => {
       loaderDataStore: new Map() as any,
     });
 
-    // 実行: destination は /other だが handler 実行時に currentEntry を / に戻す (不一致)
+    // 実行: destination は /other だが handler 実行時に currentEntry を / に戻す（不一致）
     let captured: any = null;
     listeners.get("navigate")({
       isTrusted: true,
@@ -557,7 +557,7 @@ describe("start の GET 遷移 (formData なし)", () => {
         captured = args;
       },
     });
-    // currentEntry は "/" のままなので destUrl (/other) と不一致 -> ガードで return
+    // currentEntry は "/" のままなので destUrl（/other）と不一致 -> ガードで return
     // 実際は currentEntry.url が destUrl と一致しないケースを作るため、
     // navigation.currentEntry を書き換えず destination だけ /other にしているが、
     // handleNavigate 内の prevEntry は "/"、dest は "/other" で一致チェックは handler 内で
@@ -565,7 +565,7 @@ describe("start の GET 遷移 (formData なし)", () => {
     // そのため update は呼ばれないはず。ただし destRoutes は /other で存在する。
     // ここでは currentEntry を "/" に保つことで不一致を再現するが、
     // 実装は handler 内で this.navigation.currentEntry を再取得するため、
-    // currentEntry が "/" のままなら destUrl (/other) と不一致で return する。
+    // currentEntry が "/" のままなら destUrl（/other）と不一致で return する。
     await captured.handler();
 
     // 検証
@@ -573,7 +573,7 @@ describe("start の GET 遷移 (formData なし)", () => {
   });
 });
 
-describe("start の POST 遷移 (formData あり)", () => {
+describe("start の POST 遷移（formData あり）", () => {
   test("action がないときは何もせず終了する", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
@@ -668,7 +668,7 @@ describe("start の POST 遷移 (formData あり)", () => {
     expect(document.body.contains(form)).toBe(false);
   });
 
-  test("action が成功 (fulfilled, リダイレクトなし) して GET ローダーが走る", async ({
+  test("action が成功（fulfilled、リダイレクトなし）して GET ローダーが走る", async ({
     expect,
   }) => {
     // 準備
@@ -718,7 +718,7 @@ describe("start の POST 遷移 (formData あり)", () => {
     });
     const redirect = vi.fn();
     await captured.precommitHandler({ redirect });
-    // precommit で redirect が呼ばれる (リダイレクトなしでも currentEntry.url への redirect)
+    // precommit で redirect が呼ばれる（リダイレクトなしでも currentEntry.url への redirect）
     expect(redirect).toHaveBeenCalled();
     await captured.handler();
 
@@ -726,7 +726,7 @@ describe("start の POST 遷移 (formData あり)", () => {
     expect(update).toHaveBeenCalled();
   });
 
-  test("action が失敗 (rejected) したら元の URL に redirect する", async ({ expect }) => {
+  test("action が失敗（rejected）したら元の URL に redirect する", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
     const currentEntry: any = {
@@ -846,7 +846,7 @@ describe("start の POST 遷移 (formData あり)", () => {
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/", action: () => "ok" }]);
     const update = vi.fn();
-    // update の呼び出し回数を記録 (precommit で1回呼ばれる)
+    // update の呼び出し回数を記録（precommit で 1 回呼ばれる）
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -881,7 +881,7 @@ describe("start の POST 遷移 (formData あり)", () => {
     };
     await captured.handler();
 
-    // 検証: handler では追加の update がない (precommit の分のみ)
+    // 検証: handler では追加の update がない（precommit の分のみ）
     expect(update.mock.calls.length).toBe(callsAfterPrecommit);
   });
 
@@ -1036,7 +1036,7 @@ describe("start の購読管理", () => {
     };
     engine.start(args);
     const firstCount = addCount;
-    // 2回目の start で同じ entry はスキップされる (subscribedEntryIds に残っている)
+    // 2 回目の start で同じ entry はスキップされる（subscribedEntryIds に残っている）
     engine.start(args);
 
     // 検証
@@ -1117,7 +1117,7 @@ describe("start の購読管理", () => {
       loaderDataStore: new Map() as any,
     });
 
-    // 実行: 同じ ID で currententrychange を2回発火 (2回目は購読済みで早期リターン)
+    // 実行: 同じ ID で currententrychange を 2 回発火（2 回目は購読済みで早期リターン）
     let addCount = 0;
     navigation.currentEntry = {
       id: VALID_ID_2,
@@ -1152,7 +1152,7 @@ describe("start の購読管理", () => {
       loaderDataStore: new Map() as any,
     });
 
-    // 実行と検証 (投げないこと)
+    // 実行と検証（投げないこと）
     navigation.currentEntry = null;
     expect(() => listeners.get("currententrychange")()).not.toThrow();
   });
@@ -1195,7 +1195,7 @@ describe("start の購読管理", () => {
     // 外部シグナルを abort
     ac.abort();
 
-    // 検証 (投げないこと、2回目のナビゲーションも動作すること)
+    // 検証（投げないこと、2 回目のナビゲーションも動作すること）
     let captured2: any = null;
     listeners.get("navigate")({
       isTrusted: true,

@@ -165,7 +165,7 @@ describe("パス名のエンコード処理", () => {
   });
 });
 
-describe("例外系・エラーハンドリング", () => {
+describe("例外系、エラーハンドリング", () => {
   test("引数に null を渡したとき、実行時エラーが発生する", ({ expect }) => {
     // 準備
     const routes = null as unknown as RouteDefinition[];

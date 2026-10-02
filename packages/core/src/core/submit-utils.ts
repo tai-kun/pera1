@@ -7,7 +7,7 @@ import type { ReadonlyURLSearchParams } from "./readonly-url.types.js";
  */
 export type SubmitGetOptions = {
   /**
-   * 送信先（遷移先）のベースとなる URL パスを明示的に上書き指定します。省略時は現在のフォームアクションパスが使用されます。
+   * 遷移先のベースとなる URL パスを明示的に上書き指定します。省略時は現在のフォームアクションパスが使用されます。
    */
   readonly action?: string | undefined;
 
@@ -22,13 +22,13 @@ export type SubmitGetOptions = {
  */
 export type SubmitPostOptions = {
   /**
-   * 送信先（アクション実行先）の URL パスを明示的に上書き指定します。省略時は現在のフォームアクションパスが使用されます。
+   * アクション実行先の URL パスを明示的に上書き指定します。省略時は現在のフォームアクションパスが使用されます。
    */
   readonly action?: string | undefined;
 };
 
 /**
- * `useSubmit` (React) や将来の Solid.js 版が受け取る引数を、低レイヤーの `IEngine.SubmitArgs` に変換します。
+ * `useSubmit` や将来の Solid.js 版が受け取る引数を、低レイヤーの `IEngine.SubmitArgs` に変換します。
  *
  * `FormData` か `URLSearchParams` かのランタイム判定を含めた分岐ロジックを core に集約することで、
  * フレームワーク間の振る舞いの乖離を防ぎます。

@@ -275,7 +275,7 @@ export default class RoutePatternUtils<const TRoutePattern extends string = stri
 
     const params: Record<string, string> = {};
     for (let i = 0, param: string | undefined; i < this.paramKeys.length; i++) {
-      // exec メソッドの戻り値のインデックス 0 にはマッチした文字列全体が格納されているため、各パラメーターの値はインデックス 1 以降（i + 1）から取得します。
+      // exec メソッドの戻り値のインデックス 0 にはマッチした文字列全体が格納されているため、各パラメーターの値はインデックス 1 以降(i + 1)から取得します。
       param = matches[i + 1];
 
       // キャプチャーされたセグメントが存在し、かつ文字列型である場合にのみ、対応するパラメーターキーと値をマッピングします。

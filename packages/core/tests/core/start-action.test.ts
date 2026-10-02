@@ -9,7 +9,7 @@ import startAction from "../../src/core/start-action.js";
 
 const url = (s: string) => v.parse(HistoryEntryUrlSchema(), s);
 
-test("該当するアクション関数が存在しない場合、 null を返す", ({ expect, signal }) => {
+test("該当するアクション関数が存在しない場合、null を返す", ({ expect, signal }) => {
   // 準備
   const request = {
     url: url("http://localhost/user"),
@@ -64,7 +64,7 @@ test("リクエスト URL パスに前方一致する最初のアクション関
   expect(result!.func).toStrictEqual(fnA);
 });
 
-test("同期的に通常のデータを返す場合、 fulfilled 状態になりリダイレクト情報を返さない", async ({
+test("同期的に通常のデータを返す場合、fulfilled 状態になりリダイレクト情報を返さない", async ({
   expect,
   signal,
 }) => {
@@ -206,7 +206,7 @@ test("非同期で RedirectResponse を返す場合、データを隠蔽しリ�
   });
 });
 
-test("同期実行時に例外が投げられた場合、 rejected 状態になり例外を内部でトラップする", async ({
+test("同期実行時に例外が投げられた場合、rejected 状態になり例外を内部でトラップする", async ({
   expect,
   signal,
 }) => {
@@ -241,7 +241,7 @@ test("同期実行時に例外が投げられた場合、 rejected 状態にな�
   });
 });
 
-test("非同期実行時に Promise が拒否された場合、 rejected 状態になり例外を内部でトラップする", async ({
+test("非同期実行時に Promise が拒否された場合、rejected 状態になり例外を内部でトラップする", async ({
   expect,
   signal,
 }) => {

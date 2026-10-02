@@ -46,7 +46,7 @@ export namespace IEngine {
     routes: readonly Route<TComponent>[];
 
     /**
-     * 各履歴エントリーに紐づくローダーの非同期状態を多重管理する、共有データストアへの参照です。
+     * 各履歴エントリーに紐づくローダーの非同期状態を多重管理する共有データストアへの参照です。
      */
     loaderDataStore: Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>;
 
@@ -143,7 +143,7 @@ export namespace IEngine {
         type: "URL_SEARCH_PARAMS";
 
         /**
-         * 更新対象となる検索クエリーパラメータです。
+         * 更新対象となる検索クエリーパラメーターです。
          */
         target: ReadonlyURLSearchParams;
 
@@ -164,7 +164,7 @@ export namespace IEngine {
   /**
    * 命令的な画面遷移を行う `navigate` メソッドの引数の型定義です。
    *
-   * リンクをクリックした際のアドレス遷移か、ブラウザーの「戻る・進む」に相当する相対移動かで分岐します。
+   * リンクをクリックした際のアドレス遷移か、ブラウザーの「戻る、進む」に相当する相対移動かで分岐します。
    */
   export type NavigateArgs =
     | {
@@ -197,7 +197,7 @@ export namespace IEngine {
               /**
                * 動的にパッチを適用する関数です。
                *
-               * @param path アプリケーション内のルーティングにおけるパスを安全に構築・解析・操作するためのオブジェクトです。
+               * @param path アプリケーション内のルーティングにおけるパスを安全に構築し、解析し、操作するためのオブジェクトです。
                */
               patch(path: RoutePath): void;
             };
@@ -212,7 +212,7 @@ export namespace IEngine {
       }
     | {
         /**
-         * 履歴スタック内の相対的な位置移動（例: `-1` で1つ戻る、`2` で2つ進む）です。
+         * 履歴スタック内の相対的な位置移動（例: `-1` で 1 つ戻る、`2` で 2 つ進む）です。
          */
         type: "MOVE";
 
@@ -240,7 +240,7 @@ export interface IEngine<TComponent = any> {
   start(args: IEngine.StartArgs<TComponent>): IEngine.StartReturn;
 
   /**
-   * ユーザーからの意図的なフォームデータまたはクエリーパラメータの送信を検知し、対応するルートのアクションやローダーを起動します。
+   * ユーザーからの意図的なフォームデータまたはクエリーパラメーターの送信を検知し、対応するルートのアクションやローダーを起動します。
    */
   submit(args: IEngine.SubmitArgs): void;
 

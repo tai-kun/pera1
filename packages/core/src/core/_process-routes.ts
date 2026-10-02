@@ -3,7 +3,7 @@ import RoutePatternUtils from "./route-pattern-utils.js";
 import type { Route, RouteDefinition } from "./route.types.js";
 
 /**
- * 定義したルーティング設定の配列を、内部のルーティングエンジンが直接利用可能な正規化済みのルートオブジェクトの配列へと変換します。
+ * 定義したルーティング設定の配列を、内部のルーティングエンジンが直接利用可能な正規化済みのルートオブジェクトの配列へ変換します。
  *
  * 実行内容:
  * - 各ルートのパス正規化
@@ -46,7 +46,7 @@ export default function processRoutes<TComponent = any>(
         };
       })
       // すべてのルートを正規化した後、compareRoutePaths 関数を用いて詳細度が高い順にソートします。
-      // マッチング漏れや誤ったルートへの誤認を防ぐため、制限の厳しい（具体的な）パスパターンを持つルートオブジェクトが配列のより前方に配置されます。
+      // マッチング漏れや誤ったルートへの誤認を防ぐため、制限の厳しいパスパターンを持つルートオブジェクトが配列のより前方に配置されます。
       .sort((a, b) => compareRoutePaths(a.path, b.path))
   );
 }

@@ -1,7 +1,7 @@
 /**
  * セグメントの種類に応じたスコア定数です。
  *
- * 数値が大きいほど優先順位（詳細度）が高いです。
+ * 数値が大きいほど優先順位が高いです。
  *
  * 詳細度（regexparam の README より）:
  * | 順位 | 種別 | 例 |
@@ -62,12 +62,12 @@ function getSegmentScore(s: string): number {
 const enCollator = new Intl.Collator("en");
 
 /**
- * 2つのルートパスの優先順位を比較し、ソート順を決定するための比較関数です。
+ * 2 つのルートパスの優先順位を比較し、ソート順を決定するための比較関数です。
  *
- * より具体的で制限の厳しいパス（詳細度スコアが高いパス）が、ソート結果においてより前方に配置されるように負の値を返します。
+ * より具体的で制限の厳しいパスが、ソート結果においてより前方に配置されるように負の値を返します。
  *
- * @param pathA 比較対象となる1つ目のパス文字列です。
- * @param pathB 比較対象となる2つ目のパス文字列です。
+ * @param pathA 比較対象となる1 つ目のパス文字列です。
+ * @param pathB 比較対象となる2 つ目のパス文字列です。
  * @returns `pathA` を優先する場合は負の数、`pathB` を優先する場合は正の数、等価である場合は `0` を返します。
  */
 export default function compareRoutePaths(pathA: string, pathB: string): number {
@@ -90,7 +90,7 @@ export default function compareRoutePaths(pathA: string, pathB: string): number 
 
     const scoreA = getSegmentScore(a);
     const scoreB = getSegmentScore(b);
-    // スコアが異なる場合は、スコアが高い方を優先します。
+    // スコアが異なる場合は、スコアが高いほうを優先します。
     if (scoreA !== scoreB) {
       return scoreB - scoreA;
     }

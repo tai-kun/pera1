@@ -133,7 +133,7 @@ export interface ShouldReloadFunction<TRoutePattern extends string = string> {
 }
 
 /**
- * 画面の描画に必要なデータを取得（ロード）する際に、該当する関数へ渡される引数の型定義です。
+ * 画面の描画に必要なデータを取得する際に、該当する関数へ渡される引数の型定義です。
  *
  * 解析済みのパスパラメーターと、HTTP の GET メソッドを抽象化したリクエストオブジェクトを含みます。
  *
@@ -267,7 +267,7 @@ export type RouteDefinition<TPath extends string = string, TComponent = any> =
   | RouteDefinitionModule<TPath, TComponent>;
 
 /**
- * `RouteDefinition` を基にシステム内部で解析・コンパイルされ、ルーティングエンジンが直接処理を行うための実体化されたルートオブジェクトの型定義です。
+ * `RouteDefinition` を基にシステム内部で解析、コンパイルされ、ルーティングエンジンが直接処理を行うための実体化されたルートオブジェクトの型定義です。
  *
  * 省略可能だったプロパティーが正規化され、正規表現によるマッチング機構が追加されています。
  *

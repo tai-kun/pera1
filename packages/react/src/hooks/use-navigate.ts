@@ -21,22 +21,22 @@ export interface NavigateFunction {
   /**
    * ブラウザーのセッション履歴スタック内を、現在地を基準に相対移動させます。
    *
-   * @param delta 移動する履歴のステップ数（例: `-1` で1つ戻る、`1` で1つ進む）です。
+   * @param delta 移動する履歴のステップ数（例: `-1` で 1 つ戻る、`1` で 1 つ進む）です。
    */
   (delta: number): void;
 }
 
 /**
- * リンクなどを介さない、ボタンのクリックハンドラーや非同期処理の完了時などから、プログラムによって命令的に画面遷移や履歴移動をトリガーするための関数を取得するカスタムフックです。
+ * リンクなどを介さない、ボタンのクリックハンドラーや非同期処理の完了したときなどから、プログラムによって命令的に画面遷移や履歴移動をトリガーするための関数を取得するカスタムフックです。
  *
  * 引数の正規化は `@pera1/core` の `toNavigateArgs` に委譲しており、Solid.js 版とも共有されます。
  *
- * @returns `NavigateFunction` 関数です。
+ * @returns 画面遷移を実行する `NavigateFunction` 関数を返します。
  */
 export default function useNavigate(): NavigateFunction {
   const routerNavigate = useRouterContext((router) => router.navigate);
 
-  // レンダリング毎に関数の参照が変わって子コンポーネントが不要に再描画されるのを防ぐため、useCallback でラップします。
+  // レンダリングごとに参照が変わって子コンポーネントが不要に再描画されるのを防ぐため、`useCallback` でラップします。
   return React.useCallback(
     function navigate(...args: [NavigateTo, options?: NavigateOptions | undefined] | [number]) {
       return routerNavigate(toNavigateArgs(args[0] as NavigateTo | number, args[1]));
