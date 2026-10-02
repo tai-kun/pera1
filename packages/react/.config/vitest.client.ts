@@ -19,7 +19,6 @@ export default defineConfig({
   },
   test: {
     include: ["tests/**/*.test.{ts,tsx}"],
-    exclude: ["tests/**/*.server.test.{ts,tsx}"],
     coverage: {
       provider: "v8",
       reporter: ["text", "json-summary", "html"],

@@ -1,6 +1,6 @@
 {
   "extends": ["@tsconfig/strictest"],
-  "include": ["./global.d.ts", "../tests/**/*.client.test.ts", "../tests/**/*.client.test.tsx"],
+  "include": ["./global.d.ts", "../tests/**/*"],
   "compilerOptions": {
     "types": ["vite/client"],
     "lib": ["DOM", "ESNext"],

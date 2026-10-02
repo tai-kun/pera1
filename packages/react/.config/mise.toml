@@ -1,6 +1,5 @@
 [tasks.test]
 run = [
-  { task = "test:server" },
   { task = "test:client" },
   { task = "test:format" },
   { task = "test:lint" },
@@ -8,21 +7,14 @@ run = [
 ]
 env = { CI = 1 }
 
-[tasks."test:server"]
-run = "npx vitest --config ./.config/vitest.server.ts"
-
 [tasks."test:client"]
 run = "npx vitest --config ./.config/vitest.client.ts"
 
 [tasks."test:coverage"]
 run = [
-  { task = "test:coverage:server" },
   { task = "test:coverage:client" },
 ]
 env = { CI = 1 }
-
-[tasks."test:coverage:server"]
-run = "npx vitest run --coverage --config ./.config/vitest.server.ts"
 
 [tasks."test:coverage:client"]
 run = "npx vitest run --coverage --config ./.config/vitest.client.ts"
@@ -36,9 +28,7 @@ run = { task = "lint" }
 [tasks."test:typecheck"]
 run = [
   "npx tsc --noEmit --project ./.config/tsconfig.base.json",
-  "npx tsc --noEmit --project ./.config/tsconfig.test.json",
   "npx tsc --noEmit --project ./.config/tsconfig.client.json",
-  "npx tsc --noEmit --project ./.config/tsconfig.server.json",
   "npx tsc --noEmit --project ./.config/tsconfig.config.json",
 ]
 
