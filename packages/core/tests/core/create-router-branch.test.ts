@@ -203,7 +203,7 @@ describe("createRouter の start/stop", () => {
 
   test("stop 関数が呼ばれ ac がリセットされる", ({ expect }) => {
     // 準備
-    const stopFn = vi.fn();
+    const stopFn = vi.fn<() => void>();
     let firstSignal!: AbortSignal;
     let secondSignal!: AbortSignal;
     let startCall = 0;
@@ -264,7 +264,7 @@ describe("createRouter の start/stop", () => {
 
   test("start が返す stop を 2 回呼んでも安全", ({ expect }) => {
     // 準備
-    const stopFn = vi.fn();
+    const stopFn = vi.fn<() => void>();
     const engine = {
       init: () => null,
       start: () => stopFn,

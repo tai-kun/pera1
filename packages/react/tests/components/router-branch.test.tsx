@@ -72,9 +72,7 @@ describe("Router の分岐網羅", () => {
     expect(container.textContent).toContain("child");
   });
 
-  test("親の action/loader を子が引き継いで useActionData/useLoaderData で参照できる", async ({
-    expect,
-  }) => {
+  test("親の action/loader を子の RouteContext が引き継ぐ", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
 
@@ -110,12 +108,7 @@ describe("Router の分岐網羅", () => {
       params: {},
       urlPath: "/child",
     };
-    const { NinjaPromise } = await import("ninja-promise");
     const entryId = "550e8400-e29b-41d4-a716-446655440000" as unknown as HistoryEntryId;
-    const actionPromise = NinjaPromise.resolve("a-result");
-    const loaderPromise = NinjaPromise.resolve("l-result");
-    const actionStore: any = new Map([[entryId, new Map([[parentAction, actionPromise]])]]);
-    const loaderStore: any = new Map([[entryId, new Map([[parentLoader, loaderPromise]])]]);
     const engine: IEngine = {
       init: () => ({
         entry: {
@@ -129,9 +122,6 @@ describe("Router の分岐網羅", () => {
       submit: () => {},
       navigate: () => {},
     };
-    // 未使用変数の警告を避けるために参照する
-    expect(actionStore).toBeDefined();
-    expect(loaderStore).toBeDefined();
 
     const container = document.createElement("div");
     document.body.appendChild(container);
@@ -159,8 +149,14 @@ describe("Router の分岐網羅", () => {
     await using cleanup = new AsyncDisposableStack();
 
     const childAction = () => "child-action";
+    const childLoader = () => "child-loader";
     function Child() {
-      return <span>child-own</span>;
+      const ctx = useRouteContext() as any;
+      return (
+        <span>
+          {String(ctx.action === childAction)}-{String(ctx.loader === childLoader)}
+        </span>
+      );
     }
     const parentRoute: any = {
       path: "/",
@@ -178,7 +174,7 @@ describe("Router の分岐網羅", () => {
       index: false,
       utils: new RoutePatternUtils("/child"),
       action: childAction,
-      loader: () => "child-loader",
+      loader: childLoader,
       component: Child,
       shouldReload: () => false,
       params: {},
@@ -215,7 +211,7 @@ describe("Router の分岐網羅", () => {
       root.render(<Router engine={engine} routes={[{ path: "/" }, { path: "/child" }]} />);
     });
 
-    // 検証
-    expect(container.textContent).toContain("child-own");
+    // 検証（子の action/loader が優先される）
+    expect(container.textContent).toContain("true-true");
   });
 });

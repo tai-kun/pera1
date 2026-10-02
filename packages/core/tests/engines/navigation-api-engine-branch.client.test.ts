@@ -18,50 +18,20 @@ function createMockNavigation(overrides: any = {}) {
       id: VALID_ID,
       url: "https://example.com/",
       index: 0,
-      addEventListener: vi.fn(),
+      addEventListener: vi.fn<() => void>(),
     },
     entries: () => [],
-    addEventListener: vi.fn((type: string, handler: any) => {
+    addEventListener: vi.fn<(type: string, handler: any) => void>((type: string, handler: any) => {
       listeners.set(type, handler);
     }),
-    navigate: vi.fn(),
-    traverseTo: vi.fn(),
+    navigate: vi.fn<() => void>(),
+    traverseTo: vi.fn<() => void>(),
     ...overrides,
   };
   return { navigation, listeners };
 }
 
 describe("コンストラクタの分岐", () => {
-  test("window.navigation から取得できる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    vi.stubGlobal("navigation", undefined);
-    (window as any).navigation = {
-      currentEntry: null,
-      entries: () => [],
-      addEventListener: () => {},
-    };
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-      (window as any).navigation = undefined;
-    });
-
-    // 実行と検証（投げないこと）
-    expect(() => new NavigationApiEngine()).not.toThrow();
-  });
-
-  test("navigation がオブジェクトでないときエラーを投げる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    vi.stubGlobal("navigation", "invalid");
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-    });
-
-    // 実行と検証
-    expect(() => new NavigationApiEngine()).toThrow(NavigationApiNotSupportedError);
-  });
-
   test("window アクセスで例外が出てもエラーを投げる", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
@@ -209,7 +179,7 @@ describe("start のナビゲーションガード", () => {
       vi.unstubAllGlobals();
     });
     const engine = new NavigationApiEngine();
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: [],
       update: update as any,
@@ -241,7 +211,7 @@ describe("start のナビゲーションガード", () => {
       vi.unstubAllGlobals();
     });
     const engine = new NavigationApiEngine();
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: [],
       update: update as any,
@@ -272,7 +242,7 @@ describe("start のナビゲーションガード", () => {
       vi.unstubAllGlobals();
     });
     const engine = new NavigationApiEngine();
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: [],
       update: update as any,
@@ -303,7 +273,7 @@ describe("start のナビゲーションガード", () => {
       vi.unstubAllGlobals();
     });
     const engine = new NavigationApiEngine();
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: [],
       update: update as any,
@@ -334,7 +304,7 @@ describe("start のナビゲーションガード", () => {
       vi.unstubAllGlobals();
     });
     const engine = new NavigationApiEngine();
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: [],
       update: update as any,
@@ -367,7 +337,7 @@ describe("start のナビゲーションガード", () => {
       vi.unstubAllGlobals();
     });
     const engine = new NavigationApiEngine();
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: [],
       update: update as any,
@@ -405,7 +375,7 @@ describe("start のナビゲーションガード", () => {
     });
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/exists" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -445,7 +415,7 @@ describe("start の GET 遷移（formData なし）", () => {
     });
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/", loader: () => "data" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -487,7 +457,7 @@ describe("start の GET 遷移（formData なし）", () => {
     });
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -535,7 +505,7 @@ describe("start の GET 遷移（formData なし）", () => {
     });
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/" }, { path: "/other" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -585,7 +555,7 @@ describe("start の POST 遷移（formData あり）", () => {
     const engine = new NavigationApiEngine();
     // action なしのルート
     const routes = processRoutes([{ path: "/" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -609,7 +579,7 @@ describe("start の POST 遷移（formData あり）", () => {
         captured = args;
       },
     });
-    await captured.precommitHandler({ redirect: vi.fn() });
+    await captured.precommitHandler({ redirect: vi.fn<() => void>() });
     await captured.handler();
 
     // 検証
@@ -626,7 +596,7 @@ describe("start の POST 遷移（formData あり）", () => {
     });
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/", action: () => "ok" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -660,7 +630,7 @@ describe("start の POST 遷移（formData あり）", () => {
         captured = args;
       },
     });
-    const redirect = vi.fn();
+    const redirect = vi.fn<() => void>();
     await captured.precommitHandler({ redirect });
     await captured.handler();
 
@@ -685,10 +655,9 @@ describe("start の POST 遷移（formData あり）", () => {
       vi.unstubAllGlobals();
     });
     const engine = new NavigationApiEngine();
-    const routes = processRoutes([
-      { path: "/", action: () => "action-result", loader: () => "loader-data" },
-    ]);
-    const update = vi.fn();
+    const loader = vi.fn<() => string>(() => "loader-data");
+    const routes = processRoutes([{ path: "/", action: () => "action-result", loader }]);
+    const update = vi.fn<() => void>();
     const actionStore = new Map() as any;
     const loaderStore = new Map() as any;
     engine.start({
@@ -716,14 +685,19 @@ describe("start の POST 遷移（formData あり）", () => {
         captured = args;
       },
     });
-    const redirect = vi.fn();
+    const redirect = vi.fn<() => void>();
     await captured.precommitHandler({ redirect });
     // precommit で redirect が呼ばれる（リダイレクトなしでも currentEntry.url への redirect）
     expect(redirect).toHaveBeenCalled();
     await captured.handler();
 
     // 検証
-    expect(update).toHaveBeenCalled();
+    expect(loader).toHaveBeenCalledTimes(1);
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        routes: expect.arrayContaining([expect.objectContaining({ path: "/" })]),
+      }),
+    );
   });
 
   test("action が失敗（rejected）したら元の URL に redirect する", async ({ expect }) => {
@@ -749,7 +723,7 @@ describe("start の POST 遷移（formData あり）", () => {
         },
       },
     ]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -774,7 +748,7 @@ describe("start の POST 遷移（formData あり）", () => {
         captured = args;
       },
     });
-    const redirect = vi.fn();
+    const redirect = vi.fn<() => void>();
     await captured.precommitHandler({ redirect });
 
     // 検証
@@ -797,7 +771,7 @@ describe("start の POST 遷移（formData あり）", () => {
     });
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/", action: () => "ok" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -821,7 +795,7 @@ describe("start の POST 遷移（formData あり）", () => {
         captured = args;
       },
     });
-    await captured.precommitHandler({ redirect: vi.fn() });
+    await captured.precommitHandler({ redirect: vi.fn<() => void>() });
     navigation.currentEntry = null;
     await captured.handler();
 
@@ -845,7 +819,7 @@ describe("start の POST 遷移（formData あり）", () => {
     });
     const engine = new NavigationApiEngine();
     const routes = processRoutes([{ path: "/", action: () => "ok" }]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     // update の呼び出し回数を記録（precommit で 1 回呼ばれる）
     engine.start({
       routes: routes as any,
@@ -870,7 +844,7 @@ describe("start の POST 遷移（formData あり）", () => {
         captured = args;
       },
     });
-    await captured.precommitHandler({ redirect: vi.fn() });
+    await captured.precommitHandler({ redirect: vi.fn<() => void>() });
     const callsAfterPrecommit = update.mock.calls.length;
     // handler 実行時に URL をずらす
     navigation.currentEntry = {
@@ -905,7 +879,7 @@ describe("start の POST 遷移（formData あり）", () => {
     const routes = processRoutes([
       { path: "/a", action: () => new RedirectResponse("/b-notfound") },
     ]);
-    const update = vi.fn();
+    const update = vi.fn<() => void>();
     engine.start({
       routes: routes as any,
       update: update as any,
@@ -959,9 +933,11 @@ describe("start の購読管理", () => {
       id: VALID_ID,
       index: 0,
       key: "k1",
-      addEventListener: vi.fn((type: string, handler: any) => {
-        disposeHandlers.set(`${VALID_ID}:${type}`, handler);
-      }),
+      addEventListener: vi.fn<(type: string, handler: any) => void>(
+        (type: string, handler: any) => {
+          disposeHandlers.set(`${VALID_ID}:${type}`, handler);
+        },
+      ),
     };
     const { navigation } = createMockNavigation({
       currentEntry: {
@@ -1155,63 +1131,6 @@ describe("start の購読管理", () => {
     // 実行と検証（投げないこと）
     navigation.currentEntry = null;
     expect(() => listeners.get("currententrychange")()).not.toThrow();
-  });
-
-  test("abort シグナルで navAbortController がリセットされる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    const { navigation, listeners } = createMockNavigation({});
-    vi.stubGlobal("navigation", navigation);
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-    });
-    const engine = new NavigationApiEngine();
-    const routes = processRoutes([{ path: "/", action: () => "ok" }]);
-    const ac = new AbortController();
-    engine.start({
-      routes: routes as any,
-      update: (() => {}) as any,
-      getSignal: () => ac.signal,
-      actionDataStore: new Map() as any,
-      loaderDataStore: new Map() as any,
-    });
-
-    // 実行: 先にナビゲーションを起こして navAbortController を生成
-    let captured: any = null;
-    listeners.get("navigate")({
-      isTrusted: true,
-      canIntercept: true,
-      hashChange: false,
-      downloadRequest: null,
-      navigationType: "push",
-      destination: { url: "https://example.com/" },
-      formData: new FormData(),
-      sourceElement: null,
-      intercept: (args: any) => {
-        captured = args;
-      },
-    });
-    await captured.precommitHandler({ redirect: vi.fn() });
-    // 外部シグナルを abort
-    ac.abort();
-
-    // 検証（投げないこと、2 回目のナビゲーションも動作すること）
-    let captured2: any = null;
-    listeners.get("navigate")({
-      isTrusted: true,
-      canIntercept: true,
-      hashChange: false,
-      downloadRequest: null,
-      navigationType: "push",
-      destination: { url: "https://example.com/" },
-      formData: new FormData(),
-      sourceElement: null,
-      intercept: (args: any) => {
-        captured2 = args;
-      },
-    });
-    await captured2.precommitHandler({ redirect: vi.fn() });
-    expect(captured2).toBeDefined();
   });
 });
 

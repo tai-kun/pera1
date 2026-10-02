@@ -1,4 +1,4 @@
-import { expect, test, vi } from "vitest";
+import { test, vi } from "vitest";
 
 vi.mock("../../src/core/start-action.js", () => ({
   default: () => ({
@@ -9,11 +9,12 @@ vi.mock("../../src/core/start-action.js", () => ({
 }));
 
 import processRoutes from "../../src/core/_process-routes.js";
+import { UnreachableError } from "../../src/core/errors.js";
 import NavigationApiEngine from "../../src/engines/navigation-api-engine.js";
 
 const VALID_ID = "550e8400-e29b-41d4-a716-446655440000";
 
-test("action のステータスが不正なとき UnreachableError になる", async ({ expect: exp }) => {
+test("action のステータスが不正なとき UnreachableError になる", async ({ expect }) => {
   // 準備
   await using cleanup = new AsyncDisposableStack();
   const listeners = new Map<string, any>();
@@ -22,14 +23,14 @@ test("action のステータスが不正なとき UnreachableError になる", a
       id: VALID_ID,
       url: "https://example.com/",
       index: 0,
-      addEventListener: vi.fn(),
+      addEventListener: vi.fn<() => void>(),
     },
     entries: () => [],
-    addEventListener: vi.fn((type: string, handler: any) => {
+    addEventListener: vi.fn<(type: string, handler: any) => void>((type: string, handler: any) => {
       listeners.set(type, handler);
     }),
-    navigate: vi.fn(),
-    traverseTo: vi.fn(),
+    navigate: vi.fn<() => void>(),
+    traverseTo: vi.fn<() => void>(),
   };
   vi.stubGlobal("navigation", navigation);
   cleanup.defer(() => {
@@ -62,6 +63,7 @@ test("action のステータスが不正なとき UnreachableError になる", a
   });
 
   // 検証: precommitHandler が UnreachableError で拒否される
-  await exp(captured.precommitHandler({ redirect: vi.fn() })).rejects.toThrow();
-  expect(true).toBe(true);
+  await expect(captured.precommitHandler({ redirect: vi.fn<() => void>() })).rejects.toThrow(
+    UnreachableError,
+  );
 });
