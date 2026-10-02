@@ -1,0 +1,4 @@
+{
+  "oxc.configPath": "./.config/.oxlintrc.json",
+  "oxc.fmt.configPath": "./.config/.oxfmtrc.json"
+}

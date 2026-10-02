@@ -1,0 +1,401 @@
+name: "リリース"
+run-name: "${{ github.event.inputs.version }}"
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "バージョン（例:「1.2.3」「package-name@1.2.3」）"
+        required: true
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+concurrency:
+  group: "release"
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+  id-token: write
+
+jobs:
+  release:
+    timeout-minutes: 60
+    runs-on: ubuntu-latest
+    outputs:
+      changelog: ${{ steps.changelog.outputs.changelog }}
+      packages: ${{ steps.packages.outputs.list }}
+    steps:
+      - name: "バージョン解析"
+        id: pkg
+        uses: tai-kun/gha-package-version-parser@dd1d3b95150181171e03b6bc31dc090bd67e07e0 # v1.0.0
+        with:
+          package: ${{ github.event.inputs.version }}
+
+      - name: "チェックアウト"
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+        with:
+          fetch-depth: 0
+
+      - name: "mise をセットアップ"
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+
+      - name: "依存関係をインストール"
+        run: pnpm i
+
+      - name: "ビルド"
+        run: |
+          for dir in $(jq -r '.workspaces[]' package.json); do
+            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            if ! jq -e '.scripts.build' "$dir/package.json" >/dev/null; then
+              echo "::notice::$dir には build スクリプトがないためスキップします。"
+              continue
+            fi
+
+            echo "::group::$dir"
+            (
+              cd "$dir" || exit 1
+              npm run build
+            )
+            echo "::endgroup::"
+          done
+
+      - name: "format"
+        run: |
+          for dir in $(jq -r '.workspaces[]' package.json); do
+            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            echo "::group::$dir"
+            (
+              cd "$dir" || exit 1
+
+              if ! mise tasks --json | jq -e '.[] | select(.name == "test:format")' >/dev/null; then
+                echo "::notice::$dir には test:format タスクがないためスキップします。"
+                exit 0
+              fi
+
+              mise run test:format
+            )
+            echo "::endgroup::"
+          done
+
+      - name: "lint"
+        run: |
+          for dir in $(jq -r '.workspaces[]' package.json); do
+            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            echo "::group::$dir"
+            (
+              cd "$dir" || exit 1
+
+              if ! mise tasks --json | jq -e '.[] | select(.name == "test:lint")' >/dev/null; then
+                echo "::notice::$dir には test:lint タスクがないためスキップします。"
+                exit 0
+              fi
+
+              mise run test:lint
+            )
+            echo "::endgroup::"
+          done
+
+      - name: "テスト"
+        run: |
+          for dir in $(jq -r '.workspaces[]' package.json); do
+            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            echo "::group::$dir"
+            (
+              cd "$dir" || exit 1
+
+              if grep -q "playwright" package.json; then
+                npx playwright install --with-deps
+              fi
+
+              if [ -f scripts/pretest.sh ]; then
+                bash -euo pipefail ./scripts/pretest.sh
+              fi
+
+              if ! mise tasks --json | jq -e '.[] | select(.name == "test")' >/dev/null; then
+                echo "::notice::$dir には test タスクがないためスキップします。"
+                exit 0
+              fi
+
+              mise run test
+            )
+            echo "::endgroup::"
+          done
+
+      - name: "公開パッケージを決定"
+        id: packages
+        env:
+          PACKAGE_NAME: ${{ steps.pkg.outputs.name }}
+          VERSION: ${{ steps.pkg.outputs.version }}
+        run: |
+          git fetch --tags --force
+
+          matched=false
+          non_private_count=0
+          list=""
+
+          for dir in $(jq -r '.workspaces[]' package.json); do
+            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            if [ "$(jq -r '.private // false' "$dir/package.json")" = "true" ]; then
+              continue
+            fi
+
+            non_private_count=$((non_private_count + 1))
+            name=$(jq -r '.name' "$dir/package.json")
+
+            if [ "$PACKAGE_NAME" != "*" ] && [ "$name" != "$PACKAGE_NAME" ]; then
+              continue
+            fi
+
+            matched=true
+            tag="$name@$VERSION"
+
+            if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+              echo "::notice::タグ $tag がすでに存在するため $name をスキップします。"
+              continue
+            fi
+
+            list+="$dir"$'\t'"$name"$'\t'"$VERSION"$'\n'
+          done
+
+          if [ "$PACKAGE_NAME" != "*" ] && [ "$matched" = "false" ]; then
+            echo "::error::公開対象のパッケージ「$PACKAGE_NAME」が見つかりません。"
+            exit 1
+          fi
+
+          list="${list%$'\n'}"
+
+          if [ -z "$list" ]; then
+            echo "::error::公開対象のパッケージがありません。"
+            exit 1
+          fi
+
+          count=$(grep -c . <<< "$list")
+
+          {
+            echo "list<<EOF"
+            echo "$list"
+            echo "EOF"
+            echo "count=$count"
+            echo "non_private=$non_private_count"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "バージョンを更新"
+        if: steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+        run: |
+          while IFS=$'\t' read -r dir name version; do
+            if [ -z "$name" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            echo "$name のバージョンを $version に更新します。"
+            (
+              cd "$dir" || exit 1
+              pnpm version "$version" --no-git-tag-version --allow-same-version --no-git-checks
+            )
+          done <<< "$LIST"
+
+      - name: "CHANGELOG を生成"
+        id: changelog
+        if: steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
+        run: |
+          entry_file="$RUNNER_TEMP/release-changelog.md"
+
+          release_tag=""
+          release_version=""
+
+          while IFS=$'\t' read -r _ name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            if [ -z "$release_tag" ]; then
+              release_tag="$name@$version"
+              release_version="$version"
+            fi
+          done <<< "$LIST"
+
+          if [ "$RELEASE_COUNT" -gt 1 ]; then
+            heading="v$release_version"
+          else
+            heading="$release_tag"
+          fi
+
+          previous_tag=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
+          body=$(node .github/scripts/generate-changelog.mjs "$GITHUB_REPOSITORY" "$release_tag" "$previous_tag")
+
+          printf '## %s\n\n%s\n' "$heading" "$body" > "$entry_file"
+
+          {
+            echo "changelog<<EOF"
+            cat "$entry_file"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "CHANGELOG.md に追記"
+        if: steps.packages.outputs.count != '0'
+        run: |
+          entry_file="$RUNNER_TEMP/release-changelog.md"
+
+          if [ ! -f CHANGELOG.md ]; then
+            printf '# Changelog\n' > CHANGELOG.md
+          fi
+
+          merged=$(mktemp)
+          {
+            head -n 1 CHANGELOG.md
+            printf '\n'
+            cat "$entry_file"
+            tail -n +2 CHANGELOG.md
+          } > "$merged"
+          mv "$merged" CHANGELOG.md
+
+      - name: "更新をコミット"
+        if: steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
+          NON_PRIVATE_COUNT: ${{ steps.packages.outputs.non_private }}
+        run: |
+          release_tag=""
+          release_version=""
+          release_names=""
+
+          while IFS=$'\t' read -r _ name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            if [ -z "$release_tag" ]; then
+              release_tag="$name@$version"
+              release_version="$version"
+            fi
+
+            release_names+="- $name"$'\n'
+          done <<< "$LIST"
+
+          if [ "$RELEASE_COUNT" -ge 2 ]; then
+            message="release: v$release_version (x$RELEASE_COUNT)"$'\n'"${release_names%$'\n'}"
+          elif [ "$NON_PRIVATE_COUNT" -eq 1 ]; then
+            message="release: v$release_version"
+          else
+            message="release: $release_tag"
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add --all
+          git commit -m "$message"
+          git push
+
+      - name: "タグを作成"
+        if: steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+        run: |
+          while IFS=$'\t' read -r _ name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            tag="$name@$version"
+            git tag "$tag"
+            git push origin "$tag"
+          done <<< "$LIST"
+
+      - name: "Release を作成"
+        if: steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          first_tag=""
+          release_version=""
+          package_count=0
+
+          while IFS=$'\t' read -r _ name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            package_count=$((package_count + 1))
+
+            if [ -z "$first_tag" ]; then
+              first_tag="$name@$version"
+              release_version="$version"
+            fi
+          done <<< "$LIST"
+
+          if [ "$package_count" -gt 1 ]; then
+            title="$release_version"
+          else
+            title="$first_tag"
+          fi
+
+          gh release create "$first_tag" --title "$title" --notes-file "$RUNNER_TEMP/release-changelog.md"
+
+      - name: "npm に公開"
+        if: steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+        run: |
+          while IFS=$'\t' read -r dir name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            echo "$name@$version を公開します。"
+            (
+              cd "$dir" || exit 1
+              pnpm publish --access public --no-git-checks --provenance
+            )
+          done <<< "$LIST"
+
+      - name: "失敗時にタグと Release を削除"
+        if: failure()
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          while IFS=$'\t' read -r _ name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            tag="$name@$version"
+            echo "$tag を削除します。"
+
+            gh release delete "$tag" --yes --cleanup-tag || true
+            git push origin ":refs/tags/$tag" || true
+          done <<< "$LIST"
+
+      - name: "pnpm ログをアップロード"
+        if: always()
+        uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
+        with:
+          name: pnpm-logs-publish
+          path: /home/runner/.pnpm-debug.log
+          if-no-files-found: ignore
+          retention-days: 3

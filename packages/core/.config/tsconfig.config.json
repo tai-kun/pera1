@@ -1,0 +1,13 @@
+{
+  "extends": ["@tsconfig/node24", "@tsconfig/strictest"],
+  "include": ["./**/*"],
+  "exclude": ["./global.d.ts"],
+  "compilerOptions": {
+    "types": ["node"],
+    "lib": ["ESNext"],
+    "noEmit": true,
+    "module": "nodenext",
+    "moduleResolution": "nodenext",
+    "erasableSyntaxOnly": true
+  }
+}

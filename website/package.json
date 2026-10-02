@@ -1,0 +1,14 @@
+{
+  "name": "website",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "build": "blume build"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "24.0.5",
+    "@tsconfig/strictest": "2.0.8",
+    "@types/node": "24.13.6",
+    "blume": "2.0.3"
+  }
+}

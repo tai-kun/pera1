@@ -1,0 +1,15 @@
+{
+  "name": "pera1-monorepo",
+  "version": "0.0.0",
+  "private": true,
+  "workspaces": ["packages/core", "packages/react", "website"],
+  "type": "module",
+  "devDependencies": {
+    "npm-check-updates": "23.1.0",
+    "oxfmt": "0.70.0",
+    "oxlint": "1.85.0",
+    "oxlint-tsgolint": "7.0.2003",
+    "skills": "1.7.0",
+    "typescript": "7.0.2"
+  }
+}

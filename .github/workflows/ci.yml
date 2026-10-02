@@ -1,0 +1,98 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+
+defaults:
+  run:
+    shell: bash -euo pipefail {0}
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        package-directory: ["packages/core", "packages/react"]
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: "チェックアウト"
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: "mise をセットアップ"
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+
+      - name: "依存関係をインストール（ルート）"
+        run: pnpm i
+
+      - name: "内部依存パッケージのビルド"
+        run: |
+          root_dir="$(pwd)"
+
+          # 1. ルートの workspaces 設定から、全内部パッケージの「パッケージ名」と「ディレクトリ名」のマップを作成
+          internal_pkg_map=$(jq -r '
+            .workspaces[] as $ws 
+            | ($ws | sub("/\\*$"; "")) as $path 
+            | $path 
+          ' package.json | xargs -I {} sh -c '
+            if [ -f "{}/package.json" ]; then
+              name=$(jq -r .name "{}/package.json")
+              echo "{\"$name\": \"{}\"}"
+            fi
+          ' | jq -s 'add')
+
+          cd "${{ matrix.package-directory }}"
+
+          # 2. 現在のパッケージの全依存関係を取得
+          all_deps_in_pkg=$(jq -r '
+            ( .dependencies // {}, 
+              .devDependencies // {}, 
+              .peerDependencies // {}, 
+              .optionalDependencies // {} 
+            ) | keys[]
+          ' package.json | sort -u)
+
+          # 3. ルートの workspaces の定義順（ビルド順序のヒント）に従って、依存している内部パッケージを抽出
+          ordered_internal_deps=$(jq -r --argjson map "$internal_pkg_map" '
+            .workspaces[] as $ws 
+            | ($ws | sub("/\\*$"; "")) as $path
+            | ($map | to_entries[] | select(.value == $path) | .key) as $pkg_name
+            | $pkg_name
+          ' "${root_dir}/package.json")
+
+          for dep_name in $ordered_internal_deps; do
+            # 現在のパッケージがその内部パッケージに依存しているかチェック
+            if echo "$all_deps_in_pkg" | grep -qx "$dep_name"; then
+              target_rel_path=$(echo "$internal_pkg_map" | jq -r ".\"$dep_name\"")
+              target_abs_path="${root_dir}/${target_rel_path}"
+
+              echo "${target_rel_path} で内部依存パッケージ ${dep_name} をビルドします"
+              (cd "${target_abs_path}" && npm run build)
+              echo
+            fi
+          done
+
+      - name: "依存関係をインストール（パッケージ）"
+        run: |
+          if grep -q "playwright" package.json; then
+            npx playwright install --with-deps
+          fi
+        working-directory: ${{ matrix.package-directory }}
+
+      - name: "テスト準備"
+        run: |
+          if [ -f ./scripts/pretest.sh ]; then
+            bash -euo pipefail ./scripts/pretest.sh
+          fi
+        working-directory: ${{ matrix.package-directory }}
+
+      - name: "ビルド"
+        run: npm run build
+        working-directory: ${{ matrix.package-directory }}
+
+      - name: "テスト"
+        run: mise run test
+        working-directory: ${{ matrix.package-directory }}

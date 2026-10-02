@@ -1,0 +1,41 @@
+{
+  "version": 1,
+  "skills": {
+    "blume-docs": {
+      "source": "tai-kun/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/blume-docs/SKILL.md",
+      "computedHash": "fcd223b8a00c51d532868d74bc95a433af999b3b3b0b24d34f37e22d78521bbb"
+    },
+    "japanese": {
+      "source": "tai-kun/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/japanese/SKILL.md",
+      "computedHash": "6b01a63f4a00a3ace274ebd13ec703fde427152bf280e1444905ca893cc22fd0"
+    },
+    "jsdoc": {
+      "source": "tai-kun/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/jsdoc/SKILL.md",
+      "computedHash": "811621d9a79343b3e92a006a54742446528cd144ec470d98550ad794f570b97d"
+    },
+    "natural-japanese": {
+      "source": "coji/natural-japanese",
+      "sourceType": "github",
+      "skillPath": "skills/natural-japanese/SKILL.md",
+      "computedHash": "2cbc03e78e7533e2baa502b37b58db5dae91dcdb3fa991e02f57d3c6c6805964"
+    },
+    "pc-safety-guard": {
+      "source": "tai-kun/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/pc-safety-guard/SKILL.md",
+      "computedHash": "fa420cb2b157f777d142d0227fdcc022683874c4ea12a7d198b51574bc159529"
+    },
+    "vitest": {
+      "source": "tai-kun/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/vitest/SKILL.md",
+      "computedHash": "3243cd5f4261ec2c1928ad455ed1de8b48f3756d765b0ffc765adfb6784c829f"
+    }
+  }
+}

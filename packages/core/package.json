@@ -1,0 +1,45 @@
+{
+  "name": "@pera1/core",
+  "version": "0.0.0",
+  "description": "",
+  "homepage": "https://tai-kun.github.io/pera1",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/tai-kun/pera1",
+    "directory": "packages/core"
+  },
+  "files": [
+    "dist",
+    "src",
+    "package.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project ./.config/tsconfig.build.json"
+  },
+  "dependencies": {
+    "i18n-error-base": "0.0.7"
+  },
+  "devDependencies": {
+    "@tsconfig/node24": "24.0.5",
+    "@tsconfig/strictest": "2.0.8",
+    "@types/node": "24.13.6",
+    "@vitest/browser": "4.1.11",
+    "@vitest/browser-playwright": "4.1.11",
+    "playwright": "1.63.0",
+    "vitest": "4.1.11"
+  },
+  "peerDependencies": {
+    "@logtape/logtape": "^2.0.0"
+  },
+  "readme": "README.md"
+}
