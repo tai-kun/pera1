@@ -72,7 +72,9 @@ describe("Router の分岐網羅", () => {
     expect(container.textContent).toContain("child");
   });
 
-  test("親の action/loader を子が引き継いで useActionData/useLoaderData で参照できる", async ({ expect }) => {
+  test("親の action/loader を子が引き継いで useActionData/useLoaderData で参照できる", async ({
+    expect,
+  }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
 

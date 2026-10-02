@@ -1,10 +1,7 @@
 import { setGlobalConfig } from "valibot";
 import { describe, test } from "vitest";
 
-import {
-  LoaderConditionError,
-  LoaderDataNotFoundError,
-} from "../../src/core/errors.js";
+import { LoaderConditionError, LoaderDataNotFoundError } from "../../src/core/errors.js";
 
 describe("エラーメッセージの分岐網羅", () => {
   test("getTypeName が空文字のとき unknown になる (英語)", ({ expect }) => {

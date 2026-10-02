@@ -15,10 +15,7 @@ run = "npx vitest --config ./.config/vitest.server.ts"
 run = "npx vitest --config ./.config/vitest.client.ts"
 
 [tasks."test:coverage"]
-run = [
-  { task = "test:coverage:server" },
-  { task = "test:coverage:client" },
-]
+run = [{ task = "test:coverage:server" }, { task = "test:coverage:client" }]
 env = { CI = 1 }
 
 [tasks."test:coverage:server"]

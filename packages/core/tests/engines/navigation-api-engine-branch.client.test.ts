@@ -1,7 +1,7 @@
 import { describe, test, vi } from "vitest";
 
-import { NavigationApiNotSupportedError, UnreachableError } from "../../src/core/errors.js";
 import processRoutes from "../../src/core/_process-routes.js";
+import { NavigationApiNotSupportedError, UnreachableError } from "../../src/core/errors.js";
 import NavigationApiEngine from "../../src/engines/navigation-api-engine.js";
 
 const VALID_ID = "550e8400-e29b-41d4-a716-446655440000";
@@ -126,7 +126,12 @@ describe("init の分岐", () => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
     const { navigation } = createMockNavigation({
-      currentEntry: { id: VALID_ID, url: "https://example.com/", index: -1, addEventListener: () => {} },
+      currentEntry: {
+        id: VALID_ID,
+        url: "https://example.com/",
+        index: -1,
+        addEventListener: () => {},
+      },
     });
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
@@ -215,7 +220,13 @@ describe("start のナビゲーションガード", () => {
 
     // 実行
     const handler = listeners.get("navigate");
-    handler({ isTrusted: false, canIntercept: true, hashChange: false, downloadRequest: null, navigationType: "push" });
+    handler({
+      isTrusted: false,
+      canIntercept: true,
+      hashChange: false,
+      downloadRequest: null,
+      navigationType: "push",
+    });
 
     // 検証
     expect(update).not.toHaveBeenCalled();
@@ -240,7 +251,13 @@ describe("start のナビゲーションガード", () => {
     });
 
     // 実行
-    listeners.get("navigate")({ isTrusted: true, canIntercept: false, hashChange: false, downloadRequest: null, navigationType: "push" });
+    listeners.get("navigate")({
+      isTrusted: true,
+      canIntercept: false,
+      hashChange: false,
+      downloadRequest: null,
+      navigationType: "push",
+    });
 
     // 検証
     expect(update).not.toHaveBeenCalled();
@@ -265,7 +282,13 @@ describe("start のナビゲーションガード", () => {
     });
 
     // 実行
-    listeners.get("navigate")({ isTrusted: true, canIntercept: true, hashChange: true, downloadRequest: null, navigationType: "push" });
+    listeners.get("navigate")({
+      isTrusted: true,
+      canIntercept: true,
+      hashChange: true,
+      downloadRequest: null,
+      navigationType: "push",
+    });
 
     // 検証
     expect(update).not.toHaveBeenCalled();
@@ -290,7 +313,13 @@ describe("start のナビゲーションガード", () => {
     });
 
     // 実行
-    listeners.get("navigate")({ isTrusted: true, canIntercept: true, hashChange: false, downloadRequest: {}, navigationType: "push" });
+    listeners.get("navigate")({
+      isTrusted: true,
+      canIntercept: true,
+      hashChange: false,
+      downloadRequest: {},
+      navigationType: "push",
+    });
 
     // 検証
     expect(update).not.toHaveBeenCalled();
@@ -315,7 +344,13 @@ describe("start のナビゲーションガード", () => {
     });
 
     // 実行
-    listeners.get("navigate")({ isTrusted: true, canIntercept: true, hashChange: false, downloadRequest: null, navigationType: "reload" });
+    listeners.get("navigate")({
+      isTrusted: true,
+      canIntercept: true,
+      hashChange: false,
+      downloadRequest: null,
+      navigationType: "reload",
+    });
 
     // 検証
     expect(update).not.toHaveBeenCalled();
@@ -435,7 +470,9 @@ describe("start の GET 遷移 (formData なし)", () => {
     await captured.handler();
 
     // 検証
-    expect(update).toHaveBeenCalledWith(expect.objectContaining({ entry: expect.anything(), routes: expect.anything() }));
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({ entry: expect.anything(), routes: expect.anything() }),
+    );
   });
 
   test("GET 遷移で currentEntry がなければ update(null) になる", async ({ expect }) => {
@@ -485,7 +522,12 @@ describe("start の GET 遷移 (formData なし)", () => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
     const { navigation, listeners } = createMockNavigation({
-      currentEntry: { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} },
+      currentEntry: {
+        id: VALID_ID,
+        url: "https://example.com/",
+        index: 0,
+        addEventListener: () => {},
+      },
     });
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
@@ -626,10 +668,17 @@ describe("start の POST 遷移 (formData あり)", () => {
     expect(document.body.contains(form)).toBe(false);
   });
 
-  test("action が成功 (fulfilled, リダイレクトなし) して GET ローダーが走る", async ({ expect }) => {
+  test("action が成功 (fulfilled, リダイレクトなし) して GET ローダーが走る", async ({
+    expect,
+  }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
-    const currentEntry: any = { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} };
+    const currentEntry: any = {
+      id: VALID_ID,
+      url: "https://example.com/",
+      index: 0,
+      addEventListener: () => {},
+    };
     const { navigation, listeners } = createMockNavigation({ currentEntry });
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
@@ -680,7 +729,12 @@ describe("start の POST 遷移 (formData あり)", () => {
   test("action が失敗 (rejected) したら元の URL に redirect する", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
-    const currentEntry: any = { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} };
+    const currentEntry: any = {
+      id: VALID_ID,
+      url: "https://example.com/",
+      index: 0,
+      addEventListener: () => {},
+    };
     const { navigation, listeners } = createMockNavigation({ currentEntry });
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
@@ -730,7 +784,12 @@ describe("start の POST 遷移 (formData あり)", () => {
   test("POST 後の handler で currentEntry がなければ update(null)", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
-    const currentEntry: any = { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} };
+    const currentEntry: any = {
+      id: VALID_ID,
+      url: "https://example.com/",
+      index: 0,
+      addEventListener: () => {},
+    };
     const { navigation, listeners } = createMockNavigation({ currentEntry });
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
@@ -773,7 +832,12 @@ describe("start の POST 遷移 (formData あり)", () => {
   test("POST 後の handler で URL がずれていれば何もしない", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
-    const currentEntry: any = { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} };
+    const currentEntry: any = {
+      id: VALID_ID,
+      url: "https://example.com/",
+      index: 0,
+      addEventListener: () => {},
+    };
     const { navigation, listeners } = createMockNavigation({ currentEntry });
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
@@ -809,7 +873,12 @@ describe("start の POST 遷移 (formData あり)", () => {
     await captured.precommitHandler({ redirect: vi.fn() });
     const callsAfterPrecommit = update.mock.calls.length;
     // handler 実行時に URL をずらす
-    navigation.currentEntry = { id: VALID_ID_2, url: "https://example.com/other", index: 1, addEventListener: () => {} };
+    navigation.currentEntry = {
+      id: VALID_ID_2,
+      url: "https://example.com/other",
+      index: 1,
+      addEventListener: () => {},
+    };
     await captured.handler();
 
     // 検証: handler では追加の update がない (precommit の分のみ)
@@ -819,7 +888,12 @@ describe("start の POST 遷移 (formData あり)", () => {
   test("POST 後の handler でマッチなしなら update(null)", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
-    const currentEntry: any = { id: VALID_ID, url: "https://example.com/a", index: 0, addEventListener: () => {} };
+    const currentEntry: any = {
+      id: VALID_ID,
+      url: "https://example.com/a",
+      index: 0,
+      addEventListener: () => {},
+    };
     const { navigation, listeners } = createMockNavigation({ currentEntry });
     vi.stubGlobal("navigation", navigation);
     cleanup.defer(() => {
@@ -828,7 +902,9 @@ describe("start の POST 遷移 (formData あり)", () => {
     const engine = new NavigationApiEngine();
     // "/" を含めず "/a" のみにすることで、リダイレクト先 "/b-notfound" がマッチなしになる
     const { default: RedirectResponse } = await import("../../src/core/redirect-response.js");
-    const routes = processRoutes([{ path: "/a", action: () => new RedirectResponse("/b-notfound") }]);
+    const routes = processRoutes([
+      { path: "/a", action: () => new RedirectResponse("/b-notfound") },
+    ]);
     const update = vi.fn();
     engine.start({
       routes: routes as any,
@@ -854,10 +930,19 @@ describe("start の POST 遷移 (formData あり)", () => {
       },
     });
     let redirectedTo = "";
-    await captured.precommitHandler({ redirect: (p: string) => { redirectedTo = p; } });
+    await captured.precommitHandler({
+      redirect: (p: string) => {
+        redirectedTo = p;
+      },
+    });
     // redirect 先に currentEntry を合わせるが、そのパスは routes にない
     expect(redirectedTo).toContain("b-notfound");
-    navigation.currentEntry = { id: VALID_ID_2, url: `https://example.com${redirectedTo}`, index: 1, addEventListener: () => {} };
+    navigation.currentEntry = {
+      id: VALID_ID_2,
+      url: `https://example.com${redirectedTo}`,
+      index: 1,
+      addEventListener: () => {},
+    };
     await captured.handler();
 
     // 検証
@@ -879,7 +964,12 @@ describe("start の購読管理", () => {
       }),
     };
     const { navigation } = createMockNavigation({
-      currentEntry: { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} },
+      currentEntry: {
+        id: VALID_ID,
+        url: "https://example.com/",
+        index: 0,
+        addEventListener: () => {},
+      },
       entries: () => [entry1],
     });
     vi.stubGlobal("navigation", navigation);
@@ -918,10 +1008,17 @@ describe("start の購読管理", () => {
       id: VALID_ID,
       index: 0,
       key: "k1",
-      addEventListener: () => { addCount += 1; },
+      addEventListener: () => {
+        addCount += 1;
+      },
     };
     const { navigation, listeners } = createMockNavigation({
-      currentEntry: { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} },
+      currentEntry: {
+        id: VALID_ID,
+        url: "https://example.com/",
+        index: 0,
+        addEventListener: () => {},
+      },
       entries: () => [entry1],
     });
     vi.stubGlobal("navigation", navigation);
@@ -951,7 +1048,12 @@ describe("start の購読管理", () => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
     const { navigation, listeners } = createMockNavigation({
-      currentEntry: { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} },
+      currentEntry: {
+        id: VALID_ID,
+        url: "https://example.com/",
+        index: 0,
+        addEventListener: () => {},
+      },
       entries: () => [],
     });
     vi.stubGlobal("navigation", navigation);
@@ -975,7 +1077,9 @@ describe("start の購読管理", () => {
       id: VALID_ID_2,
       url: "https://example.com/2",
       index: 1,
-      addEventListener: (_type: string, handler: any) => { capturedDispose = handler; },
+      addEventListener: (_type: string, handler: any) => {
+        capturedDispose = handler;
+      },
     };
     listeners.get("currententrychange")();
 
@@ -992,7 +1096,12 @@ describe("start の購読管理", () => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
     const { navigation, listeners } = createMockNavigation({
-      currentEntry: { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: () => {} },
+      currentEntry: {
+        id: VALID_ID,
+        url: "https://example.com/",
+        index: 0,
+        addEventListener: () => {},
+      },
       entries: () => [],
     });
     vi.stubGlobal("navigation", navigation);
@@ -1014,7 +1123,9 @@ describe("start の購読管理", () => {
       id: VALID_ID_2,
       url: "https://example.com/2",
       index: 1,
-      addEventListener: () => { addCount += 1; },
+      addEventListener: () => {
+        addCount += 1;
+      },
     };
     listeners.get("currententrychange")();
     const firstCount = addCount;
@@ -1076,7 +1187,9 @@ describe("start の購読管理", () => {
       destination: { url: "https://example.com/" },
       formData: new FormData(),
       sourceElement: null,
-      intercept: (args: any) => { captured = args; },
+      intercept: (args: any) => {
+        captured = args;
+      },
     });
     await captured.precommitHandler({ redirect: vi.fn() });
     // 外部シグナルを abort
@@ -1093,7 +1206,9 @@ describe("start の購読管理", () => {
       destination: { url: "https://example.com/" },
       formData: new FormData(),
       sourceElement: null,
-      intercept: (args: any) => { captured2 = args; },
+      intercept: (args: any) => {
+        captured2 = args;
+      },
     });
     await captured2.precommitHandler({ redirect: vi.fn() });
     expect(captured2).toBeDefined();
@@ -1120,7 +1235,9 @@ describe("submit の分岐", () => {
     });
 
     // 検証
-    expect(navigation.navigate).toHaveBeenCalledWith(expect.stringContaining("/search"), { history: "push" });
+    expect(navigation.navigate).toHaveBeenCalledWith(expect.stringContaining("/search"), {
+      history: "push",
+    });
   });
 
   test("不正な submit タイプでは UnreachableError を投げる", async ({ expect }) => {
@@ -1152,12 +1269,20 @@ describe("navigate の分岐", () => {
     // 実行: 現在の location とは確実に異なるパスへ変更する
     engine.navigate({
       type: "LINK",
-      to: { type: "DYNAMIC", patch: (p: any) => { p.pathname = "/changed-xyz-12345"; } },
+      to: {
+        type: "DYNAMIC",
+        patch: (p: any) => {
+          p.pathname = "/changed-xyz-12345";
+        },
+      },
       history: "push",
     });
 
     // 検証
-    expect(navigation.navigate).toHaveBeenCalledWith(expect.stringContaining("/changed-xyz-12345"), { history: "push" });
+    expect(navigation.navigate).toHaveBeenCalledWith(
+      expect.stringContaining("/changed-xyz-12345"),
+      { history: "push" },
+    );
   });
 
   test("DYNAMIC で URL が変わらなければ navigate を呼ばない", async ({ expect }) => {
@@ -1200,7 +1325,12 @@ describe("navigate の分岐", () => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
     const { navigation } = createMockNavigation({
-      currentEntry: { id: VALID_ID, url: "https://example.com/", index: 5, addEventListener: () => {} },
+      currentEntry: {
+        id: VALID_ID,
+        url: "https://example.com/",
+        index: 5,
+        addEventListener: () => {},
+      },
       entries: () => [{ index: 5, key: "k5" }],
     });
     vi.stubGlobal("navigation", navigation);
@@ -1241,6 +1371,8 @@ describe("navigate の分岐", () => {
     const engine = new NavigationApiEngine();
 
     // 実行と検証
-    expect(() => engine.navigate({ type: "LINK", to: { type: "INVALID" } as any, history: "push" })).toThrow(UnreachableError);
+    expect(() =>
+      engine.navigate({ type: "LINK", to: { type: "INVALID" } as any, history: "push" }),
+    ).toThrow(UnreachableError);
   });
 });

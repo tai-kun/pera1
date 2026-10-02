@@ -21,16 +21,14 @@ describe("startLoaders の分岐網羅", () => {
     store.set("prev-id", new Map([[loader, cached]]));
 
     // 実行
-    startLoaders(
-      {
-        prevRoutes: [prevRoute],
-        currentRoutes: [currentRoute],
-        prevEntry: { id: "prev-id" as any, url: { search: "" } as any },
-        currentEntry: { id: "curr-id" as any, url: { search: "" } as any },
-        loaderDataStore: store,
-        signal,
-      },
-    );
+    startLoaders({
+      prevRoutes: [prevRoute],
+      currentRoutes: [currentRoute],
+      prevEntry: { id: "prev-id" as any, url: { search: "" } as any },
+      currentEntry: { id: "curr-id" as any, url: { search: "" } as any },
+      loaderDataStore: store,
+      signal,
+    });
 
     // 検証
     expect(captured.prevParams).toStrictEqual({ id: "1" });
@@ -50,16 +48,14 @@ describe("startLoaders の分岐網羅", () => {
     store.set("prev-id", new Map([[loader, cached]]));
 
     // 実行
-    startLoaders(
-      {
-        prevRoutes: [],
-        currentRoutes: [currentRoute],
-        prevEntry: { id: "prev-id" as any, url: { search: "" } as any },
-        currentEntry: { id: "curr-id" as any, url: { search: "" } as any },
-        loaderDataStore: store,
-        signal,
-      },
-    );
+    startLoaders({
+      prevRoutes: [],
+      currentRoutes: [currentRoute],
+      prevEntry: { id: "prev-id" as any, url: { search: "" } as any },
+      currentEntry: { id: "curr-id" as any, url: { search: "" } as any },
+      loaderDataStore: store,
+      signal,
+    });
 
     // 検証
     expect(captured.prevParams).toStrictEqual({});
@@ -80,16 +76,14 @@ describe("startLoaders の分岐網羅", () => {
     store.set("prev-id", new Map([[loader, cached]]));
 
     // 実行
-    startLoaders(
-      {
-        prevRoutes: [prevRoute],
-        currentRoutes: [currentRoute],
-        prevEntry: { id: "prev-id" as any, url: { search: "" } as any },
-        currentEntry: { id: "curr-id" as any, url: { search: "" } as any },
-        loaderDataStore: store,
-        signal,
-      },
-    );
+    startLoaders({
+      prevRoutes: [prevRoute],
+      currentRoutes: [currentRoute],
+      prevEntry: { id: "prev-id" as any, url: { search: "" } as any },
+      currentEntry: { id: "curr-id" as any, url: { search: "" } as any },
+      loaderDataStore: store,
+      signal,
+    });
 
     // 検証
     expect(captured.defaultShouldReload).toBe(true);

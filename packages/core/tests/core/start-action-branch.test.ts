@@ -2,9 +2,9 @@ import { NinjaPromise } from "ninja-promise";
 import * as v from "valibot";
 import { describe, test, vi } from "vitest";
 
+import { UnreachableError } from "../../src/core/errors.js";
 import HistoryEntryUrlSchema from "../../src/core/history-entry-url-schema.js";
 import type { HistoryEntryUrl } from "../../src/core/history-entry-url-schema.js";
-import { UnreachableError } from "../../src/core/errors.js";
 import startAction from "../../src/core/start-action.js";
 
 const url = (s: string) => v.parse(HistoryEntryUrlSchema(), s);

@@ -96,9 +96,12 @@ describe("toNavigateArgs の部分パッチ", () => {
 
   test("関数形式で replace 指定ができる", ({ expect }) => {
     // 実行
-    const args = toNavigateArgs((p) => {
-      p.pathname = "/fn";
-    }, { replace: true });
+    const args = toNavigateArgs(
+      (p) => {
+        p.pathname = "/fn";
+      },
+      { replace: true },
+    );
 
     // 検証
     expect(args.type).toBe("LINK");

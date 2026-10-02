@@ -18,7 +18,12 @@ test("action のステータスが不正なとき UnreachableError になる", a
   await using cleanup = new AsyncDisposableStack();
   const listeners = new Map<string, any>();
   const navigation: any = {
-    currentEntry: { id: VALID_ID, url: "https://example.com/", index: 0, addEventListener: vi.fn() },
+    currentEntry: {
+      id: VALID_ID,
+      url: "https://example.com/",
+      index: 0,
+      addEventListener: vi.fn(),
+    },
     entries: () => [],
     addEventListener: vi.fn((type: string, handler: any) => {
       listeners.set(type, handler);
