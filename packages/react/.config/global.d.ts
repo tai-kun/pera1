@@ -6,6 +6,8 @@ declare const __SERVER__: boolean;
 // @ts-ignore
 // oxlint-disable
 declare module globalThis {
+  var IS_REACT_ACT_ENVIRONMENT: boolean | undefined;
+
   interface ArrayConstructor {
     isArray(arg: readonly any[] | any): arg is readonly any[];
   }

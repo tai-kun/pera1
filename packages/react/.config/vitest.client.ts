@@ -31,6 +31,6 @@ export default defineConfig({
       headless: true,
       instances: [{ browser: "chromium" }],
     },
-    setupFiles: [".config/_debugging.ts"],
+    setupFiles: [".config/_setup-act.ts", ".config/_debugging.ts"],
   },
 });
