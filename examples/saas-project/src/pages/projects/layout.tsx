@@ -21,12 +21,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (projectId === undefined) {
     throw new Error("projectId が指定されていません。");
   }
-  // `/app/projects/new` は静的ルートが優先されますが、詳細度ソート後の
-  // マッチ鎖には親として本レイアウトも含まれるため、`new` は透過させます。
-  if (projectId === "new") {
-    return { projectId, project: undefined, isNewRoute: true as const };
-  }
-  return { projectId, project: await findProject(projectId), isNewRoute: false as const };
+  // `/app/projects/new` は静的ルートが完全一致した時点で param 兄弟が
+  // マッチ鎖から除外されるため (matchRoutes の static 優先)、ここでの
+  // `projectId === "new"` 分岐は不要です。
+  return { projectId, project: await findProject(projectId) };
 }
 
 export default function ProjectLayout() {
@@ -36,10 +34,6 @@ export default function ProjectLayout() {
   if (data instanceof RedirectResponse) {
     // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
     return null;
-  }
-  // `/app/projects/new` の描画時は子 (New Project) へ透過させます。
-  if (data.isNewRoute) {
-    return <Outlet />;
   }
   if (!data.project) {
     return (

@@ -79,7 +79,7 @@ const routes = [
 ];
 ```
 
-`/users/me` へアクセスすると、静的セグメントの `/users/me` が先頭でマッチします。ただし後述のとおり、`/users/:id` も同時にマッチして親子として重なります。
+`/users/me` へアクセスすると、静的セグメントの `/users/me` が先頭でマッチします。同階層の `/users/:id` は static 優先の除外によりマッチ鎖に含まれません（[重なり](#overlapping)を参照）。
 
 ## `index` ルートは完全一致のときだけ使われる [#index-routes]
 
@@ -139,24 +139,28 @@ const routes = [
 同じ `path` を持つルートは詳細度が等しいため、定義順がそのまま並び順になります。`index` ルートを先に定義すると、マッチ結果が「index、レイアウト、…」の順になり、反転後の描画でレイアウトが index を包みます。順序を逆にすると親子が入れ替わり、レイアウトの `Outlet` に index が表示されません。
 :::
 
-## パターンが重なると兄弟ではなく親子になる [#overlapping]
+## パターンが重なるとき static が param に優先する [#overlapping]
 
-pera1 はマッチしたルートをすべて集めます。同じ URL に 2 つのパターンがマッチした場合、優先度の高いほうがもう一方の子としてネストします。除外はされません。
+pera1 はマッチしたルートをすべて集めますが、同一階層で静的ルートが完全一致した場合は、その階層のパラメータールート（およびその配下の前方一致レイアウト）はマッチ鎖から除外されます。「static 完全一致 > param 前方一致」の優先です。
 
 ```tsx
 const routes = [
-  { path: "/contacts/new", component: NewContactPage },
+  { path: "/contacts/new", index: true, component: NewContactPage },
   { path: "/contacts/:id", component: ContactPage },
 ];
 ```
 
-`/contacts/new` へアクセスすると、`NewContactPage` と `ContactPage` (パラメーター `id: "new"`) の両方がマッチし、`ContactPage` の子として `NewContactPage` が描画されます。`ContactPage` が `Outlet` を描画しない場合、`NewContactPage` は画面に現れません。
+`/contacts/new` へアクセスすると、`NewContactPage` のみが該当階層としてマッチし、`ContactPage`（パラメーター `id: "new"`）のローダーやレイアウトは実行されません。`projectId === "new"` のような分散ガードは不要です。
 
-固定セグメントと動的セグメントを同じ階層に並べるときは、次のいずれかで回避してください。
+除外条件は次のとおりです。いずれも満たす場合のみ除外します。
 
-- 動的セグメント側のコンポーネントで `params` を見て分岐する。
-- 重ならないパス設計にする (`/contacts/:id` と `/contacts/new` を同じ階層に置かない)。
-- 動的セグメント側のコンポーネントに `Outlet` を置き、子として重なることを受け入れる。
+- 勝者・敗者のいずれもワイルドカード（`*` を含む）を含まない。`/*` のフォールバックは常に保持されます。
+- 勝者が URL に完全一致する（`allowChild: false` の厳密照合でもマッチする）。
+- 同一セグメント位置で、勝者が静的・敗者がパラメーターである。
+
+正当な親レイアウト（例: `/app` → `/app/dashboard` の親）は全セグメントが静的同士で等しいため除外されません。`/` も同様に保持されます。`children` で宣言したネスト（例: `/projects/{ new, :projectId/tasks }`）を展開したパスでも同じ規則が働きます。
+
+なお、静的ルート自体が前方一致の親にすぎない場合（完全一致していない場合）は除外しません。該当階層に静的完全一致がない URL（例: `/contacts/42`）では、パラメータールートが通常どおりマッチします。
 
 ## マッチ結果は `MatchedRoute` の配列になる [#matched-route]
 
