@@ -3,13 +3,13 @@ import type { RouterRouteDefinition } from "@pera1/react";
 import ContactPage, {
   action as deleteContactAction,
   loader as contactLoader,
-} from "./pages/contact.js";
-import ContactsPage from "./pages/contacts-index.js";
+} from "./pages/contacts/[id].js";
+import ContactsPage from "./pages/contacts/index.js";
 import ContactsLayout, {
   action as createContactAction,
   loader as contactsLoader,
-} from "./pages/contacts.js";
-import HomePage from "./pages/home.js";
+} from "./pages/contacts/layout.js";
+import HomePage from "./pages/index.js";
 import NotFoundPage from "./pages/not-found.js";
 import RootLayout from "./pages/root.js";
 

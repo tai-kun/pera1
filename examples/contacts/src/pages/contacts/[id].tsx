@@ -3,7 +3,7 @@ import { redirect } from "@pera1/core";
 import { useLoaderData, useParams } from "@pera1/react";
 import { use } from "react";
 
-import { deleteContact, findContact } from "../data.js";
+import { deleteContact, findContact } from "../../data.js";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const id = params["id"];

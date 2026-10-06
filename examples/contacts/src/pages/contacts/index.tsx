@@ -2,7 +2,7 @@ import type { ActionData } from "@pera1/react";
 import { useActionData, useLoaderData } from "@pera1/react";
 import { use } from "react";
 
-import type { action as contactsAction, loader as contactsLoader } from "./contacts.js";
+import type { action as contactsAction, loader as contactsLoader } from "./layout.js";
 
 export default function ContactsPage() {
   const contacts = use(useLoaderData<typeof contactsLoader>());
