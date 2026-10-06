@@ -1,5 +1,6 @@
 {
   "name": "@pera1/example-contacts",
+  "description": "連絡先管理アプリです",
   "version": "0.0.0",
   "private": true,
   "type": "module",
