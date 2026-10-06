@@ -24,76 +24,82 @@ import UserPostsPage, {
   loader as userPostsLoader,
 } from "./pages/users/posts.js";
 
+// `children` による明示的ネストの代表例。`/users/:username` 配下の親子対応を
+// 構造で表し、従来の同 path 二重定義と等価にマッチする。
+// `/*` フォールバックは 006 のスコープのため従来通りとする。
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
-    index: true,
-    component: HomePage,
-  },
-  {
-    path: "/",
     component: RootLayout,
-  },
-  {
-    path: "/feed",
-    index: true,
-    component: FeedPage,
-    loader: feedLoader,
-  },
-  {
-    path: "/explore",
-    index: true,
-    component: ExplorePage,
-    loader: exploreLoader,
-  },
-  {
-    path: "/notifications",
-    index: true,
-    component: NotificationsPage,
-  },
-  {
-    path: "/messages",
-    index: true,
-    component: MessagesIndexPage,
-  },
-  {
-    path: "/messages",
-    component: MessagesLayout,
-    loader: messagesLoader,
-  },
-  {
-    path: "/messages/:conversationId",
-    component: ConversationPage,
-    loader: conversationLoader,
-  },
-  {
-    path: "/users/:username",
-    index: true,
-    component: UserPostsPage,
-    loader: userPostsLoader,
-  },
-  {
-    path: "/users/:username",
-    component: ProfileLayout,
-    loader: profileLoader,
-  },
-  {
-    path: "/users/:username/posts",
-    index: true,
-    component: UserPostsPage,
-    loader: userPostsLoader,
-  },
-  {
-    path: "/users/:username/followers",
-    index: true,
-    component: UserFollowersPage,
-    loader: followersLoader,
-  },
-  {
-    path: "/users/:username/following",
-    index: true,
-    component: UserFollowingPage,
-    loader: followingLoader,
+    children: [
+      {
+        index: true,
+        component: HomePage,
+      },
+      {
+        path: "feed",
+        index: true,
+        component: FeedPage,
+        loader: feedLoader,
+      },
+      {
+        path: "explore",
+        index: true,
+        component: ExplorePage,
+        loader: exploreLoader,
+      },
+      {
+        path: "notifications",
+        index: true,
+        component: NotificationsPage,
+      },
+      {
+        path: "messages",
+        component: MessagesLayout,
+        loader: messagesLoader,
+        children: [
+          {
+            index: true,
+            component: MessagesIndexPage,
+          },
+          {
+            path: ":conversationId",
+            component: ConversationPage,
+            loader: conversationLoader,
+          },
+        ],
+      },
+      {
+        path: "users/:username",
+        component: ProfileLayout,
+        loader: profileLoader,
+        children: [
+          {
+            index: true,
+            component: UserPostsPage,
+            loader: userPostsLoader,
+          },
+          {
+            path: "posts",
+            index: true,
+            component: UserPostsPage,
+            loader: userPostsLoader,
+          },
+          {
+            path: "followers",
+            index: true,
+            component: UserFollowersPage,
+            loader: followersLoader,
+          },
+          {
+            path: "following",
+            index: true,
+            component: UserFollowingPage,
+            loader: followingLoader,
+          },
+        ],
+      },
+    ],
   },
   {
     path: "/*",

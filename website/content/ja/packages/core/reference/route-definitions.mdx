@@ -3,7 +3,7 @@ title: RouteDefinition
 description: "ルート定義の 2 形式と、ローダー、アクション、shouldReload、パラメーターの型をまとめます。"
 ---
 
-`RouteDefinition` はルート定義の型です。`createRouter` や React の `Router` に渡す配列の要素を表します。オブジェクト形式とモジュール形式の 2 通りがあり、どちらも `path` が必須です。
+`RouteDefinition` はルート定義の型です。`createRouter` や React の `Router` に渡す配列の要素を表します。オブジェクト形式とモジュール形式の 2 通りがあり、トップレベルでは `path` が必須です。`children` 内では `path` を省略でき、省略時は親パスを継承します。
 
 定義は `createRouter` が内部で正規化し、`Route` に変換します。このページでは、定義側の型、正規化後の `Route`、ローダーとアクションの引数型をまとめて説明します。
 
@@ -24,23 +24,25 @@ description: "ルート定義の 2 形式と、ローダー、アクション、
 
 ```ts
 type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
-  readonly path: TPath;
+  readonly path?: TPath;
   readonly index?: boolean;
   readonly action?: ActionFunction<TPath>;
   readonly shouldReload?: ShouldReloadFunction<TPath>;
   readonly loader?: LoaderFunction<TPath>;
   readonly component?: TComponent;
+  readonly children?: readonly RouteDefinition<string, TComponent>[];
 };
 ```
 
 | プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
-| `path` | `TPath` | はい | マッチングの対象となるパスパターンです。 |
+| `path` | `TPath` | トップレベルでははい、`children` 内ではいいえ | マッチングの対象となるパスパターンです。子で省略時は親パスを継承します。`"/"` 始まりは絶対パス、それ以外は親との相対結合です。 |
 | `index` | `boolean` | いいえ | 親パスに完全一致したときだけ使うインデックスルートにします。 |
 | `action` | `ActionFunction<TPath>` | いいえ | POST 時に実行するデータ更新関数です。 |
 | `shouldReload` | `ShouldReloadFunction<TPath>` | いいえ | ローダーを再実行するかを判定します。 |
 | `loader` | `LoaderFunction<TPath>` | いいえ | 画面に必要なデータを取得する関数です。 |
 | `component` | `TComponent` | いいえ | 描画するコンポーネントです。 |
+| `children` | `RouteDefinition[]` | いいえ | 親子を明示する子ルート定義です。展開時に親パスと結合され、flat 配列と等価になります。 |
 
 `index` を付けなければ、ルートはレイアウトとして働きます。子ルートを前方一致で内包します。`index: true` を付けたルートがマッチするのは、そのパスに完全一致したときだけです。
 
@@ -205,6 +207,23 @@ const routes = [
 ];
 ```
 
+親子を明示する場合は `children` を使います（推奨）。相対パスは親に結合され、`index: true` や `path` 省略の子は親パスを継承します。展開後は上と同じ flat 配列と等価です。
+
+```tsx
+const routes = [
+  {
+    path: "/",
+    component: RootLayout,
+    children: [{ index: true, component: HomePage }],
+  },
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    children: [{ path: ":id", component: ContactPage, loader: contactLoader }],
+  },
+];
+```
+
 型引数には文字列リテラルを渡します。`RouteParams` はリテラル型からキーを読み取るため、`string` 型を渡すとキーの型が確定しません。
 
 ## 注意 [#notes]
@@ -212,6 +231,7 @@ const routes = [
 - `RouteDefinition` は入力、`Route` は出力です。`Route` を自分で組み立てる必要はありません。
 - `routes` の配列はモジュールスコープに置きます。参照が変わるとルーターが作り直され、キャッシュも失われます。
 - モジュール形式では `component` が `default` より優先されます。
+- `children` は展開時に flat 配列へ正規化されます。`children` なしの定義は従来通り動作します。
 - `path` のパターン記法と詳細度のルールは[ルーティング](/guides/routing)にまとめています。
 
 ## 関連 [#related]

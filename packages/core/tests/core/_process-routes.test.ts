@@ -1,6 +1,7 @@
 import { describe, test } from "vitest";
 
 import processRoutes from "../../src/core/_process-routes.js";
+import matchRoutes from "../../src/core/match-routes.js";
 import type { RouteDefinition, ShouldReloadFunctionArgs } from "../../src/core/route.types.js";
 
 describe("空の配列が入力された場合", () => {
@@ -229,5 +230,225 @@ describe("processRoutes のエッジケース", () => {
     // 検証
     expect(routes[0]!.loader).toBe(loader);
     expect(routes[0]!.action).toBe(action);
+  });
+});
+
+describe("children による明示的ネストの展開", () => {
+  test("相対パスは親パスに結合される", ({ expect }) => {
+    // 準備
+    const routes: RouteDefinition[] = [
+      {
+        path: "/users/:username",
+        children: [{ path: "followers" }, { path: "following" }],
+      },
+    ];
+
+    // 実行
+    const result = processRoutes(routes);
+    const paths = result.map((r) => r.path).sort();
+
+    // 検証
+    expect(paths).toContain("/users/:username");
+    expect(paths).toContain("/users/:username/followers");
+    expect(paths).toContain("/users/:username/following");
+  });
+
+  test("子 path が '/' 始まりなら絶対パスとして扱われる", ({ expect }) => {
+    // 準備
+    const routes: RouteDefinition[] = [
+      {
+        path: "/parent",
+        children: [{ path: "/absolute" }, { path: "relative" }],
+      },
+    ];
+
+    // 実行
+    const result = processRoutes(routes);
+    const paths = result.map((r) => r.path);
+
+    // 検証
+    expect(paths).toContain("/absolute");
+    expect(paths).toContain("/parent/relative");
+    expect(paths).toContain("/parent");
+  });
+
+  test("index: true の子は path 省略時に親パスを継承する", ({ expect }) => {
+    // 準備
+    const Child = () => "child";
+    const Parent = () => "parent";
+    const routes: RouteDefinition[] = [
+      {
+        path: "/users/:username",
+        component: Parent,
+        children: [{ index: true, component: Child }],
+      },
+    ];
+
+    // 実行
+    const result = processRoutes(routes);
+
+    // 検証
+    expect(result.length).toBe(2);
+    const indexRoute = result.find((r) => r.index === true);
+    const layoutRoute = result.find((r) => r.index === false);
+    expect(indexRoute?.path).toBe("/users/:username");
+    expect(indexRoute?.component).toBe(Child);
+    expect(layoutRoute?.path).toBe("/users/:username");
+    expect(layoutRoute?.component).toBe(Parent);
+    // index は完全一致のみ、レイアウトは前方一致する。
+    expect(indexRoute?.utils.match("/users/tai-kun")).toBe(true);
+    expect(indexRoute?.utils.match("/users/tai-kun/followers")).toBe(false);
+    expect(layoutRoute?.utils.match("/users/tai-kun/followers")).toBe(true);
+  });
+
+  test("深いネストは再帰的に結合される", ({ expect }) => {
+    // 準備
+    const routes: RouteDefinition[] = [
+      {
+        path: "/",
+        children: [
+          {
+            path: "posts",
+            children: [{ path: ":postId" }],
+          },
+        ],
+      },
+    ];
+
+    // 実行
+    const result = processRoutes(routes);
+    const paths = result.map((r) => r.path);
+
+    // 検証
+    expect(paths).toContain("/");
+    expect(paths).toContain("/posts");
+    expect(paths).toContain("/posts/:postId");
+  });
+
+  test("flat 定義と children 定義は混在できる", ({ expect }) => {
+    // 準備
+    const routes: RouteDefinition[] = [
+      { path: "/flat" },
+      {
+        path: "/nested",
+        children: [{ index: true }, { path: "child" }],
+      },
+    ];
+
+    // 実行
+    const result = processRoutes(routes);
+    const paths = result.map((r) => r.path);
+
+    // 検証
+    expect(paths).toContain("/flat");
+    expect(paths).toContain("/nested");
+    expect(paths).toContain("/nested/child");
+    expect(result.length).toBe(4);
+  });
+
+  test("children なしの flat 配列は従来通り動作する", ({ expect }) => {
+    // 準備: children 記法と等価な flat 配列
+    const flat: RouteDefinition[] = [
+      { path: "/users/:username" },
+      { path: "/users/:username", index: true },
+      { path: "/users/:username/followers", index: true },
+    ];
+    const nested: RouteDefinition[] = [
+      {
+        path: "/users/:username",
+        children: [{ index: true }, { path: "followers", index: true }],
+      },
+    ];
+
+    // 実行
+    const flatPaths = processRoutes(flat).map((r) => `${r.path} index=${r.index}`).sort();
+    const nestedPaths = processRoutes(nested).map((r) => `${r.path} index=${r.index}`).sort();
+
+    // 検証
+    expect(nestedPaths).toStrictEqual(flatPaths);
+  });
+
+  test("path を省略したパスレスの子は親パスを継承する", ({ expect }) => {
+    // 準備
+    const routes: RouteDefinition[] = [
+      {
+        path: "/dashboard",
+        children: [{ component: () => "layout-child" }],
+      },
+    ];
+
+    // 実行
+    const result = processRoutes(routes);
+
+    // 検証
+    expect(result.length).toBe(2);
+    expect(result.every((r) => r.path === "/dashboard")).toBe(true);
+  });
+
+  test("index ルートが children を持つとき警告するが展開は継続する", ({ expect }) => {
+    // 準備
+    const originalWarn = console.warn;
+    const calls: unknown[][] = [];
+    console.warn = (...args: unknown[]) => {
+      calls.push(args);
+    };
+
+    try {
+      // 実行
+      const result = processRoutes([
+        { path: "/a", index: true, children: [{ path: "b" }] },
+      ]);
+
+      // 検証
+      expect(calls.length).toBe(1);
+      expect(String(calls[0]?.[0])).toContain("index route");
+      expect(result.map((r) => r.path)).toContain("/a/b");
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
+  test("children 展開のマッチ順は等価な flat 配列と一致する (index が先)", ({ expect }) => {
+    // 準備: flat 記法の慣習 (index を先に定義) と等価な children 記法
+    const component = () => "x";
+    const flat: RouteDefinition[] = [
+      { path: "/", index: true, component },
+      { path: "/", component },
+      { path: "/posts", index: true, component },
+      { path: "/posts", component },
+      { path: "/posts/:postId", component },
+    ];
+    const nested: RouteDefinition[] = [
+      {
+        path: "/",
+        component,
+        children: [
+          { index: true, component },
+          {
+            path: "posts",
+            component,
+            children: [{ index: true, component }, { path: ":postId", component }],
+          },
+        ],
+      },
+    ];
+    const flatRoutes = processRoutes(flat);
+    const nestedRoutes = processRoutes(nested);
+
+    // 実行と検証: 複数の URL でマッチ順 (子→親) が完全に一致する。
+    for (const pathname of ["/", "/posts", "/posts/42"]) {
+      const url = new URL("https://example.com" + pathname);
+      const flatMatched = matchRoutes(flatRoutes, url)?.map(
+        (r) => `${r.path} index=${r.index}`,
+      );
+      const nestedMatched = matchRoutes(nestedRoutes, url)?.map(
+        (r) => `${r.path} index=${r.index}`,
+      );
+      expect(nestedMatched).toStrictEqual(flatMatched);
+    }
+
+    // 検証: "/" では index が先 (描画反転後にレイアウトが index を包む)。
+    const rootMatched = matchRoutes(nestedRoutes, new URL("https://example.com/"))!;
+    expect(rootMatched.map((r) => r.index)).toStrictEqual([true, false]);
   });
 });

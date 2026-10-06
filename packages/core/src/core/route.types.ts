@@ -176,12 +176,17 @@ export interface LoaderFunction<TRoutePattern extends string = string, TData = u
 export type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
   /**
    * マッチングの対象となる URL パスのパターン文字列です。
+   *
+   * トップレベルの定義では必須です。`children` 内では省略可能で、
+   * 省略時（または空文字時）は親のパスを継承します。
+   * `index: true` の子で省略した場合は親と同一パスになります。
+   * 子の `path` が `"/"` 始まりなら絶対パス、それ以外は親パスとの相対結合になります。
    */
-  readonly path: TPath;
+  readonly path?: TPath | undefined;
 
   /**
-   * 親ルートのパスにおいて、インデックスルートとして機能させるかどうかのフラグです。
-   */
+    * 親ルートのパスにおいて、インデックスルートとして機能させるかどうかのフラグです。
+    */
   readonly index?: boolean | undefined;
 
   /**
@@ -205,6 +210,14 @@ export type RouteDefinitionObject<TPath extends string = string, TComponent = an
    * フレームワークに依存しないため、具体的な型は `TComponent` ジェネリクスで受け取ります。
    */
   readonly component?: TComponent | undefined;
+
+  /**
+   * 明示的な親子関係を宣言するための子ルート定義の配列です (React Router 互換形状)。
+   *
+   * `processRoutes` がフラット化の際に親パスと結合します。
+   * 既存の flat 配列（`children` なし）は従来通り動作します。
+   */
+  readonly children?: readonly RouteDefinition<string, TComponent>[] | undefined;
 };
 /**
  * ルーティング設定をインポート経由で定義するための構造体型定義です。
@@ -215,8 +228,11 @@ export type RouteDefinitionObject<TPath extends string = string, TComponent = an
 export type RouteDefinitionModule<TPath extends string = string, TComponent = any> = {
   /**
    * マッチングの対象となる URL パスのパターン文字列です。
+   *
+   * トップレベルの定義では必須です。`children` 内では省略可能で、
+   * 省略時（または空文字時）は親のパスを継承します。
    */
-  readonly path: TPath;
+  readonly path?: TPath | undefined;
 
   /**
    * 親ルートのパスにおいて、インデックスルートとして機能させるかどうかのフラグです。
@@ -258,6 +274,14 @@ export type RouteDefinitionModule<TPath extends string = string, TComponent = an
    * モジュールオブジェクトとしての識別に使用します。
    */
   get [Symbol.toStringTag](): string;
+
+  /**
+   * 明示的な親子関係を宣言するための子ルート定義の配列です (React Router 互換形状)。
+   *
+   * `processRoutes` がフラット化の際に親パスと結合します。
+   * 既存の flat 配列（`children` なし）は従来通り動作します。
+   */
+  readonly children?: readonly RouteDefinition<string, TComponent>[] | undefined;
 };
 
 /**

@@ -3,7 +3,7 @@ title: ルーティング
 description: "パスパターン、詳細度、index ルート、ネストの決まりを、具体例とともに解説します。"
 ---
 
-ルーティングの設計は、ルート定義の配列をどう並べるかで決まります。pera1 ではツリー構造を書かず、パスパターンの前方一致で親子を作ります。このページでは、使えるパターン、マッチの優先順位、ネストが成立する条件、重なり合うパターンの扱いを順に見ていきます。
+ルーティングの設計は、ルート定義の配列をどう並べるかで決まります。pera1 の一次仕様は flat 配列です。`index: true` のないルートはレイアウトとして前方一致し、正規化後に詳細度順へソートされ、マッチしたものが「子から親」の順で集まり、描画時に親から子へ反転 (`toReversed`) してネストします。親子を明示したい場合は `children` 記法（推奨）を使います。内部で親パスと結合して flat 配列へ展開されるため、動作は等価です。このページでは、使えるパターン、マッチの優先順位、ネストが成立する条件、重なり合うパターンの扱いを順に見ていきます。
 
 ## ルート定義の形は 2 通りある [#definition-forms]
 
@@ -106,6 +106,35 @@ function ContactsLayout() {
 }
 ```
 
+## `children` で親子を明示する（推奨） [#children]
+
+同じ `path` を2回書く flat 記法の代わりに、`children` で親子を宣言できます。React Router 互換の形状で、`processRoutes` が展開時に親パスと結合します。`children` なしの従来の flat 配列も引き続き動作します。
+
+```tsx
+const routes = [
+  {
+    path: "/users/:username",
+    component: ProfileLayout,
+    loader: profileLoader,
+    children: [
+      { index: true, component: UserPostsPage, loader: userPostsLoader },
+      { path: "followers", component: FollowersPage },
+    ],
+  },
+];
+```
+
+展開規則は次のとおりです。
+
+- 子の `path` が `"/"` 始まりなら絶対パスとして扱い、親を無視します。それ以外は親パスに相対結合します（`"followers"` → `"/users/:username/followers"`）。
+- `index: true` の子や `path` を省略した子は、親パスを継承します（上例の index は `"/users/:username"` になります）。
+- 親自身もレイアウトとして残ります。展開後の各ルートは、flat 配列と同様に詳細度順へソートされ、前方一致・`toReversed` 描画の対象になります。
+- `index: true` のルートが `children` を持つ定義は不正です。開発時に警告し、展開は継続します。
+
+:::note[flat 配列が一次仕様]
+`children` は糖衣構文です。展開後は flat 配列と同一の `Route` 配列になり、マッチング規則（前方一致・ソート・子から親への収集・描画時の反転）は変わりません。移行は少しずつ進められます。flat と `children` の混在も可能です。
+:::
+
 :::warning[同じパスのレイアウトと index は index を先に書く]
 同じ `path` を持つルートは詳細度が等しいため、定義順がそのまま並び順になります。`index` ルートを先に定義すると、マッチ結果が「index、レイアウト、…」の順になり、反転後の描画でレイアウトが index を包みます。順序を逆にすると親子が入れ替わり、レイアウトの `Outlet` に index が表示されません。
 :::
@@ -147,6 +176,8 @@ for (const route of matched ?? []) {
 ```
 
 `urlPath` はパラメーターを実際の値で埋めたパスです。アクションの実行対象を選ぶときや、フォームの送信先に使えます。
+
+`matchRoutes` の戻り値は詳細度の高い「子から親」の順です。`Router` は描画時に `.toReversed()` で「親から子」へ反転し、外側からレイアウトをネストします。
 
 ## マッチしなかったときの画面を用意する [#not-found]
 

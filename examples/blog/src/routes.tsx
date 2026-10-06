@@ -10,46 +10,51 @@ import PostsPage, { loader as postsLoader } from "./pages/posts/index.js";
 import RootLayout from "./pages/root.js";
 import SearchPage, { loader as searchLoader } from "./pages/search.js";
 
+// `children` による明示的ネストの代表例。`processRoutes` がフラット化の際に
+// 親パスと結合するため、従来の flat 配列と等価にマッチする。
+// `/*` フォールバックは 006 のスコープのため従来通りとする。
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
-    index: true,
-    component: HomePage,
-  },
-  {
-    path: "/",
     component: RootLayout,
-  },
-  {
-    path: "/posts",
-    index: true,
-    component: PostsPage,
-    loader: postsLoader,
-  },
-  {
-    path: "/posts",
-    component: PostsLayout,
-  },
-  {
-    path: "/posts/:postId",
-    component: PostDetailPage,
-    loader: postLoader,
-  },
-  {
-    path: "/categories/:category",
-    component: CategoryPage,
-    loader: categoryLoader,
-  },
-  {
-    path: "/search",
-    index: true,
-    component: SearchPage,
-    loader: searchLoader,
-  },
-  {
-    path: "/about",
-    index: true,
-    component: AboutPage,
+    children: [
+      {
+        index: true,
+        component: HomePage,
+      },
+      {
+        path: "posts",
+        component: PostsLayout,
+        children: [
+          {
+            index: true,
+            component: PostsPage,
+            loader: postsLoader,
+          },
+          {
+            path: ":postId",
+            component: PostDetailPage,
+            loader: postLoader,
+          },
+        ],
+      },
+      {
+        path: "categories/:category",
+        component: CategoryPage,
+        loader: categoryLoader,
+      },
+      {
+        path: "search",
+        index: true,
+        component: SearchPage,
+        loader: searchLoader,
+      },
+      {
+        path: "about",
+        index: true,
+        component: AboutPage,
+      },
+    ],
   },
   {
     path: "/*",
