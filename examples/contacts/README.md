@@ -39,14 +39,14 @@ pnpm --filter @pera1/example-contacts preview
 
 `src/routes.tsx` で定義しています。
 
-| パス | コンポーネント | `loader` / `action` |
-| --- | --- | --- |
-| `/` | `HomePage` | なし |
-| `/` | `RootLayout` | なし |
-| `/contacts` (`index`) | `ContactsPage` | なし |
-| `/contacts` | `ContactsLayout` | `loader` で一覧取得、`action` で追加後に詳細へ `redirect` します |
-| `/contacts/:id` | `ContactPage` | `loader` で 1 件取得、`action` で削除後に一覧へ `redirect` します |
-| `/*` | `NotFoundPage` | なし |
+| パス                  | コンポーネント   | `loader` / `action`                                               |
+| --------------------- | ---------------- | ----------------------------------------------------------------- |
+| `/`                   | `HomePage`       | なし                                                              |
+| `/`                   | `RootLayout`     | なし                                                              |
+| `/contacts` (`index`) | `ContactsPage`   | なし                                                              |
+| `/contacts`           | `ContactsLayout` | `loader` で一覧取得、`action` で追加後に詳細へ `redirect` します  |
+| `/contacts/:id`       | `ContactPage`    | `loader` で 1 件取得、`action` で削除後に一覧へ `redirect` します |
+| `/*`                  | `NotFoundPage`   | なし                                                              |
 
 共通レイアウト (`RootLayout`、`ContactsLayout`) は `Outlet` で子ルートを表示します。`RootLayout` では `Suspense` で `loader` の読み込み状態を表示します。
 
@@ -70,6 +70,10 @@ examples/contacts/
             ├── index.tsx # 一覧と追加フォームです
             └── [id].tsx # `/contacts/:id` の詳細表示と取得・削除の loader / action です
 ```
+
+## デバッグログについて
+
+`src/main.tsx` で LogTape を設定し、`@pera1/*` のデバッグログをコンソールに出力します。`debug` は既定で `console.debug` に送られ、DevTools では Verbose 扱いになります。
 
 ## データについて
 

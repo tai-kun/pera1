@@ -16,7 +16,7 @@
     "valibot": "^1.0.0"
   },
   "devDependencies": {
-    "@logtape/logtape": "^2.3.9",
+    "@logtape/logtape": "^2.0.0",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
