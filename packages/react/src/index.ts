@@ -1,3 +1,7 @@
+export * from "@pera1/core/utils";
+
+/**************************************************************************************************/
+
 export type * from "./components/browser-router.jsx";
 export { default as BrowserRouter } from "./components/browser-router.jsx";
 

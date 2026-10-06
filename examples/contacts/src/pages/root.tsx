@@ -1,5 +1,5 @@
 import { Outlet } from "@pera1/react";
-import { Suspense } from "react";
+import * as React from "react";
 
 export default function RootLayout() {
   return (
@@ -10,9 +10,9 @@ export default function RootLayout() {
         </h1>
       </header>
       <main>
-        <Suspense fallback={<p>読み込み中…</p>}>
+        <React.Suspense fallback={<p>読み込み中…</p>}>
           <Outlet />
-        </Suspense>
+        </React.Suspense>
       </main>
     </>
   );

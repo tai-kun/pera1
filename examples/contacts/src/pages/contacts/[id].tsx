@@ -1,7 +1,11 @@
-import type { ActionFunctionArgs, LoaderFunctionArgs } from "@pera1/core";
-import { redirect } from "@pera1/core";
-import { useLoaderData, useParams } from "@pera1/react";
-import { use } from "react";
+import {
+  type ActionFunctionArgs,
+  type LoaderFunctionArgs,
+  redirect,
+  useParams,
+  useLoaderData,
+} from "@pera1/react";
+import * as React from "react";
 
 import { deleteContact, findContact } from "../../data.js";
 
@@ -28,7 +32,7 @@ export async function action({ params }: ActionFunctionArgs) {
 
 export default function ContactPage() {
   const params = useParams<"/contacts/:id">();
-  const contact = use(useLoaderData<typeof loader>());
+  const contact = React.use(useLoaderData<typeof loader>());
 
   return (
     <article>

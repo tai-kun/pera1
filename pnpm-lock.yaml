@@ -38,9 +38,6 @@ importers:
 
   examples/contacts:
     dependencies:
-      '@pera1/core':
-        specifier: workspace:*
-        version: link:../../packages/core
       '@pera1/react':
         specifier: workspace:*
         version: link:../../packages/react

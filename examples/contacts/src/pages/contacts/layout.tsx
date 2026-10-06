@@ -1,6 +1,4 @@
-import type { ActionFunctionArgs } from "@pera1/core";
-import { redirect } from "@pera1/core";
-import { Outlet } from "@pera1/react";
+import { type ActionFunctionArgs, redirect, Outlet } from "@pera1/react";
 
 import { createContact, listContacts } from "../../data.js";
 

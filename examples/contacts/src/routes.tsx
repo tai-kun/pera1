@@ -14,9 +14,20 @@ import NotFoundPage from "./pages/not-found.js";
 import RootLayout from "./pages/root.js";
 
 export const routes: readonly RouterRouteDefinition[] = [
-  { path: "/", index: true, component: HomePage },
-  { path: "/", component: RootLayout },
-  { path: "/contacts", index: true, component: ContactsPage },
+  {
+    path: "/",
+    index: true,
+    component: HomePage,
+  },
+  {
+    path: "/",
+    component: RootLayout,
+  },
+  {
+    path: "/contacts",
+    index: true,
+    component: ContactsPage,
+  },
   {
     path: "/contacts",
     component: ContactsLayout,
@@ -29,5 +40,8 @@ export const routes: readonly RouterRouteDefinition[] = [
     loader: contactLoader,
     action: deleteContactAction,
   },
-  { path: "/*", component: NotFoundPage },
+  {
+    path: "/*",
+    component: NotFoundPage,
+  },
 ];

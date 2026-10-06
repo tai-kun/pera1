@@ -1,6 +1,6 @@
 import { configureSync, getConsoleSink } from "@logtape/logtape";
 import { BrowserRouter } from "@pera1/react";
-import { StrictMode } from "react";
+import * as React from "react";
 import { createRoot } from "react-dom/client";
 
 import { routes } from "./routes.js";
@@ -11,20 +11,15 @@ configureSync({
   },
   loggers: [
     {
-      category: "@pera1/core",
+      category: ["@pera1/*"],
       sinks: ["console"],
-      lowestLevel: "debug",
-    },
-    {
-      category: "@pera1/react",
-      sinks: ["console"],
-      lowestLevel: "debug",
+      lowestLevel: "trace",
     },
   ],
 });
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+  <React.StrictMode>
     <BrowserRouter routes={routes} />
-  </StrictMode>,
+  </React.StrictMode>,
 );

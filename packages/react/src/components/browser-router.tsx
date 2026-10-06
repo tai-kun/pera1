@@ -24,7 +24,7 @@ export type BrowserRouterProps = {
 export default function BrowserRouter(props: BrowserRouterProps): React.ReactElement {
   const { routes } = props;
   const engine = useSingleton(() => {
-    log.debug("NavigationApiEngineを作成します");
+    log.debug("NavigationApiEngine を作成します");
     return new NavigationApiEngine();
   });
 

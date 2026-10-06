@@ -1,11 +1,10 @@
-import type { ActionData } from "@pera1/react";
-import { useActionData, useLoaderData } from "@pera1/react";
-import { use } from "react";
+import { type ActionData, useActionData, useLoaderData } from "@pera1/react";
+import * as React from "react";
 
 import type { action as contactsAction, loader as contactsLoader } from "./layout.js";
 
 export default function ContactsPage() {
-  const contacts = use(useLoaderData<typeof contactsLoader>());
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
 
   return (
     <>
@@ -42,7 +41,7 @@ function CreateContactForm() {
 }
 
 function ActionError({ actionData }: { actionData: ActionData<typeof contactsAction> }) {
-  const data = use(actionData);
+  const data = React.use(actionData);
   if (data && "error" in data) {
     return <p role="alert">{data.error}</p>;
   }

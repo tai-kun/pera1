@@ -22,13 +22,9 @@
       "types": "./dist/src/index.d.ts",
       "default": "./dist/src/index.js"
     },
-    "./core": {
-      "types": "./dist/src/core.d.ts",
-      "default": "./dist/src/core.js"
-    },
-    "./engines": {
-      "types": "./dist/src/engines.d.ts",
-      "default": "./dist/src/engines.js"
+    "./utils": {
+      "types": "./dist/src/utils.d.ts",
+      "default": "./dist/src/utils.js"
     }
   },
   "scripts": {
