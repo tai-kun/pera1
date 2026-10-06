@@ -1,13 +1,14 @@
 {
   "name": "@pera1/example-contacts",
-  "description": "連絡先管理アプリです",
   "version": "0.0.0",
   "private": true,
+  "description": "連絡先管理アプリです",
   "type": "module",
   "scripts": {
     "dev": "vite",
     "build": "tsc --noEmit && vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test": "pnpm build && vitest run --config ./vitest.e2e.config.ts"
   },
   "dependencies": {
     "@pera1/react": "workspace:*",
@@ -17,10 +18,13 @@
   },
   "devDependencies": {
     "@logtape/logtape": "^2.0.0",
+    "@types/node": "24.13.6",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",
     "@vitejs/plugin-react": "^5.2.0",
+    "playwright": "1.63.0",
     "typescript": "7.0.2",
-    "vite": "^8.0.14"
+    "vite": "^8.0.14",
+    "vitest": "4.1.11"
   }
 }
