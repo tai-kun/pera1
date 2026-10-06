@@ -1,3 +1,4 @@
+import log from "../_logger.js";
 import singleton from "./_singleton.js";
 import * as v from "./_valibot.js";
 import HistoryEntryIdSchema, { type HistoryEntryId } from "./history-entry-id-schema.js";
@@ -81,6 +82,10 @@ function expectHistoryEntry(entry: HistoryEntryLike | null | undefined): History
     // 現在のドキュメントが完全にアクティブでない場合は -1 になってしまうので、そのときは null を返します。
     index < 0
   ) {
+    log.debug("履歴エントリーが未確定のため null を返します（hasUrl: {hasUrl}, index: {index}）", {
+      hasUrl: url != null,
+      index,
+    });
     return null;
   }
 

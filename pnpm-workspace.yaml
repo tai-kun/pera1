@@ -1,4 +1,4 @@
-packages: ["packages/core", "packages/react", "website"]
+packages: ["packages/core", "packages/react", "examples/*", "website"]
 
 minimumReleaseAge: 10080 # 7 日
 minimumReleaseAgeExclude: []

@@ -1,5 +1,6 @@
 import { NinjaPromise } from "ninja-promise";
 
+import log from "../_logger.js";
 import unreachable from "./_unreachable.js";
 import { LoaderConditionError } from "./errors.js";
 import type { HistoryEntry } from "./expect-history-entry.js";
@@ -88,6 +89,16 @@ export default function startLoaders(
     actionData: options.actionData,
   };
 
+  log.debug(
+    "ローダーを評価します（trigger: {trigger}, from: {from} -> to: {to}, 対象数: {count}）",
+    {
+      trigger: actionContext ? "POST" : "GET",
+      from: prevEntry.url.href,
+      to: currentEntry.url.href,
+      count: currentRoutes.length,
+    },
+  );
+
   // マッチした配列は詳細度の高い子ルートから詳細度の低い親ルートの順にソートされているため、先頭の要素から、ルート全体の動的パスパラメーターを一括して回収できます。
   const prevParams = prevRoutes?.[0]?.params || {};
   const prevRoutePathSet: ReadonlySet<string> = new Set(prevRoutes?.map((r) => r.path));
@@ -113,6 +124,7 @@ export default function startLoaders(
     const prevLoaderData = prevLoaderDataMap?.get(currentLoader);
     if (!prevLoaderData) {
       // 過去のキャッシュが存在しない＝今回新しくマッチした未知のルート階層であると判定し、判定の余地なく新規にローダーを起動します。
+      log.debug("ローダーを新規起動します（path: {path}）", { path: currentRoute.path });
       const data = NinjaPromise.try(function executeLoader() {
         return currentLoader({
           params: currentParams,
@@ -162,6 +174,9 @@ export default function startLoaders(
       case "pending": {
         // shouldReload は仕様上「同期的」に真偽値を返す必要があります（Promise を返してはなりません）。
         // もし pending であれば LoaderConditionError を生成して拒否状態のプロミスとしてラップします。
+        log.debug("shouldReloadが非同期値を返したためエラーにします（path: {path}）", {
+          path: currentRoute.path,
+        });
         const error = new LoaderConditionError({
           url: request.url.href,
           returnValue: should,
@@ -173,6 +188,9 @@ export default function startLoaders(
 
       case "rejected":
         // shouldReload の実行中に同期的な例外が発生した場合は、そのエラー状態をそのまま引き継ぎ、ハンドリングを画面側に委ねます。
+        log.debug("shouldReloadの実行中に例外が発生しました（path: {path}）", {
+          path: currentRoute.path,
+        });
         data = should;
         break;
 
@@ -181,6 +199,7 @@ export default function startLoaders(
         switch (value) {
           case true:
             // 明示的にリロードの指示が出た場合のみ、ローダーを新規に再実行します。
+            log.debug("ローダーを再実行します（path: {path}）", { path: currentRoute.path });
             data = NinjaPromise.try(function executeLoader() {
               return currentLoader({
                 params: currentParams,
@@ -192,12 +211,18 @@ export default function startLoaders(
 
           case false:
             // 再読み込みが不要と判定された場合は、前回のキャッシュプロミスをそのまま無加工で引き継ぎます。
+            log.debug("ローダーのキャッシュを再利用します（path: {path}）", {
+              path: currentRoute.path,
+            });
             data = prevLoaderData;
 
             break;
 
           default: {
             // 戻り値が boolean 型ではなかった場合、仕様不適合としてエラーを割り当てます。
+            log.debug("shouldReloadが真偽値以外を返したためエラーにします（path: {path}）", {
+              path: currentRoute.path,
+            });
             const error = new LoaderConditionError({
               url: request.url.href,
               returnValue: value,

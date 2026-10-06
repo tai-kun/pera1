@@ -1,6 +1,7 @@
 import { RouterContextMissingError } from "@pera1/core";
 import * as React from "react";
 
+import log from "../_logger.js";
 import RouterContext, { type RouterRef } from "../contexts/router-context.js";
 
 /**
@@ -17,6 +18,7 @@ export default function useRouterContext<TSlice>(
 ): TSlice {
   const routerContext = React.use(RouterContext);
   if (!routerContext) {
+    log.debug("RouterContextが見つかりません");
     throw new RouterContextMissingError();
   }
 

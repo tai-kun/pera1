@@ -2,6 +2,7 @@ import type { NavigateOptions, NavigateTo } from "@pera1/core";
 import { toNavigateArgs } from "@pera1/core";
 import * as React from "react";
 
+import log from "../_logger.js";
 import useRouterContext from "./use-router-context.js";
 
 export type { NavigateOptions, NavigateTo };
@@ -39,7 +40,18 @@ export default function useNavigate(): NavigateFunction {
   // レンダリングごとに参照が変わって子コンポーネントが不要に再描画されるのを防ぐため、`useCallback` でラップします。
   return React.useCallback(
     function navigate(...args: [NavigateTo, options?: NavigateOptions | undefined] | [number]) {
-      return routerNavigate(toNavigateArgs(args[0] as NavigateTo | number, args[1]));
+      const navigateArgs = toNavigateArgs(args[0] as NavigateTo | number, args[1]);
+      if (navigateArgs.type === "MOVE") {
+        log.debug("履歴を移動します（delta: {delta}）", { delta: navigateArgs.delta });
+      } else if (navigateArgs.to.type === "STATIC") {
+        log.debug("画面遷移します（to: {to}, history: {history}）", {
+          to: navigateArgs.to.path,
+          history: navigateArgs.history,
+        });
+      } else {
+        log.debug("画面遷移します（history: {history}）", { history: navigateArgs.history });
+      }
+      return routerNavigate(navigateArgs);
     },
     [routerNavigate],
   );

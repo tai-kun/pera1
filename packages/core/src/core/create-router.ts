@@ -1,5 +1,6 @@
 import type { NinjaPromise } from "ninja-promise";
 
+import log from "../_logger.js";
 import type { IEngine } from "../engines/engine.types.js";
 import type { RouterState } from "../engines/engine.types.js";
 import processRoutes from "./_process-routes.js";
@@ -125,6 +126,11 @@ export default function createRouter<TComponent = any>(
   const routes = processRoutes(routesProp);
   let ac: AbortController | null = null;
 
+  log.debug("Routerを作成します（定義数: {definitionCount}, 正規化数: {routeCount}）", {
+    definitionCount: routesProp.length,
+    routeCount: routes.length,
+  });
+
   /**
    * 現在のフェーズで有効な、シングルトン構造の中断シグナルをオンデマンドで生成し、回収します。
    */
@@ -140,11 +146,23 @@ export default function createRouter<TComponent = any>(
   });
   let currentRoutes = initialState?.routes as readonly MatchedRoute<TComponent>[] | undefined;
 
+  if (initialState) {
+    log.debug("初期状態を確定しました（url: {url}, id: {id}, 一致数: {matchedCount}）", {
+      url: initialState.entry.url.href,
+      id: initialState.entry.id,
+      matchedCount: initialState.routes.length,
+    });
+  } else {
+    log.debug("初期状態は未マッチです（エントリーなしまたはルート不一致）");
+  }
+
   const snapshot = {
     submit(submitArgs: IEngine.SubmitArgs): void {
+      log.debug("submitを受信しました（type: {type}）", { type: submitArgs.type });
       return engine.submit(submitArgs);
     },
     navigate(navigateArgs: IEngine.NavigateArgs): void {
+      log.debug("navigateを受信しました（type: {type}）", { type: navigateArgs.type });
       return engine.navigate(navigateArgs);
     },
     currentEntry: initialState?.entry as HistoryEntry,
@@ -161,6 +179,17 @@ export default function createRouter<TComponent = any>(
     }
     if (newState) {
       (snapshot as { currentEntry: HistoryEntry }).currentEntry = newState.entry;
+      log.debug("状態を更新しました（url: {url}, id: {id}, 一致数: {matchedCount}）", {
+        url: newState.entry.url.href,
+        id: newState.entry.id,
+        matchedCount: newState.routes.length,
+      });
+    } else if (newState === null) {
+      log.debug("未マッチ状態にリセットしました");
+    } else {
+      log.debug("現在の状態を維持したまま再描画します（購読者数: {subscriberCount}）", {
+        subscriberCount: subscribers.size,
+      });
     }
 
     // 状態変更の発生を、すべての購読者に一斉通知して再描画を促します。
@@ -171,6 +200,7 @@ export default function createRouter<TComponent = any>(
    * エンジンによるイベントのリアルタイム監視を開始するトリガー関数です。
    */
   function startRouterEngine(): () => void {
+    log.debug("エンジンの監視を開始します");
     const stop = engine.start({
       routes,
       update: updateRouter,
@@ -180,6 +210,7 @@ export default function createRouter<TComponent = any>(
     });
 
     return function stopRouterEngine(): void {
+      log.debug("エンジンの監視を停止します");
       try {
         if (typeof stop === "function") {
           stop();

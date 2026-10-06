@@ -1,16 +1,18 @@
 import type {
   IEngine,
   MatchedRoute,
+  RouterSnapshot,
   RouteDefinitionModule,
   RouteDefinitionObject,
 } from "@pera1/core";
 import { createRouter } from "@pera1/core";
 import * as React from "react";
 
+import log from "../_logger.js";
 import RouteContext from "../contexts/route-context.js";
 import RouterContext, {
-  type RouterContextValue,
   type RouterRef,
+  type RouterContextValue,
 } from "../contexts/router-context.js";
 
 /**
@@ -124,14 +126,15 @@ export default function Router(props: RouterProps) {
     readonly start: () => () => void;
     readonly context: RouterContextValue;
     readonly getRoutes: () => readonly MatchedRoute<React.ComponentType<{}>>[] | undefined;
+    readonly getSnapshot: () => RouterSnapshot;
   }>(() => {
+    log.debug("Routerコントローラーを作成します（定義数: {count}）", {
+      count: routesProp.length,
+    });
     const controller = createRouter<React.ComponentType<{}>>({
       engine,
       routes: routesProp,
     });
-
-    // 作成したスナップショットの参照を、永続化 Ref オブジェクトへマージします。
-    Object.assign(routerRef.current, controller.getSnapshot());
 
     return {
       start: controller.start,
@@ -140,11 +143,26 @@ export default function Router(props: RouterProps) {
         subscribe: controller.subscribe,
       },
       getRoutes: controller.getRoutes,
+      getSnapshot: controller.getSnapshot,
     };
   }, [engine, routesProp]);
 
+  // `getSnapshot()` の返すオブジェクトは同一参照ですが、内部の `currentEntry` は
+  // 遷移のたびにコントローラー側で差し替えられます。一度だけ写し取ると
+  // `useLoaderData` などが古いエントリーを参照し続けてしまうため、
+  // レンダリングのたびに最新のスナップショットへ載せ替えます。
+  // 同一参照の代入であり冪等なので、並行レンダリングでも安全です。
+  routerRef.current = router.getSnapshot();
+
   // コンポーネントのマウントしたときにルーターエンジンを始動させ、アンマウントするときには自動的に破棄処理と連動させます。
-  React.useEffect(() => router.start(), [router]);
+  React.useEffect(() => {
+    log.debug("エンジンの監視を開始します");
+    const stop = router.start();
+    return () => {
+      log.debug("エンジンの監視を停止します");
+      stop();
+    };
+  }, [router]);
 
   // マッチしたルート階層配列をリアクティブに監視します。
   const routes = React.useSyncExternalStore(router.context.subscribe, router.getRoutes);
@@ -152,8 +170,13 @@ export default function Router(props: RouterProps) {
   // 有効なルートマッチングがない場合は何も描画しません。
   if (!routes) {
     // TODO(tai-kun): 404 Not Found ページを表示できるようにします。
+    log.debug("一致するルートがないため null を描画します");
     return null;
   }
+
+  log.debug("マッチしたルートを描画します（paths: {paths}）", () => ({
+    paths: routes.map((r) => r.urlPath).join(" <- "),
+  }));
 
   return (
     <RouterContext value={router.context}>

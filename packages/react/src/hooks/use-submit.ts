@@ -7,6 +7,7 @@ import type {
 import { toSubmitArgs } from "@pera1/core";
 import * as React from "react";
 
+import log from "../_logger.js";
 import useFormAction from "./use-form-action.js";
 import useRouterContext from "./use-router-context.js";
 
@@ -59,7 +60,17 @@ export default function useSubmit(): SubmitFunction {
   // レンダリングごとに参照が変わって子コンポーネントが不要に再描画されるのを防ぐため、`useCallback` でラップします。
   return React.useCallback(
     function submit(target, options = {}) {
-      return routerSubmit(toSubmitArgs(target, formAction, options));
+      const submitArgs = toSubmitArgs(target, formAction, options);
+      if (submitArgs.type === "FORM_DATA") {
+        log.debug("フォームを送信します（action: {action}）", { action: submitArgs.action });
+      } else {
+        log.debug("クエリーを送信します（action: {action}, history: {history}）", {
+          action: submitArgs.action,
+          history: submitArgs.history,
+        });
+      }
+
+      return routerSubmit(submitArgs);
     },
     [routerSubmit, formAction],
   );

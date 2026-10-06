@@ -1,6 +1,7 @@
 import { LoaderDataNotFoundError, selectLoaderData } from "@pera1/core";
 import type { NinjaPromise } from "ninja-promise";
 
+import log from "../_logger.js";
 import useRouteContext from "./use-route-context.js";
 import useRouterContext from "./use-router-context.js";
 
@@ -12,7 +13,6 @@ import useRouterContext from "./use-router-context.js";
 export type FulfilledLoaderData<TData = unknown> = Awaited<
   TData extends (...args: any) => infer TReturn ? TReturn : TData
 >;
-
 /**
  * {@link useLoaderData|`useLoaderData`} カスタムフックが返すオブジェクトの型定義です。
  *
@@ -31,9 +31,13 @@ export type LoaderData<TData = unknown> = NinjaPromise<FulfilledLoaderData<TData
  * @returns ローダーの実行状態を管理している `NinjaPromise` を返します。
  */
 export default function useLoaderData<TData = unknown>(): LoaderData<TData> {
-  const { loader } = useRouteContext();
+  const { loader, urlPath } = useRouteContext();
   const loaderData = useRouterContext((router) => selectLoaderData(router, loader));
   if (!loaderData) {
+    log.debug("ローダーデータが見つかりません（path: {path}, loader: {loader}）", {
+      path: urlPath,
+      loader: loader?.name || "anonymous",
+    });
     throw new LoaderDataNotFoundError({ loader });
   }
 

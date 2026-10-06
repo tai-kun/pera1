@@ -1,6 +1,7 @@
 import { RouteContextMissingError } from "@pera1/core";
 import * as React from "react";
 
+import log from "../_logger.js";
 import RouteContext, { type RouteContextValue } from "../contexts/route-context.js";
 
 /**
@@ -13,6 +14,7 @@ import RouteContext, { type RouteContextValue } from "../contexts/route-context.
 export default function useRouteContext(): RouteContextValue {
   const routeContext = React.use(RouteContext);
   if (!routeContext) {
+    log.debug("RouteContextが見つかりません");
     throw new RouteContextMissingError();
   }
 

@@ -36,6 +36,43 @@ importers:
         specifier: 7.0.2
         version: 7.0.2
 
+  examples/contacts:
+    dependencies:
+      '@pera1/core':
+        specifier: workspace:*
+        version: link:../../packages/core
+      '@pera1/react':
+        specifier: workspace:*
+        version: link:../../packages/react
+      react:
+        specifier: ^19.2.6
+        version: 19.3.0
+      react-dom:
+        specifier: ^19.2.6
+        version: 19.3.0(react@19.3.0)
+      valibot:
+        specifier: ^1.0.0
+        version: 1.5.0(typescript@7.0.2)
+    devDependencies:
+      '@logtape/logtape':
+        specifier: ^2.3.9
+        version: 2.3.9
+      '@types/react':
+        specifier: ^19.2.15
+        version: 19.3.0
+      '@types/react-dom':
+        specifier: ^19.2.3
+        version: 19.3.0(@types/react@19.3.0)
+      '@vitejs/plugin-react':
+        specifier: ^5.2.0
+        version: 5.2.0(supports-color@7.2.0)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+      typescript:
+        specifier: 7.0.2
+        version: 7.0.2
+      vite:
+        specifier: ^8.0.14
+        version: 8.3.1(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+
   packages/core:
     dependencies:
       '@logtape/logtape':
@@ -894,6 +931,9 @@ packages:
 
   '@logtape/logtape@2.3.7':
     resolution: {integrity: sha512-y0X4Liaj9voRRn0aAffCw2HCRpZEibOdmHiOgwsAT0hgHS8MaDKHl9cQGZ8r8uZR+b+yN9qznNYru6z9oOEMVw==}
+
+  '@logtape/logtape@2.3.9':
+    resolution: {integrity: sha512-VwrfX+GSWEtk+v17nQzANwt3/8iAZw1Kbk6HvwPiKHadrAv/P/AiDTTxar1l1XNkSmkRZICfPEUBdxTPRDLcHQ==}
 
   '@mapbox/node-pre-gyp@2.0.3':
     resolution: {integrity: sha512-uwPAhccfFJlsfCxMYTwOdVfOz3xqyj8xYL3zJj8f0pb30tLohnnFPhLuqp4/qoEz8sNxe4SESZedcBojRefIzg==}
@@ -5522,6 +5562,8 @@ snapshots:
       '@jridgewell/sourcemap-codec': 1.6.0
 
   '@logtape/logtape@2.3.7': {}
+
+  '@logtape/logtape@2.3.9': {}
 
   '@mapbox/node-pre-gyp@2.0.3(supports-color@7.2.0)':
     dependencies:

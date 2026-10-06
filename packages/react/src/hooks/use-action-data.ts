@@ -2,6 +2,7 @@ import type { RedirectResponse } from "@pera1/core";
 import { selectActionData } from "@pera1/core";
 import type { NinjaPromise } from "ninja-promise";
 
+import log from "../_logger.js";
 import useRouteContext from "./use-route-context.js";
 import useRouterContext from "./use-router-context.js";
 
@@ -39,8 +40,15 @@ export type ActionData<TData = unknown> = NinjaPromise<FulfilledActionData<TData
  * @returns アクションが実行済み、または実行中であれば結果を内包した `NinjaPromise` を返し、一度も実行されていないか対象のアクションが存在しない場合は `undefined` を返します。
  */
 export default function useActionData<TData = unknown>(): ActionData<TData> | undefined {
-  const { action } = useRouteContext();
+  const { action, urlPath } = useRouteContext();
   const actionData = useRouterContext((router) => selectActionData(router, action));
+
+  if (actionData) {
+    log.debug("アクションデータを参照します（path: {path}, status: {status}）", {
+      path: urlPath,
+      status: actionData.status,
+    });
+  }
 
   return actionData satisfies ActionData<unknown> | undefined as ActionData<any> | undefined;
 }

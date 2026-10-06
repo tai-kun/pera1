@@ -1,3 +1,4 @@
+import log from "../_logger.js";
 import unreachable from "../core/_unreachable.js";
 import * as v from "../core/_valibot.js";
 import { NavigationApiNotSupportedError } from "../core/errors.js";
@@ -69,12 +70,16 @@ export default class NavigationApiEngine implements IEngine {
   init(args: IEngine.InitArgs): IEngine.InitReturn {
     const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
     if (!currentEntry) {
+      log.debug("初期エントリーが未確定のため null を返します");
       return null;
     }
 
     const { routes, getSignal, loaderDataStore } = args;
     const currentRoutes = matchRoutes(routes, currentEntry.url);
     if (!currentRoutes) {
+      log.debug("初期URLに一致するルートがありません（url: {url}）", {
+        url: currentEntry.url.href,
+      });
       return null;
     }
 
@@ -86,6 +91,11 @@ export default class NavigationApiEngine implements IEngine {
 
     // 起動したローダーの結果（NinjaPromise）のマップを、現在の履歴 ID をキーとしてキャッシュします。
     loaderDataStore.set(currentEntry.id, dataMap);
+
+    log.debug("初期化が完了しました（url: {url}, 一致数: {matchedCount}）", {
+      url: currentEntry.url.href,
+      matchedCount: currentRoutes.length,
+    });
 
     return {
       entry: currentEntry,
@@ -114,11 +124,15 @@ export default class NavigationApiEngine implements IEngine {
         event.downloadRequest !== null ||
         event.navigationType === "reload"
       ) {
+        log.debug("ナビゲーションをスルーします（type: {type}）", {
+          type: event.navigationType,
+        });
         return;
       }
 
       const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
       if (!currentEntry) {
+        log.debug("現在のエントリーが未確定のため未マッチにリセットします");
         // 現在のエントリーが存在しない場合は、ルーターを未マッチ状態（null）にリセットして制御をブラウザーに返します。
         event.intercept({
           async handler() {
@@ -133,6 +147,9 @@ export default class NavigationApiEngine implements IEngine {
       const destUrl = v.expect(HistoryEntryUrlSchema(), event.destination.url);
       const destRoutes = matchRoutes(routes, destUrl);
       if (!destRoutes) {
+        log.debug("移動先に一致するルートがありません（to: {to}）", {
+          to: destUrl.href,
+        });
         // 移動先のルート定義が見つからない場合は、ルーターを未マッチ状態（null）にリセットして制御をブラウザーに返します。
         event.intercept({
           async handler() {
@@ -144,11 +161,20 @@ export default class NavigationApiEngine implements IEngine {
       }
 
       // 前回の遷移から短時間で遷移する場合を考慮し、進行中だった以前の古い非同期処理をすべて安全に中断します。
+      if (this.navAbortController) {
+        log.debug("進行中の遷移を中断します");
+      }
       this.navAbortController?.abort();
       this.navAbortController = new AbortController();
       const { signal } = this.navAbortController;
       const { formData } = event;
       const prevEntryInHandler = currentEntry;
+
+      log.debug("ナビゲーションを受信しました（trigger: {trigger}, from: {from} -> to: {to}）", {
+        trigger: formData ? "POST" : "GET",
+        from: currentEntry.url.href,
+        to: destUrl.href,
+      });
 
       // 分岐 A: フォームデータが伴う場合 ＝ データ変更要求（HTTP POST / Action 契機）
       if (formData) {
@@ -169,6 +195,9 @@ export default class NavigationApiEngine implements IEngine {
             formData,
           });
           if (!action) {
+            log.debug("アクションが定義されていないためコミットへ進みます（to: {to}）", {
+              to: destUrl.href,
+            });
             return;
           }
 
@@ -187,6 +216,9 @@ export default class NavigationApiEngine implements IEngine {
           switch (action.data.status) {
             case "rejected": {
               // アクションがエラーで失敗した場合は、URL を変更せず現在の元のページに強制リダイレクトさせます。
+              log.debug("アクションが失敗したため現在のURLに留まります（url: {url}）", {
+                url: currentEntry.url.href,
+              });
               controller.redirect(RoutePath.encode(currentEntry.url));
 
               break;
@@ -202,6 +234,10 @@ export default class NavigationApiEngine implements IEngine {
               redirectUrl.pathname = redirectPath.pathname;
               redirectUrl.search = redirectPath.search;
               redirectUrl.hash = redirectPath.hash;
+
+              log.debug("アクション完了後の遷移先を確定しました（to: {to}）", {
+                to: redirectUrl.href,
+              });
 
               break;
             }
@@ -231,6 +267,7 @@ export default class NavigationApiEngine implements IEngine {
           // 履歴エントリーを再度取得します。
           const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
           if (!currentEntry) {
+            log.debug("コミット後のエントリーが未確定のため未マッチにリセットします");
             // 現在のエントリーが存在しない場合は、ルーターを未マッチ状態（null）にリセットして制御をブラウザーに返します。
             update(null);
             return;
@@ -238,6 +275,13 @@ export default class NavigationApiEngine implements IEngine {
 
           // コミットされた実際のブラウザー URL が、想定しているリダイレクト先と一致しない場合は処理を中断します。
           if (currentEntry.url.href !== redirectUrl.href) {
+            log.debug(
+              "コミットURLの不一致により処理を中断します（actual: {actual}, expected: {expected}）",
+              {
+                actual: currentEntry.url.href,
+                expected: redirectUrl.href,
+              },
+            );
             return;
           }
 
@@ -248,6 +292,9 @@ export default class NavigationApiEngine implements IEngine {
 
           const currentRoutes = matchRoutes(routes, currentEntry.url);
           if (!currentRoutes) {
+            log.debug("コミット後のURLに一致するルートがありません（url: {url}）", {
+              url: currentEntry.url.href,
+            });
             // 現在のルート定義が見つからない場合は、ルーターを未マッチ状態（null）にリセットして制御をブラウザーに返します。
             update(null);
             return;
@@ -272,6 +319,10 @@ export default class NavigationApiEngine implements IEngine {
           );
 
           // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
+          log.debug("アクション後の画面を確定しました（url: {url}, 一致数: {matchedCount}）", {
+            url: currentEntry.url.href,
+            matchedCount: currentRoutes.length,
+          });
           update({
             entry: currentEntry,
             routes: currentRoutes,
@@ -296,11 +347,19 @@ export default class NavigationApiEngine implements IEngine {
         const handler = async () => {
           const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
           if (!currentEntry) {
+            log.debug("遷移先のエントリーが未確定のため未マッチにリセットします");
             update(null);
             return;
           }
           // 同期がズレている場合はガードします。
           if (currentEntry.url.href !== destUrl.href) {
+            log.debug(
+              "遷移先URLの不一致により処理を中断します（actual: {actual}, expected: {expected}）",
+              {
+                actual: currentEntry.url.href,
+                expected: destUrl.href,
+              },
+            );
             return;
           }
 
@@ -319,6 +378,11 @@ export default class NavigationApiEngine implements IEngine {
           });
 
           // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
+          log.debug("画面遷移を確定しました（from: {from} -> to: {to}, 一致数: {matchedCount}）", {
+            from: prevEntry.url.href,
+            to: currentEntry.url.href,
+            matchedCount: currentRoutes.length,
+          });
           update({
             entry: currentEntry,
             routes: currentRoutes,
@@ -340,12 +404,14 @@ export default class NavigationApiEngine implements IEngine {
 
     // 外部からルーター全体の監視終了シグナルを受け取った際、中断処理を連動させます。
     const handleAbort = (): void => {
+      log.debug("ルーターの停止に連動して進行中の遷移を中断します");
       this.navAbortController?.abort();
       this.navAbortController = null;
     };
     signal.addEventListener("abort", handleAbort, { once: true });
 
     // Navigation API の navigate イベントの購読を開始します。
+    log.debug("ナビゲーションイベントの監視を開始します");
     this.navigation.addEventListener("navigate", handleNavigate, { signal });
 
     // セッション履歴から溢れて破棄された古い履歴エントリーのデータ（アクション、ローダーのキャッシュ）を自動削除します。
@@ -356,6 +422,9 @@ export default class NavigationApiEngine implements IEngine {
       }
 
       const handleDispose = (): void => {
+        log.debug("破棄された履歴のキャッシュを削除しました（id: {id}）", {
+          id: entryId,
+        });
         this.subscribedEntryIds.delete(entryId);
         actionDataStore.delete(entryId);
         loaderDataStore.delete(entryId);
@@ -375,6 +444,9 @@ export default class NavigationApiEngine implements IEngine {
       }
 
       const handleDispose = (): void => {
+        log.debug("破棄された履歴のキャッシュを削除しました（id: {id}）", {
+          id: currentEntry.id,
+        });
         this.subscribedEntryIds.delete(currentEntry.id);
         actionDataStore.delete(currentEntry.id);
         loaderDataStore.delete(currentEntry.id);
@@ -394,6 +466,10 @@ export default class NavigationApiEngine implements IEngine {
     switch (args.type) {
       case "FORM_DATA": {
         const { action, target } = args;
+        log.debug("フォームを送信します（action: {action}）", () => ({
+          action,
+          fieldCount: [...target.keys()].length,
+        }));
         const form = createHtmlFormElementFormFormData(target);
         form.method = "POST";
         form.action = action;
@@ -413,6 +489,10 @@ export default class NavigationApiEngine implements IEngine {
         const path = new RoutePath(action);
         path.search = target.toString();
 
+        log.debug("クエリーを送信します（to: {to}, history: {history}）", {
+          to: path.toString(),
+          history,
+        });
         // Navigation API を用いて、クエリーが上書きされた新しいアドレスへ遷移させます。
         this.navigation.navigate(path.toString(), { history });
 
@@ -438,6 +518,10 @@ export default class NavigationApiEngine implements IEngine {
             // 完全なパス文字列の余分なスラッシュなどをエンコードして直接遷移します。
 
             const path = RoutePath.encode(to.path);
+            log.debug("リンク遷移します（to: {to}, history: {history}）", {
+              to: path,
+              history,
+            });
             this.navigation.navigate(path, { history });
 
             break;
@@ -454,7 +538,16 @@ export default class NavigationApiEngine implements IEngine {
 
             // 無駄な遷移履歴を作らないように、URL に実際の変化がある場合のみ navigate を実行します。
             if (nextPathString !== currentPathString) {
+              log.debug("リンク遷移します（from: {from} -> to: {to}, history: {history}）", {
+                from: currentPathString,
+                to: nextPathString,
+                history,
+              });
               this.navigation.navigate(nextPathString, { history });
+            } else {
+              log.debug("URLに変化がないため遷移をスキップします（url: {url}）", {
+                url: currentPathString,
+              });
             }
 
             break;
@@ -470,6 +563,7 @@ export default class NavigationApiEngine implements IEngine {
       case "MOVE": {
         const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
         if (!currentEntry) {
+          log.debug("現在のエントリーが未確定のため履歴移動をスキップします");
           return;
         }
 
@@ -479,10 +573,21 @@ export default class NavigationApiEngine implements IEngine {
         const index = currentEntry.index + delta;
         const entry = this.navigation.entries().find((e) => e.index === index);
         if (!entry) {
+          log.debug(
+            "移動先の履歴が存在しないためスキップします（index: {index}, delta: {delta}）",
+            {
+              index: currentEntry.index,
+              delta,
+            },
+          );
           // スタックの限界を超える移動要求の場合は何もしません。
           return;
         }
 
+        log.debug("履歴を移動します（index: {from} -> {to}）", {
+          from: currentEntry.index,
+          to: index,
+        });
         // Navigation API の traverseTo メソッドを使用し、一意の識別キーを指定して目的地へジャンプします。
         this.navigation.traverseTo(entry.key);
 

@@ -1,5 +1,6 @@
 import { NinjaPromise } from "ninja-promise";
 
+import log from "../_logger.js";
 import unreachable from "./_unreachable.js";
 import type { HistoryEntryUrl } from "./history-entry-url-schema.js";
 import type { MatchedRoute } from "./match-routes.js";
@@ -66,6 +67,7 @@ export default function startAction(
   let action: ActionFunction;
   let params: RouteParams;
   let matched = false;
+  let matchedUrlPath = "";
 
   for (const route of routes) {
     if (
@@ -78,14 +80,23 @@ export default function startAction(
     ) {
       action = route.action;
       params = route.params;
+      matchedUrlPath = route.urlPath;
       matched = true;
       break;
     }
   }
 
   if (!matched) {
+    log.debug("実行対象のアクションが見つかりません（pathname: {pathname}）", {
+      pathname: request.url.pathname,
+    });
     return null;
   }
+
+  log.debug("アクションを開始します（urlPath: {urlPath}, pathname: {pathname}）", {
+    urlPath: matchedUrlPath,
+    pathname: request.url.pathname,
+  });
 
   let actionData: NinjaPromise<unknown> | undefined;
   let redirectTo: RedirectResponse | undefined;
@@ -99,6 +110,9 @@ export default function startAction(
 
   switch (actionReturn.status) {
     case "pending": {
+      log.debug("アクションは非同期で実行中です（urlPath: {urlPath}）", {
+        urlPath: matchedUrlPath,
+      });
       // アクションの戻り値が非同期である場合、中継用のプロミスを作成して状態変化をコントロールします。
       const proxy = NinjaPromise.withResolvers();
       actionData = proxy.promise;
@@ -111,14 +125,25 @@ export default function startAction(
           // 内部状態にリダイレクト先を記録し、画面側のコンポーネントが参照するデータとしては undefined を返してデータ露出を抑制します。
           case value instanceof RedirectResponse:
             redirectTo = value;
+            log.debug("アクションがリダイレクトを返しました（to: {to}）", {
+              to: `${value.pathname}${value.search}${value.hash}`,
+            });
             return undefined;
 
           default:
+            log.debug("アクションが正常に完了しました（urlPath: {urlPath}）", {
+              urlPath: matchedUrlPath,
+            });
             return value;
         }
       })()
         .then((value) => proxy.resolve(value))
-        .catch((reason) => proxy.reject(reason)); // 例外が発生した場合はそのまま下流へ伝播させます。
+        .catch((reason) => {
+          log.debug("アクションが失敗しました（urlPath: {urlPath}）", {
+            urlPath: matchedUrlPath,
+          });
+          proxy.reject(reason);
+        }); // 例外が発生した場合はそのまま下流へ伝播させます。
 
       break;
     }
@@ -126,6 +151,9 @@ export default function startAction(
     case "rejected":
       // 同期的な実行の段階で既に例外が発生している場合は、特別な加工をせずそのままエラー状態を引き継ぎます。
       // エラーハンドリングの責務は、このアクションデータを参照し、購読するコンポーネント側に一任されます。
+      log.debug("アクションが同期的に失敗しました（urlPath: {urlPath}）", {
+        urlPath: matchedUrlPath,
+      });
       actionData = actionReturn;
 
       break;
@@ -136,12 +164,18 @@ export default function startAction(
       switch (true) {
         case value instanceof RedirectResponse:
           // 返り値がリダイレクト指示である場合は、リダイレクト先を記録し、データを undefined に置き換えた解決済みのプロミスを作成します。
+          log.debug("アクションがリダイレクトを返しました（to: {to}）", {
+            to: `${value.pathname}${value.search}${value.hash}`,
+          });
           redirectTo = value;
           actionData = NinjaPromise.resolve(undefined);
           break;
 
         default:
           // 通常のデータであれば、そのままの完了状態をアクションデータとして引き継ぎます。
+          log.debug("アクションが同期的に完了しました（urlPath: {urlPath}）", {
+            urlPath: matchedUrlPath,
+          });
           actionData = actionReturn;
       }
 

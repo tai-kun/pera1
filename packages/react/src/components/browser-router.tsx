@@ -1,5 +1,6 @@
 import { NavigationApiEngine } from "@pera1/core";
 
+import log from "../_logger.js";
 import useSingleton from "../hooks/_use-singleton.js";
 import Router, { type RouterRouteDefinition } from "./router.jsx";
 
@@ -22,7 +23,10 @@ export type BrowserRouterProps = {
  */
 export default function BrowserRouter(props: BrowserRouterProps): React.ReactElement {
   const { routes } = props;
-  const engine = useSingleton(() => new NavigationApiEngine());
+  const engine = useSingleton(() => {
+    log.debug("NavigationApiEngineを作成します");
+    return new NavigationApiEngine();
+  });
 
   return <Router engine={engine} routes={routes} />;
 }

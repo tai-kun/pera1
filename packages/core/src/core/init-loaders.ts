@@ -1,5 +1,6 @@
 import { NinjaPromise } from "ninja-promise";
 
+import log from "../_logger.js";
 import type { HistoryEntryUrl } from "./history-entry-url-schema.js";
 import type { MatchedRoute } from "./match-routes.js";
 import RouteRequest from "./route-request.js";
@@ -52,6 +53,11 @@ export default function initLoaders(
     });
     dataMap.set(loader, data);
   }
+
+  log.debug("初期ローダーを起動しました（url: {url}, 件数: {count}）", {
+    url: request.url.href,
+    count: dataMap.size,
+  });
 
   return dataMap;
 }

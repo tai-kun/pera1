@@ -1,0 +1,50 @@
+import type { ActionData } from "@pera1/react";
+import { useActionData, useLoaderData } from "@pera1/react";
+import { use } from "react";
+
+import type { action as contactsAction, loader as contactsLoader } from "./contacts.js";
+
+export default function ContactsPage() {
+  const contacts = use(useLoaderData<typeof contactsLoader>());
+
+  return (
+    <>
+      <ul>
+        {contacts.map((contact) => (
+          <li key={contact.id}>
+            <a href={`/contacts/${contact.id}`}>{contact.name}</a>
+          </li>
+        ))}
+      </ul>
+      <CreateContactForm />
+    </>
+  );
+}
+
+function CreateContactForm() {
+  const actionData = useActionData<typeof contactsAction>();
+
+  return (
+    <form method="post" action="/contacts">
+      <h3>連絡先を追加</h3>
+      <label>
+        名前
+        <input name="name" />
+      </label>
+      <label>
+        メールアドレス
+        <input name="email" type="email" />
+      </label>
+      {actionData ? <ActionError actionData={actionData} /> : null}
+      <button type="submit">追加</button>
+    </form>
+  );
+}
+
+function ActionError({ actionData }: { actionData: ActionData<typeof contactsAction> }) {
+  const data = use(actionData);
+  if (data && "error" in data) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
