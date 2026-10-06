@@ -1,0 +1,99 @@
+import {
+  type LoaderFunctionArgs,
+  type ShouldReloadFunctionArgs,
+  RedirectResponse,
+  redirect,
+  useLoaderData,
+} from "@pera1/react";
+import * as React from "react";
+
+import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
+import { findProject } from "../../api/projects.js";
+import { listTasks, toggleTask } from "../../api/tasks.js";
+import RedirectTo from "../../components/redirect-to.js";
+
+export async function loader({ params, request }: LoaderFunctionArgs) {
+  if (!getCurrentUser()) {
+    return redirect(loginUrlFor(request.url.pathname, request.url.search));
+  }
+  const projectId = params["projectId"];
+  if (projectId === undefined) {
+    throw new Error("projectId が指定されていません。");
+  }
+  if (projectId === "new") {
+    return { projectId, project: undefined, tasks: [] };
+  }
+  const project = await findProject(projectId);
+  if (!project) {
+    return { projectId, project: undefined, tasks: [] };
+  }
+  return { projectId, project, tasks: await listTasks(projectId) };
+}
+
+export function shouldReload(args: ShouldReloadFunctionArgs) {
+  if (args.defaultShouldReload) {
+    return true;
+  }
+  return args.currentParams["projectId"] !== args.prevParams["projectId"];
+}
+
+export default function TasksPage() {
+  const initial = React.use(useLoaderData<typeof loader>());
+  const [tasks, setTasks] = React.useState(
+    initial instanceof RedirectResponse ? [] : initial.tasks,
+  );
+  const data = initial;
+
+  React.useEffect(() => {
+    if (!(data instanceof RedirectResponse)) {
+      setTasks(data.tasks);
+    }
+  }, [data]);
+
+  if (data instanceof RedirectResponse) {
+    return <RedirectTo response={data} />;
+  }
+  if (!data.project) {
+    return (
+      <>
+        <h3>プロジェクトが見つかりません</h3>
+        <p>ID: {data.projectId} のプロジェクトは存在しません。</p>
+      </>
+    );
+  }
+
+  const projectId = data.projectId;
+
+  async function handleToggle(taskId: string) {
+    const next = await toggleTask(projectId, taskId);
+    if (next) {
+      setTasks(next);
+    }
+  }
+
+  return (
+    <>
+      <h3>Tasks</h3>
+      <p>プロジェクト: {data.project.name}</p>
+      {tasks.length === 0 ? (
+        <p>タスクがありません。</p>
+      ) : (
+        <ul>
+          {tasks.map((task) => (
+            <li key={task.id}>
+              <label>
+                <input
+                  type="checkbox"
+                  checked={task.done}
+                  onChange={() => void handleToggle(task.id)}
+                />
+                {task.title}
+                {task.done ? " (完了)" : ""}
+              </label>
+            </li>
+          ))}
+        </ul>
+      )}
+    </>
+  );
+}
