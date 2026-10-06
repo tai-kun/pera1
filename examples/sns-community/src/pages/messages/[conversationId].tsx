@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   useLoaderData,
   useParams,
 } from "@pera1/react";
@@ -14,13 +13,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Error("conversationId が指定されていません。");
   }
   return { conversationId, conversation: await findConversation(conversationId) };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["conversationId"] !== args.prevParams["conversationId"];
 }
 
 export default function ConversationPage() {

@@ -222,6 +222,166 @@ describe("GET 遷移時の再読み込み制御", () => {
     const storedPromise = dataStore.get("entry-2")?.get(mockLoader);
     expect(storedPromise).not.toBe(cachedPromise);
   });
+
+  test("同一パターンで params 値が変化したら既定値が true になる", ({ expect, signal }) => {
+    // 準備
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("new-data"));
+    const cachedPromise = NinjaPromise.resolve("old-data");
+
+    const dataMap = new Map();
+    dataMap.set(mockLoader, cachedPromise);
+
+    const dataStore = new Map();
+    dataStore.set("entry-1", dataMap);
+
+    const mockShouldReload = vi
+      .fn<ShouldReloadFunction>()
+      .mockImplementation((args) => args.defaultShouldReload);
+    const prevRoute = {
+      path: "/posts/:postId",
+      params: { postId: "1" },
+    };
+    const currentRoute = {
+      path: "/posts/:postId",
+      params: { postId: "2" },
+      loader: mockLoader,
+      shouldReload: mockShouldReload,
+    };
+    const args: any = {
+      prevRoutes: [prevRoute],
+      currentRoutes: [currentRoute],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証
+    expect(mockShouldReload).toHaveBeenCalledTimes(1);
+    expect(mockShouldReload.mock.calls[0]?.[0].defaultShouldReload).toBe(true);
+    expect(mockShouldReload.mock.calls[0]?.[0].prevParams).toStrictEqual({ postId: "1" });
+    expect(mockLoader).toHaveBeenCalledTimes(1);
+  });
+
+  test("同一パターンで params 値が同じなら既定値は false のままである", ({
+    expect,
+    signal,
+  }) => {
+    // 準備
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("new-data"));
+    const cachedPromise = NinjaPromise.resolve("old-data");
+
+    const dataMap = new Map();
+    dataMap.set(mockLoader, cachedPromise);
+
+    const dataStore = new Map();
+    dataStore.set("entry-1", dataMap);
+
+    const mockShouldReload = vi
+      .fn<ShouldReloadFunction>()
+      .mockImplementation((args) => args.defaultShouldReload);
+    const prevRoute = {
+      path: "/posts/:postId",
+      params: { postId: "1" },
+    };
+    const currentRoute = {
+      path: "/posts/:postId",
+      params: { postId: "1" },
+      loader: mockLoader,
+      shouldReload: mockShouldReload,
+    };
+    const args: any = {
+      prevRoutes: [prevRoute],
+      currentRoutes: [currentRoute],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証
+    expect(mockShouldReload).toHaveBeenCalledTimes(1);
+    expect(mockShouldReload.mock.calls[0]?.[0].defaultShouldReload).toBe(false);
+
+    const storedPromise = dataStore.get("entry-2")?.get(mockLoader);
+    expect(storedPromise).toBe(cachedPromise);
+  });
+
+  test("子の params 変化では静的な親ルートの既定値は false のままである", ({
+    expect,
+    signal,
+  }) => {
+    // 準備
+    const parentLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("parent"));
+    const childLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("child-new"));
+
+    const dataMap = new Map();
+    dataMap.set(parentLoader, NinjaPromise.resolve("parent-old"));
+    dataMap.set(childLoader, NinjaPromise.resolve("child-old"));
+
+    const dataStore = new Map();
+    dataStore.set("entry-1", dataMap);
+
+    const parentShouldReload = vi
+      .fn<ShouldReloadFunction>()
+      .mockImplementation((args) => args.defaultShouldReload);
+    const childShouldReload = vi
+      .fn<ShouldReloadFunction>()
+      .mockImplementation((args) => args.defaultShouldReload);
+    const args: any = {
+      prevRoutes: [
+        { path: "/posts/:postId", params: { postId: "1" } },
+        { path: "/", params: {} },
+      ],
+      currentRoutes: [
+        {
+          path: "/posts/:postId",
+          params: { postId: "2" },
+          loader: childLoader,
+          shouldReload: childShouldReload,
+        },
+        { path: "/", params: {}, loader: parentLoader, shouldReload: parentShouldReload },
+      ],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証
+    expect(childShouldReload.mock.calls[0]?.[0].defaultShouldReload).toBe(true);
+    expect(parentShouldReload.mock.calls[0]?.[0].defaultShouldReload).toBe(false);
+    expect(parentShouldReload.mock.calls[0]?.[0].prevParams).toStrictEqual({});
+    expect(childLoader).toHaveBeenCalledTimes(1);
+    expect(parentLoader).not.toHaveBeenCalled();
+  });
 });
 
 describe("POST 遷移およびアクション後の再読み込み制御", () => {

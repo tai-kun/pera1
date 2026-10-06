@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   Outlet,
   RedirectResponse,
   redirect,
@@ -28,13 +27,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     return { projectId, project: undefined, isNewRoute: true as const };
   }
   return { projectId, project: await findProject(projectId), isNewRoute: false as const };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["projectId"] !== args.prevParams["projectId"];
 }
 
 export default function ProjectLayout() {

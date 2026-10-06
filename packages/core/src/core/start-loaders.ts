@@ -85,6 +85,25 @@ export interface StartedLoaders {
 }
 
 /**
+ * 2 つの params オブジェクトが浅い等価性で一致するかを判定します。
+ *
+ * キーの和集合に対して `!==` で比較するため、キーの有無の違い
+ * (`{}` と `{ id: undefined }`) は等価とみなします。
+ */
+function areParamsEqual(
+  a: Readonly<Record<string, string | undefined>>,
+  b: Readonly<Record<string, string | undefined>>,
+): boolean {
+  const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+  for (const key of keys) {
+    if (a[key] !== b[key]) {
+      return false;
+    }
+  }
+  return true;
+}
+
+/**
  * 画面遷移やデータ更新の発生に伴い、現在マッチしているルートのローダー関数群を精査し、キャッシュの再利用または読み込みを動的に判定、実行する関数です。
  *
  * ローダーが `RedirectResponse` を返した場合はアクションと対称的に扱われ、
@@ -117,9 +136,16 @@ export default function startLoaders(
     },
   );
 
-  // マッチした配列は詳細度の高い子ルートから詳細度の低い親ルートの順にソートされているため、先頭の要素から、ルート全体の動的パスパラメーターを一括して回収できます。
-  const prevParams = prevRoutes?.[0]?.params || {};
+  // 遷移前のルート群をパス文字列ごとに前回 params へ対応付けます。
+  // 同一パターン (`/posts/:postId`) 内の値変化 (`/posts/1` → `/posts/2`) を検出するため、
+  // 従来の「先頭子ルートの params を全階層へ一括適用」ではなく、階層ごとに対称的な比較を行います。
   const prevRoutePathSet: ReadonlySet<string> = new Set(prevRoutes?.map((r) => r.path));
+  const prevParamsByPath = new Map<string, Readonly<Record<string, string | undefined>>>();
+  for (const prevRoute of prevRoutes ?? []) {
+    if (!prevParamsByPath.has(prevRoute.path)) {
+      prevParamsByPath.set(prevRoute.path, prevRoute.params ?? {});
+    }
+  }
 
   // 遷移前の履歴 ID に紐づくローダーデータのキャッシュマップをストアから取得します。
   const prevLoaderDataMap: ReadonlyMap<LoaderFunction, NinjaPromise<unknown>> | undefined =
@@ -131,7 +157,14 @@ export default function startLoaders(
 
   // 現在マッチしているすべてのルートセグメントを個別に精査します。
   for (const currentRoute of currentRoutes) {
-    const { loader: currentLoader, params: currentParams, shouldReload } = currentRoute;
+    const {
+      loader: currentLoader,
+      params: currentParams = {},
+      shouldReload,
+    } = currentRoute;
+    // 同一パス文字列の前回 params を対称的に引き当てます。存在しなければ空オブジェクト扱いです。
+    const prevParams: Readonly<Record<string, string | undefined>> =
+      prevParamsByPath.get(currentRoute.path) ?? {};
 
     // ローダー関数が定義されていないルートセグメントはスキップします。
     if (typeof currentLoader !== "function") {
@@ -169,7 +202,10 @@ export default function startLoaders(
             // 検索クエリーに変更があれば既定値を true とします。
             prevEntry.url.search !== currentEntry.url.search ||
             // 遷移前のルート群に今回精査しているパスが含まれていなければ、新規表示扱いとして、既定値を true とします。
-            !prevRoutePathSet.has(currentRoute.path),
+            !prevRoutePathSet.has(currentRoute.path) ||
+            // 同一パターン内で当該ルートの params 値が変化した場合も、既定値を true とします。
+            // (`/posts/1` → `/posts/2` で `/posts/:postId` の loader を再実行する)
+            !areParamsEqual(prevParams, currentParams),
         });
       } else {
         // フォームデータの送信を伴う更新契機の場合の判定引数です。

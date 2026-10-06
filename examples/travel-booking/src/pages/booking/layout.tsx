@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   Outlet,
   useLoaderData,
   useParams,
@@ -15,13 +14,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Error("bookingId が指定されていません。");
   }
   return { bookingId, booking: await findBooking(bookingId) };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["bookingId"] !== args.prevParams["bookingId"];
 }
 
 export default function BookingLayout() {

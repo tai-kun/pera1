@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   useLoaderData,
 } from "@pera1/react";
 import * as React from "react";
@@ -19,13 +18,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
   const all = await listUsers();
   const followers = all.filter((candidate) => user.followers.includes(candidate.username));
   return { username, user, followers };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["username"] !== args.prevParams["username"];
 }
 
 export default function UserFollowersPage() {

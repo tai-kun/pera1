@@ -72,8 +72,10 @@ export type ShouldReloadFunctionArgs<TRoutePattern extends string = string> =
 
       /**
        * POST リクエストが発生する直前の URL から抽出されたパスパラメーターです。
+       *
+       * 同一パス文字列の前回 params が対称的に渡されます。
        */
-      prevParams: RouteParams;
+      prevParams: RouteParams<TRoutePattern>;
 
       /**
        * システムが内部ロジックに基づいて判断した、再読み込み実行の既定の判定フラグです。
@@ -103,8 +105,10 @@ export type ShouldReloadFunctionArgs<TRoutePattern extends string = string> =
 
       /**
        * POST リクエストが発生する直前の URL から抽出されたパスパラメーターです。
+       *
+       * 同一パス文字列の前回 params が対称的に渡されます。
        */
-      prevParams: RouteParams;
+      prevParams: RouteParams<TRoutePattern>;
 
       /**
        * POST リクエストと共に送信された標準のフォームデータオブジェクトです。

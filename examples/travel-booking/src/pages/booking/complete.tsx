@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   RedirectResponse,
   redirect,
   useLoaderData,
@@ -29,13 +28,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return redirect(`/travel/booking/${bookingId}/confirm`);
   }
   return { bookingId, booking };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["bookingId"] !== args.prevParams["bookingId"];
 }
 
 export default function CompletePage() {

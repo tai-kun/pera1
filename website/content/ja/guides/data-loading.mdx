@@ -59,12 +59,15 @@ const routes = [{ path: "/contacts", loader: async () => listContacts() }];
 
 ## 再取得するかどうかは `shouldReload` が決める [#should-reload]
 
-`shouldReload` を省略した場合、GET では次のどちらかに当てはまるときだけ再取得します。
+`shouldReload` を省略した場合、GET では次のいずれかに当てはまるときだけ再取得します。
 
 - 遷移前後でクエリー文字列が変わったとき (`?page=1` から `?page=2` など)
 - 遷移前のルート階層に、そのルートが含まれていなかったとき
+- 同一パターンの `params` 値が変わったとき (`/posts/1` から `/posts/2` など)
 
-ブラウザーの「戻る」で同じ URL に戻る場合はどちらも当てはまらないため、キャッシュが再利用され、再取得は起こりません。
+ブラウザーの「戻る」で同じ URL に戻る場合はいずれも当てはまらないため、キャッシュが再利用され、再取得は起こりません。
+
+`prevParams` には、同一パス文字列の前回 `params` が階層ごとに対称的に渡されます。そのため、動的ルートで `currentParams["id"] !== prevParams["id"]` のような手動比較を書く必要はありません。既定値 (`defaultShouldReload`) が `params` の変化を検出します。
 
 挙動を変えたい場合は `shouldReload` を渡します。引数は GET と POST で形が異なる判別可能ユニオンです。
 

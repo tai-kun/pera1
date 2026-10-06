@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   Outlet,
   useLoaderData,
   useParams,
@@ -15,13 +14,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Error("username が指定されていません。");
   }
   return { username, user: await findUser(username) };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["username"] !== args.prevParams["username"];
 }
 
 export default function ProfileLayout() {

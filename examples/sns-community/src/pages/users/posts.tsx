@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   useLoaderData,
 } from "@pera1/react";
 import * as React from "react";
@@ -18,13 +17,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return { username, user: undefined, posts: [] as const };
   }
   return { username, user, posts: await listPostsByUser(username) };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["username"] !== args.prevParams["username"];
 }
 
 export default function UserPostsPage() {

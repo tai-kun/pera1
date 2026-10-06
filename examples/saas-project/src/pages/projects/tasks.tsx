@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   RedirectResponse,
   redirect,
   useLoaderData,
@@ -27,13 +26,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
     return { projectId, project: undefined, tasks: [] };
   }
   return { projectId, project, tasks: await listTasks(projectId) };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["projectId"] !== args.prevParams["projectId"];
 }
 
 export default function TasksPage() {

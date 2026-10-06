@@ -9,27 +9,12 @@ import NotificationsPage, { loader as notificationsLoader } from "./pages/notifi
 import RootLayout from "./pages/root.js";
 import SettingsPage, { loader as settingsLoader } from "./pages/settings.js";
 import ProjectsPage, { loader as projectsLoader } from "./pages/projects/index.js";
-import ProjectLayout, {
-  loader as projectLoader,
-  shouldReload as projectShouldReload,
-} from "./pages/projects/layout.js";
-import MembersPage, {
-  loader as membersLoader,
-  shouldReload as membersShouldReload,
-} from "./pages/projects/members.js";
+import ProjectLayout, { loader as projectLoader } from "./pages/projects/layout.js";
+import MembersPage, { loader as membersLoader } from "./pages/projects/members.js";
 import NewProjectPage, { loader as newProjectLoader } from "./pages/projects/new.js";
-import OverviewPage, {
-  loader as overviewLoader,
-  shouldReload as overviewShouldReload,
-} from "./pages/projects/overview.js";
-import ProjectSettingsPage, {
-  loader as projectSettingsLoader,
-  shouldReload as projectSettingsShouldReload,
-} from "./pages/projects/settings.js";
-import TasksPage, {
-  loader as tasksLoader,
-  shouldReload as tasksShouldReload,
-} from "./pages/projects/tasks.js";
+import OverviewPage, { loader as overviewLoader } from "./pages/projects/overview.js";
+import ProjectSettingsPage, { loader as projectSettingsLoader } from "./pages/projects/settings.js";
+import TasksPage, { loader as tasksLoader } from "./pages/projects/tasks.js";
 
 export const routes: readonly RouterRouteDefinition[] = [
   {
@@ -75,35 +60,30 @@ export const routes: readonly RouterRouteDefinition[] = [
     path: "/app/projects/:projectId",
     component: ProjectLayout,
     loader: projectLoader,
-    shouldReload: projectShouldReload,
   },
   {
     path: "/app/projects/:projectId/overview",
     index: true,
     component: OverviewPage,
     loader: overviewLoader,
-    shouldReload: overviewShouldReload,
   },
   {
     path: "/app/projects/:projectId/tasks",
     index: true,
     component: TasksPage,
     loader: tasksLoader,
-    shouldReload: tasksShouldReload,
   },
   {
     path: "/app/projects/:projectId/members",
     index: true,
     component: MembersPage,
     loader: membersLoader,
-    shouldReload: membersShouldReload,
   },
   {
     path: "/app/projects/:projectId/settings",
     index: true,
     component: ProjectSettingsPage,
     loader: projectSettingsLoader,
-    shouldReload: projectSettingsShouldReload,
   },
   {
     path: "/app/notifications",

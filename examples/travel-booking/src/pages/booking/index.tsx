@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   useLoaderData,
   useParams,
 } from "@pera1/react";
@@ -14,13 +13,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     throw new Error("bookingId が指定されていません。");
   }
   return { bookingId, booking: await findBooking(bookingId) };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["bookingId"] !== args.prevParams["bookingId"];
 }
 
 export default function BookingPage() {

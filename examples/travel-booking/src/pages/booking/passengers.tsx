@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  type ShouldReloadFunctionArgs,
   useLoaderData,
   useNavigate,
   useParams,
@@ -19,13 +18,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
     return { bookingId, booking: null, passenger: null };
   }
   return { bookingId, booking, passenger: getPassengers(bookingId) };
-}
-
-export function shouldReload(args: ShouldReloadFunctionArgs) {
-  if (args.defaultShouldReload) {
-    return true;
-  }
-  return args.currentParams["bookingId"] !== args.prevParams["bookingId"];
 }
 
 export default function PassengersPage() {
