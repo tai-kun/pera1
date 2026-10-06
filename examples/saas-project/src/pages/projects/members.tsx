@@ -10,7 +10,6 @@ import * as React from "react";
 import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
 import { listMembers } from "../../api/members.js";
 import { findProject } from "../../api/projects.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
@@ -40,7 +39,8 @@ export function shouldReload(args: ShouldReloadFunctionArgs) {
 export default function MembersPage() {
   const data = React.use(useLoaderData<typeof loader>());
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
   if (!data.project) {
     return (

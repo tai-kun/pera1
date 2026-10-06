@@ -26,7 +26,8 @@ export default function SettingsLayout() {
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
   if (pathname === "/settings") {
     return <RedirectTo response={redirect("/settings/profile")} />;

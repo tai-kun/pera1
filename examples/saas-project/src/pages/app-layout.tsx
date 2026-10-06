@@ -28,7 +28,8 @@ export default function AppLayout() {
   const navigate = useNavigate();
 
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
   if (pathname === "/app") {
     return <RedirectTo response={redirect("/app/dashboard")} />;

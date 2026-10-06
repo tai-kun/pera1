@@ -9,7 +9,6 @@ import * as React from "react";
 
 import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
 import { createProject } from "../../api/projects.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
@@ -24,7 +23,8 @@ export default function NewProjectPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {

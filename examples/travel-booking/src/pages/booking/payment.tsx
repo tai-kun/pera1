@@ -10,7 +10,6 @@ import {
 import * as React from "react";
 
 import { findBooking, getPassengers, getPayment, setPayment } from "../../api/bookings.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const bookingId = params["bookingId"];
@@ -40,7 +39,8 @@ export default function PaymentPage() {
   const navigate = useNavigate();
 
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
 
   if (data.booking === null) {

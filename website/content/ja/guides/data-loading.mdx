@@ -118,6 +118,40 @@ function Layout() {
 
 読み込み中はサスペンドし、最も近い `Suspense` のフォールバックが表示されます。ローダーが投げた例外はそのままエラーバウンダリーへ届くため、コンポーネント側で失敗を確認するコードは不要です。エラーバウンダリーの組み方は[エラー処理](/guides/error-handling)で説明します。
 
+## ガードするには `redirect` を返す [#redirect]
+
+未ログイン時のログインページへの誘導のように、条件によって別の画面へ移したい場合は、ローダーから `redirect` の戻り値をそのまま返します。アクションの `redirect` と対称的に、エンジンが自動遷移させます。
+
+```tsx
+import { redirect } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function dashboardLoader({ request }: LoaderFunctionArgs) {
+  const user = getCurrentUser();
+  if (!user) {
+    return redirect(`/login?redirectTo=${request.url.pathname}`);
+  }
+  return { user };
+}
+```
+
+リダイレクトは同期でも非同期でも構いません。GET 遷移・アクション後の再取得・初回表示のいずれでも、ローダーの完了時にエンジンが検出して遷移先へ移動します。履歴に余分なエントリーを残さないよう `replace` で遷移するため、戻るボタンでガード対象のページに戻ってしまうことはありません。
+
+描画側では、遷移が間に合わない初回表示などに備えて次のフォールバックを残しておきます。到達するのは一瞬だけのため、`null` を返すだけで十分です。`useEffect` と `navigate` を組み合わせた自前の遷移コードは不要です。
+
+```tsx
+import { RedirectResponse, useLoaderData } from "@pera1/react";
+import { use } from "react";
+
+function DashboardPage() {
+  const data = use(useLoaderData<typeof dashboardLoader>());
+  if (data instanceof RedirectResponse) {
+    return null;
+  }
+  return <h2>ようこそ、{data.user.name}さん。</h2>;
+}
+```
+
 ## 親のローダーを子から使う [#inheritance]
 
 子ルートにローダーがない場合、`useLoaderData` は親ルートのローダーを引き継ぎます。親で取得した一覧データを、複数の子ページで共有したいときに便利です。

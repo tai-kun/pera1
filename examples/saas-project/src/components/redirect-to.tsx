@@ -6,10 +6,11 @@ export { RedirectResponse };
 /**
  * loader が返した `RedirectResponse` に従って画面遷移を実行します。
  *
- * pera1 のエンジンはアクションの `redirect()` だけを自動処理し、
- * loader の `redirect()` はローダーデータとして渡すだけです。
- * そのため認証ガードなどで loader が `redirect()` を返した場合は、
- * 描画側でこのコンポーネントを返して遷移を完了させます。
+ * @deprecated loader の `redirect()` はエンジンが自動遷移させるようになったため、
+ * 新規のガードではこのコンポーネントは不要です。描画側では
+ * `data instanceof RedirectResponse` の場合に `null` を返すフォールバックで十分です。
+ * 本コンポーネントは、loader を介さない描画側での誘導
+ * (`/app` → `/app/dashboard` など) と後方互換のために残しています。
  */
 export default function RedirectTo({ response }: { response: RedirectResponse }) {
   const navigate = useNavigate();

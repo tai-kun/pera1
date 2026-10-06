@@ -6,6 +6,7 @@ import { LoaderConditionError } from "./errors.js";
 import type { HistoryEntry } from "./expect-history-entry.js";
 import type { HistoryEntryId } from "./history-entry-id-schema.js";
 import type { MatchedRoute } from "./match-routes.js";
+import RedirectResponse from "./redirect-response.js";
 import RouteRequest from "./route-request.js";
 import type { LoaderFunction } from "./route.types.js";
 
@@ -65,13 +66,30 @@ export type StartLoadersOptions = {
  */
 export interface StartedLoaders {
   /**
-   * 現在のフェーズでスケジュールされたすべてのローダーの処理が完了するまで待機します。
+   * 現在のフェーズでスケジュールされたすべてのローダーの処理が完了するまで待機し、
+   * リダイレクト要求の有無を回収します。
+   *
+   * いずれかのローダーが `RedirectResponse` (同期値または非同期の解決値) を返した場合、
+   * そのうち最初に検出されたものを `redirectTo` として返します。呼び出し側
+   * (ルーティングエンジン) はこの値を使って自動遷移を行ってください。
+   *
+   * なお検出された `RedirectResponse` 自体はデータストア上にそのまま保持されます。
+   * 万一エンジンが遷移しなかった場合でも、コンポーネント側の
+   * `data instanceof RedirectResponse` によるフォールバックが動作します。
+   *
+   * @returns 処理結果に伴うリダイレクト要求を含むオブジェクトです。
    */
-  idle: () => Promise<void>;
+  idle: () => Promise<{
+    redirectTo: RedirectResponse | undefined;
+  }>;
 }
 
 /**
  * 画面遷移やデータ更新の発生に伴い、現在マッチしているルートのローダー関数群を精査し、キャッシュの再利用または読み込みを動的に判定、実行する関数です。
+ *
+ * ローダーが `RedirectResponse` を返した場合はアクションと対称的に扱われ、
+ * `idle()` の戻り値 `redirectTo` として回収されます。エンジンはこの値を
+ * 使って自動遷移を行います。
  *
  * @param args ローダーの評価に必要な現旧のルートおよび履歴コンテキストです。
  * @param options 直前のアクション実行コンテキストを含むオプションです。
@@ -254,7 +272,28 @@ export default function startLoaders(
 
   return {
     async idle() {
-      await Promise.allSettled(currentLoaderDataMap.values());
+      // すべてのローダーの確定を待ちます。拒否されたものがあっても、
+      // リダイレクト検出のために他の結果を走査できるよう `allSettled` で待機します。
+      // ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブには
+      // ローディングスピーナーが表示されます。
+      const results = await Promise.allSettled(currentLoaderDataMap.values());
+
+      // 確定した結果の中から、リダイレクト応答 (`RedirectResponse`) を探します。
+      // 複数が該当する場合は、ルート評価順で最初のものを優先します。
+      let redirectTo: RedirectResponse | undefined;
+      for (const result of results) {
+        if (result.status === "fulfilled" && result.value instanceof RedirectResponse) {
+          redirectTo = result.value;
+          log.debug("ローダーがリダイレクトを返しました（to: {to}）", {
+            to: `${redirectTo.pathname}${redirectTo.search}${redirectTo.hash}`,
+          });
+          break;
+        }
+      }
+
+      return {
+        redirectTo,
+      };
     },
   };
 }

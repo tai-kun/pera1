@@ -77,6 +77,8 @@ async function deleteContactAction({ params }: ActionFunctionArgs) {
 
 リダイレクトは同期でも非同期でも構いません。`redirect` が返す `RedirectResponse` はフレームワークが受け取り、画面にデータとして露出させる代わりに `undefined` に置き換えます。`useActionData` にリダイレクト応答が渡ることはありません。
 
+ローダーから `redirect` を返した場合も、エンジンが自動遷移させます。認証ガードなど読み取り時の誘導は[データ取得](/guides/data-loading#redirect)を参照してください。
+
 リダイレクトを返さずに値を返した場合は、現在の URL に留まります。バリデーションエラーのように「同じ画面で結果を表示したい」ときに適しています。
 
 ```tsx

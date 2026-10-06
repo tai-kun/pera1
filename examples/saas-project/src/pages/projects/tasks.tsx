@@ -10,7 +10,6 @@ import * as React from "react";
 import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
 import { findProject } from "../../api/projects.js";
 import { listTasks, toggleTask } from "../../api/tasks.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
@@ -51,7 +50,8 @@ export default function TasksPage() {
   }, [data]);
 
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
   if (!data.project) {
     return (

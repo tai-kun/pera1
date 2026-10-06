@@ -9,6 +9,7 @@ import HistoryEntryIdSchema from "../core/history-entry-id-schema.js";
 import HistoryEntryUrlSchema from "../core/history-entry-url-schema.js";
 import initLoaders from "../core/init-loaders.js";
 import matchRoutes from "../core/match-routes.js";
+import RedirectResponse from "../core/redirect-response.js";
 import RoutePath from "../core/route-path.js";
 import startAction from "../core/start-action.js";
 import startLoaders from "../core/start-loaders.js";
@@ -59,6 +60,58 @@ export default class NavigationApiEngine implements IEngine {
     this.navigation = navigation_;
     this.subscribedEntryIds = new Set();
     this.navAbortController = null;
+    this.initialRedirectArmed = false;
+  }
+
+  /**
+   * 初期表示時のローダーが解決した際のリダイレクト監視が有効かどうかを示すフラグです。
+   *
+   * `init()` は `start()` (ナビゲーションの購読開始) よりも先に実行されるため、
+   * 初期ローダーの解決を監視するハンドラーは、このフラグが立つまで遷移を行いません。
+   * `start()` 内でフラグを立てると同時に、すでに確定済みの結果を走査します。
+   */
+  private initialRedirectArmed: boolean;
+
+  /**
+   * ローダーが返したリダイレクト応答に従って自動遷移します。
+   *
+   * アクションの `redirect()` が `precommitHandler` 経由で `controller.redirect()` されるのと対称的に、
+   * ローダーの `redirect()` もエンジンが回収して遷移させるための共通処理です。
+   * 履歴に余分なエントリーを残さないよう `replace` で遷移します。
+   *
+   * 次の場合は遷移を行いません。
+   *
+   * - 対応するナビゲーションがすでに中断されている場合 (古い遷移の結果による横取りを防ぎます)。
+   * - 現在のエントリーが未確定の場合。
+   * - リダイレクト先が現在の URL と同一の場合 (自己リダイレクトによる無限ループを防ぎます)。
+   *
+   * @param redirectTo ローダーが返したリダイレクト応答です。
+   * @param signal 対応するナビゲーションの中断シグナルです。省略時は中断チェックを行いません。
+   */
+  private redirectOnLoaderRedirect(redirectTo: RedirectResponse, signal?: AbortSignal): void {
+    if (signal?.aborted) {
+      log.debug("中断済みのためローダーのリダイレクトを無視します");
+      return;
+    }
+
+    const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
+    if (!currentEntry) {
+      log.debug("現在のエントリーが未確定のためローダーのリダイレクトを無視します");
+      return;
+    }
+
+    const redirectPath = new RoutePath(redirectTo).toString();
+    if (RoutePath.encode(currentEntry.url) === redirectPath) {
+      log.debug("同一URLへのリダイレクトのため遷移をスキップします（to: {to}）", {
+        to: redirectPath,
+      });
+      return;
+    }
+
+    log.debug("ローダーのリダイレクトに従って遷移します（to: {to}）", {
+      to: redirectPath,
+    });
+    this.navigation.navigate(redirectPath, { history: "replace" });
   }
 
   /**
@@ -83,14 +136,32 @@ export default class NavigationApiEngine implements IEngine {
       return null;
     }
 
+    const signal = getSignal();
+
     // 初期表示に必要なすべてのローダーを一斉に並行起動します。
     const dataMap = initLoaders(currentRoutes, {
       url: currentEntry.url,
-      signal: getSignal(),
+      signal,
     });
 
     // 起動したローダーの結果（NinjaPromise）のマップを、現在の履歴 ID をキーとしてキャッシュします。
     loaderDataStore.set(currentEntry.id, dataMap);
+
+    // 初期ローダーが `redirect()` を返した場合は、解決を待って自動遷移します。
+    // 直接リンク (`/dashboard` など) での初回表示でもガードを成立させるための監視です。
+    // `start()` までの間に解決した場合は遷移を見送り、`start()` 内の走査に委ねます。
+    for (const data of dataMap.values()) {
+      void Promise.resolve(data).then(
+        (value) => {
+          if (value instanceof RedirectResponse && this.initialRedirectArmed) {
+            this.redirectOnLoaderRedirect(value);
+          }
+        },
+        () => {
+          // ローダーの拒否はコンポーネント側のエラーバウンダリーに委ねるため、ここでは無視します。
+        },
+      );
+    }
 
     log.debug("初期化が完了しました（url: {url}, 一致数: {matchedCount}）", {
       url: currentEntry.url.href,
@@ -110,6 +181,23 @@ export default class NavigationApiEngine implements IEngine {
    */
   start(args: IEngine.StartArgs): IEngine.StartReturn {
     const { routes, update, getSignal, actionDataStore, loaderDataStore } = args;
+
+    // 初期ローダーのリダイレクト監視を有効化します。以降に解決する初期ローダーの
+    // `redirect()` は `init()` 内のハンドラー経由で自動遷移します。
+    this.initialRedirectArmed = true;
+
+    // `init()` から `start()` までの間にすでに確定していた初期ローダーの
+    // リダイレクトがあれば、ここで遷移します (取りこぼし防止)。
+    const armedEntry = expectHistoryEntry(this.navigation.currentEntry);
+    const armedDataMap = armedEntry && loaderDataStore.get(armedEntry.id);
+    if (armedDataMap) {
+      for (const data of armedDataMap.values()) {
+        if (data.status === "fulfilled" && data.value instanceof RedirectResponse) {
+          this.redirectOnLoaderRedirect(data.value);
+          break;
+        }
+      }
+    }
 
     /**
      * ユーザーのアクションによって発生したすべての遷移要求をインターセプトして処理する、ルーティングの中枢ハンドラーです。
@@ -329,7 +417,14 @@ export default class NavigationApiEngine implements IEngine {
           });
 
           // 全ローダーの完了を待機します。ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
-          await startedLoaders?.idle();
+          const { redirectTo } = (await startedLoaders?.idle()) ?? {
+            redirectTo: undefined,
+          };
+
+          // アクション後のローダーがリダイレクトを返した場合も自動遷移します。
+          if (redirectTo) {
+            this.redirectOnLoaderRedirect(redirectTo, signal);
+          }
         };
 
         // Navigation API のインターセプト機構に、二段階の処理をバインドします。
@@ -389,7 +484,15 @@ export default class NavigationApiEngine implements IEngine {
           });
 
           // 全ローダーの完了を待機します。ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
-          await startedLoaders?.idle();
+          const { redirectTo } = (await startedLoaders?.idle()) ?? {
+            redirectTo: undefined,
+          };
+
+          // いずれかのローダーがリダイレクトを返した場合は自動遷移します
+          // (アクションの `redirect()` と対称的な振る舞いです)。
+          if (redirectTo) {
+            this.redirectOnLoaderRedirect(redirectTo, signal);
+          }
         };
 
         event.intercept({

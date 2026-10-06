@@ -9,7 +9,6 @@ import * as React from "react";
 
 import { isCartEmptySync, listCart } from "../../api/cart.js";
 import { getShipping, setShipping } from "../../api/checkout.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader(_args: LoaderFunctionArgs) {
   if (isCartEmptySync()) {
@@ -24,7 +23,8 @@ export default function ShippingPage() {
   const navigate = useNavigate();
 
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {

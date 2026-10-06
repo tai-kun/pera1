@@ -42,7 +42,8 @@ export default function ProjectLayout() {
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
   // `/app/projects/new` の描画時は子 (New Project) へ透過させます。
   if (data.isNewRoute) {

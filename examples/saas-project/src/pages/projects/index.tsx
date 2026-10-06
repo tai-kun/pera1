@@ -8,7 +8,6 @@ import * as React from "react";
 
 import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
 import { listProjects } from "../../api/projects.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
@@ -20,7 +19,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function ProjectsPage() {
   const data = React.use(useLoaderData<typeof loader>());
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
 
   return (

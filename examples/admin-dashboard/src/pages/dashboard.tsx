@@ -7,7 +7,6 @@ import {
 import * as React from "react";
 
 import { getCurrentUser, loginUrlFor } from "../api/auth.js";
-import RedirectTo from "../components/redirect-to.js";
 import AppLayout from "./app-layout.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {
@@ -21,7 +20,8 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function DashboardPage() {
   const data = React.use(useLoaderData<typeof loader>());
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
 
   return (

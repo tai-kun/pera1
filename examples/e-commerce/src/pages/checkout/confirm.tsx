@@ -10,7 +10,6 @@ import * as React from "react";
 import { isCartEmptySync, listCart } from "../../api/cart.js";
 import { getPayment, getShipping } from "../../api/checkout.js";
 import { createOrder } from "../../api/orders.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader(_args: LoaderFunctionArgs) {
   if (isCartEmptySync()) {
@@ -34,7 +33,8 @@ export default function ConfirmPage() {
   const [error, setError] = React.useState<string | null>(null);
 
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
 
   async function handleConfirm() {

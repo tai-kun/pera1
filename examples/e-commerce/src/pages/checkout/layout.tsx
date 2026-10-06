@@ -22,7 +22,8 @@ export default function CheckoutLayout() {
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
   if (data instanceof RedirectResponse) {
-    return <RedirectTo response={data} />;
+    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
+    return null;
   }
   if (pathname === "/checkout") {
     return <RedirectTo response={redirect("/checkout/shipping")} />;
