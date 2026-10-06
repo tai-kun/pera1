@@ -7,7 +7,7 @@ import {
 } from "@pera1/react";
 import * as React from "react";
 
-import { deleteContact, findContact } from "../../data.js";
+import { deleteContact, findContact } from "../../api/contacts.js";
 
 export async function loader({ params }: LoaderFunctionArgs) {
   const id = params["id"];

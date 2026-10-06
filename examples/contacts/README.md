@@ -60,7 +60,8 @@ examples/contacts/
 └── src/
     ├── main.tsx # BrowserRouter の起動と LogTape の設定をします
     ├── routes.tsx # ルート定義です
-    ├── data.ts # インメモリーの連絡先ストアです
+    ├── api/ # データ層です
+        └── contacts.ts # インメモリーの連絡先ストアです
     └── pages/ # パス階層に合わせたネスト構成です
         ├── root.tsx # `/` の共通レイアウトです
         ├── index.tsx # `/` の index ページです
@@ -77,7 +78,7 @@ examples/contacts/
 
 ## データについて
 
-`src/data.ts` の `Map` によるインメモリーストアを使用します。サーバーや `localStorage` とは連携しないため、再読み込みすると初期データに戻ります。
+`src/api/contacts.ts` の `Map` によるインメモリーストアを使用します。サーバーや `localStorage` とは連携しないため、再読み込みすると初期データに戻ります。
 
 初期データは次の 2 件です。
 

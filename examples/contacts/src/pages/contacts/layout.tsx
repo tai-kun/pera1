@@ -1,6 +1,6 @@
 import { type ActionFunctionArgs, redirect, Outlet } from "@pera1/react";
 
-import { createContact, listContacts } from "../../data.js";
+import { createContact, listContacts } from "../../api/contacts.js";
 
 export async function loader() {
   return listContacts();
