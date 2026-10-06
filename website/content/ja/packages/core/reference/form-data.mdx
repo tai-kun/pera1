@@ -1,0 +1,67 @@
+---
+title: formDataToHTMLFormElement
+description: "読み取り専用のフォームデータから、送信用の非表示フォームを組み立てる関数です。"
+---
+
+`formDataToHTMLFormElement` は、`ReadonlyFormData` の内容を `<input>` に詰め込んだ非表示の `HTMLFormElement` を作ります。`NavigationApiEngine` が `FormData` の送信時に内部で使い、`File` を含むデータを multipart/form-data として送信できるようにします。
+
+```ts
+import { formDataToHTMLFormElement } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function formDataToHTMLFormElement(formData: ReadonlyFormData): HTMLFormElement;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `formData` | `ReadonlyFormData` | はい | 変換するフォームデータです。 |
+
+## 戻り値 [#returns]
+
+データを子要素として詰め込んだ `HTMLFormElement` を返します。要素の `style.display` は `"none"` で、DOM にはまだ配置されません。必要なときに呼び出し側が `document.body` などへ追加します。
+
+## 変換の規則 [#conversion]
+
+変換の規則は値の型で決まります。
+
+| 値 | 生成される要素 |
+| --- | --- |
+| 文字列 | `<input type="hidden" name="..." value="...">` |
+| `File` | `<input type="file" name="...">`（`DataTransfer` を経由して `files` を設定） |
+
+エントリーの順序は `FormData` を反復した順のままです。同じ名前の値が複数あれば、それぞれ別の `<input>` になります。
+
+```ts no-run
+import { formDataToHTMLFormElement } from "@pera1/core";
+
+const formData = new FormData();
+formData.set("keyword", "pera1");
+formData.set("thumbnail", file);
+
+const form = formDataToHTMLFormElement(formData);
+form.method = "POST";
+form.action = "/search";
+document.body.append(form);
+form.submit();
+```
+
+## useSubmit との関係 [#use-submit]
+
+`useSubmit` に `FormData` を渡すと、[toSubmitArgs](/packages/core/reference/submit-utils) が `FORM_DATA` の引数へ変換し、`NavigationApiEngine` がこの関数で非表示のフォームを組み立てて送信します。フォームを DOM へ置く処理はエンジンの内部で完結するため、アプリケーションのコードから直接呼ぶ場面は多くありません。
+
+## 注意 [#notes]
+
+- `document` と `DataTransfer` を使うため、DOM のある環境でのみ動作します。サーバーサイドレンダリングや Node.js では呼び出せません。
+- `File` 以外の値はすべて文字列として扱われます。`FormData` に入れた時点で、数値や真偽値も文字列になっています。
+- `File` の名前やサイズは `DataTransfer` 経由で `input.files` に保持されます。
+
+## 関連 [#related]
+
+- [toSubmitArgs](/packages/core/reference/submit-utils) — `FormData` を送信引数へ変換する
+- [useSubmit](/packages/react/reference/use-submit) — React から送信を実行するフック
+- [createRouter](/packages/core/reference/create-router) — エンジンの接続

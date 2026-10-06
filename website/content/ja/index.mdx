@@ -1,0 +1,72 @@
+---
+title: pera1
+description: "ルーティングエンジンを差し替えられる、シングルページアプリケーション向けの軽量ルーターです。"
+---
+
+pera1 は、シングルページアプリケーション (SPA) 向けの軽量ルーターです。名前は日本語の「ペラいち」に由来します。既定ではブラウザー標準の Navigation API を使い、リンクのクリック、戻る・進む、フォーム送信を `navigate` イベントで受け取ります。ページ全体を読み直さずに画面を差し替える仕組みです。
+
+画面に必要なデータを先に取得するローダーと、データを更新するアクションをルートに宣言できます。一覧表示、詳細表示、フォーム送信といった定番の流れを、URL を起点に組み立てられます。
+
+## ルートはフラットな配列で書く [#routes]
+
+ツリー構造を組み立てる必要はありません。URL の前方一致で親子関係が決まるため、レイアウトと画面を同じ配列に並べるだけです。
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts", index: true, component: ContactsPage },
+  { path: "/contacts", component: ContactsLayout, loader: contactsLoader },
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+];
+```
+
+## データはローダーとアクションで扱う [#data]
+
+取得はローダー、更新はアクションに書きます。どちらの結果も `NinjaPromise` という thenable で届き、`React.use` にそのまま渡せます。
+
+```tsx
+function ContactPage() {
+  const contact = use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+```
+
+読み込み中はサスペンドして `Suspense` のフォールバックが表示され、失敗時はエラーバウンダリーが例外を受け取ります。状態を自分で確認するコードは必要ありません。
+
+## エンジンは差し替えられる [#engines]
+
+ルーティングの実行は `IEngine` を実装したエンジンが担当します。既定は Navigation API を使う `NavigationApiEngine` ですが、自作のエンジンに差し替えられます。テスト用のメモリールーターや、URL ハッシュを使うルーターを書けば、Navigation API のない環境でも同じルート定義とフックがそのまま動きます。
+
+```tsx
+<Router engine={myEngine} routes={routes} />
+```
+
+実装の手順は[カスタムエンジン](/guides/custom-engines)、インターフェースの定義は [IEngine](/packages/core/reference/engine) を参照してください。
+
+## どこから読むか [#where-to-start]
+
+初めて触る場合は、[インストール](/getting-started/installation) と [クイックスタート](/getting-started/quickstart) を順に進めてください。動くアプリを 1 つ作りながら、ローダーとアクションの流れを体験できます。
+
+仕組みを先に押さえたい場合は [基本概念](/getting-started/concepts) から読むと、以降のガイドが頭に入りやすくなります。
+
+<CardGroup cols={2}>
+  <Card title="クイックスタート" href="/getting-started/quickstart" icon="rocket">
+    連絡先管理アプリを作りながら、ルーティングとデータ取得の基本を学びます。
+  </Card>
+  <Card title="基本概念" href="/getting-started/concepts" icon="lightbulb">
+    ルートの一致、履歴エントリー、データフローの全体像を説明します。
+  </Card>
+  <Card title="@pera1/core" href="/packages/core" icon="box">
+    UI フレームワークに依存しないルーター本体のリファレンスです。
+  </Card>
+  <Card title="@pera1/react" href="/packages/react" icon="atom">
+    React 向けのコンポーネントとフックのリファレンスです。
+  </Card>
+</CardGroup>
+
+## 動作環境 [#requirements]
+
+既定の `NavigationApiEngine` は、Navigation API を実装したブラウザーで動作します。執筆時点では Chromium 系が中心です。対応状況は [MDN の互換性表](https://developer.mozilla.org/docs/Web/API/Navigation_API#browser_compatibility) を確認してください。未対応の環境では `NavigationApiEngine` の生成時に `NavigationApiNotSupportedError` が投げられます。自作エンジンに差し替えれば、この制約はありません。
+
+React 向けバインディングは React 19 を対象にしており、サーバーサイドレンダリングには対応していません。アプリはブラウザー上で動作する前提です。

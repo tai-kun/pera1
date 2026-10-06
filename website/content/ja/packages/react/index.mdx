@@ -1,0 +1,60 @@
+---
+title: "@pera1/react"
+description: "React 19 向けのコンポーネント、フック、コンテキストの一覧です。"
+---
+
+`@pera1/react` は、`@pera1/core` のルーターを React に接続するバインディングです。ルーターの状態は `useSyncExternalStore` で購読され、必要な部分が変わったときだけ再描画されます。
+
+## インストール [#install]
+
+```package-install
+npm i @pera1/react react react-dom valibot
+```
+
+React 19 と `react-dom`、`valibot` が必要です。サーバーサイドレンダリングには対応しておらず、ブラウザー上で動作する前提です。
+
+## コンポーネント [#components]
+
+| コンポーネント | 説明 |
+| --- | --- |
+| [`BrowserRouter`](/packages/react/reference/browser-router) | Navigation API を使うエンジンでルーターを起動する入口 |
+| [`Router`](/packages/react/reference/router) | 任意のエンジンを受け取る汎用のルーター |
+| [`Outlet`](/packages/react/reference/outlet) | 親ルートのレイアウトに子ルートを差し込む |
+
+## フック [#hooks]
+
+| フック | 説明 |
+| --- | --- |
+| [`useLoaderData`](/packages/react/reference/use-loader-data) | 現在のルート階層のローダー結果を購読する |
+| [`useActionData`](/packages/react/reference/use-action-data) | 現在の履歴エントリーのアクション結果を購読する |
+| [`useNavigate`](/packages/react/reference/use-navigate) | プログラムから画面遷移する |
+| [`useSubmit`](/packages/react/reference/use-submit) | フォームデータやクエリーを送信する |
+| [`useParams`](/packages/react/reference/use-params) | 現在のルートのパラメーターを取得する |
+| [`useFormAction`](/packages/react/reference/use-form-action) | フォームの送信先 URL を取得する |
+| [`useRoutePath`](/packages/react/reference/use-route-path) | 現在の URL を `RoutePath` として取得する |
+| [`useRouteContext`](/packages/react/reference/use-route-context) | 現在のルートの文脈情報を取得する |
+| [`useRouterContext`](/packages/react/reference/use-router-context) | ルーターの状態をセレクターで購読する |
+
+## コンテキスト [#contexts]
+
+低レベルのフックや独自コンポーネントを作るために、コンテキストも公開しています。
+
+| API | 説明 |
+| --- | --- |
+| [`RouteContext`](/packages/react/reference/contexts) | 現在の階層のルート情報を供給する |
+| [`RouterContext`](/packages/react/reference/contexts) | ルーターの購読関数と参照を供給する |
+
+## エラーの日本語化 [#errors]
+
+pera1 のエラーには日本語メッセージが登録されています。表示言語は valibot のグローバル設定で切り替えられます。
+
+```ts
+import { setGlobalConfig } from "valibot";
+
+setGlobalConfig({ lang: "ja" });
+```
+
+## 次に読む [#next]
+
+- [@pera1/core の概要](/packages/core)
+- [API リファレンス](/packages/react/reference/browser-router)

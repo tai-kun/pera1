@@ -1,0 +1,89 @@
+---
+title: useSubmit
+description: "フォームや画面の外からデータを送信し、アクションやローダーを起動します。"
+---
+
+`useSubmit` は、フォームの外からデータを送信する関数を返します。`FormData` を渡すと POST 相当のアクション、`URLSearchParams` を渡すと GET 相当のローダー再取得が走ります。
+
+```tsx
+import { useSubmit } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useSubmit(): SubmitFunction;
+
+interface SubmitFunction {
+  (target: ReadonlyFormData, options?: SubmitPostOptions): void;
+  (target: ReadonlyURLSearchParams, options?: SubmitGetOptions): void;
+  (
+    target: ReadonlyURLSearchParams | ReadonlyFormData,
+    options?: SubmitGetOptions | SubmitPostOptions,
+  ): void;
+}
+```
+
+## オプション [#options]
+
+| オプション | 対象 | 型 | 説明 |
+| --- | --- | --- | --- |
+| `action` | 両方 | `string` | 送信先を上書きします。省略時は現在のルートの `urlPath` です。 |
+| `replace` | GET のみ | `boolean` | `true` で履歴を追加せず上書きします。 |
+
+```ts
+type SubmitPostOptions = {
+  action?: string;
+};
+
+type SubmitGetOptions = {
+  action?: string;
+  replace?: boolean;
+};
+```
+
+## 戻り値 [#returns]
+
+`SubmitFunction` を返します。送信先の既定値には `useFormAction()` の値を使います。種別の判定は `@pera1/core` の `toSubmitArgs` に委譲しており、実行時に `FormData` かどうかを見て、対応するエンジンのメソッドへ振り分けます。
+
+## 使い方 [#usage]
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function DeleteButton({ id }: { id: string }) {
+  const submit = useSubmit();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const formData = new FormData();
+        formData.set("intent", "delete");
+        submit(formData, { action: `/contacts/${id}` });
+      }}
+    >
+      削除
+    </button>
+  );
+}
+```
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouteContextMissingError` | 送信先の既定値を取る `RouteContext` が供給されていない |
+| `RouterContextMissingError` | `RouterContext` が供給されていない |
+
+## 注意 [#notes]
+
+- 戻り値の関数は `useCallback` でラップされ、参照が安定しています。
+- `toSubmitArgs` は `FormData` 以外を `URLSearchParams` として扱います。どちらの型もネイティブのインスタンスを渡してください。
+- `FormData` に `File` を含めることもできます。内部では非表示のフォームが一時的に作られ、multipart/form-data として送信されます。
+
+## 関連 [#related]
+
+- [useFormAction](/packages/react/reference/use-form-action) — 送信先の取得
+- [データ更新](/guides/mutations) — アクションとフォームの流れ
+- [ナビゲーション](/guides/navigation) — `useSubmit` の使いどころ

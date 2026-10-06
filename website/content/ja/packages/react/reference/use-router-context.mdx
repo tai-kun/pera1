@@ -1,0 +1,65 @@
+---
+title: useRouterContext
+description: "スナップショットからセレクターで選んだ部分だけを購読するフックです。"
+---
+
+`useRouterContext` は、ルーターのグローバルな状態から必要な部分だけを選んで購読する低レベルのフックです。`useNavigate` や `useRoutePath` などの公開フックは、内部でこのフックを使っています。
+
+```tsx
+import { useRouterContext } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useRouterContext<TSlice>(
+  selector: (router: RouterSnapshot) => TSlice,
+): TSlice;
+```
+
+## 型パラメーター [#type-parameters]
+
+| 名前 | 説明 |
+| --- | --- |
+| `TSlice` | セレクターが返す部分データの型です。関数の戻り値から推論されます。 |
+
+## 引数 [#arguments]
+
+| 引数 | 型 | 説明 |
+| --- | --- | --- |
+| `selector` | `(router: RouterSnapshot) => TSlice` | スナップショットから必要な値を取り出す関数です。 |
+
+`RouterSnapshot` の内容は [`createRouter`](/packages/core/reference/create-router#snapshot) を参照してください。
+
+## 戻り値 [#returns]
+
+セレクターの結果を返します。内部では `useSyncExternalStore` を使い、`subscribe` で状態変更を受け取るたびにセレクターを再実行します。
+
+## 使い方 [#usage]
+
+```tsx
+import { useRouterContext } from "@pera1/react";
+
+function CurrentUrl() {
+  const url = useRouterContext((router) => router.currentEntry.url);
+  return <p>{url.href}</p>;
+}
+```
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouterContextMissingError` | `RouterContext` が供給されていない |
+
+## 注意 [#notes]
+
+- セレクターは毎回同じ値を返す必要があります。呼び出しのたびに新しいオブジェクトや配列を作ると、`Object.is` で変化ありと判定され、再レンダリングが延々と続きます。プリミティブか、既存の参照を返してください。
+- 状態が変わるたびにセレクターが再実行されます。計算は軽く保ってください。
+- 用途が決まっている場合は専用のフックを使ってください。遷移は `useNavigate`、アクションの結果は `useActionData`、ローダーの結果は `useLoaderData` です。
+
+## 関連 [#related]
+
+- [コンテキスト](/packages/react/reference/contexts) — `RouterContextValue` の形
+- [createRouter](/packages/core/reference/create-router#snapshot) — `RouterSnapshot` の内容
+- [useRouteContext](/packages/react/reference/use-route-context) — ルート単位の情報

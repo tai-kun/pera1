@@ -1,0 +1,67 @@
+---
+title: BrowserRouter
+description: "Navigation API を使う既定のエンジンでルーターを起動する入口です。"
+---
+
+`BrowserRouter` は、ブラウザーで SPA ルーティングを始める入口です。内部で `NavigationApiEngine` を生成し、ルート定義と一緒に `Router` へ渡します。
+
+```tsx
+import { BrowserRouter } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function BrowserRouter(props: BrowserRouterProps): React.ReactElement;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `routes` | `readonly RouterRouteDefinition[]` | はい | アプリケーションのルート定義です。 |
+
+ルート定義の型は [Router](/packages/react/reference/router#route-definition) で説明しています。
+
+## 内部の動き [#internals]
+
+エンジンは `useSingleton` で生成します。`useSingleton` は初回レンダリング時にファクトリーを 1 回だけ実行し、以降のレンダリングでは同じインスタンスを返します。`useMemo` と違い、React の都合でキャッシュが破棄されないため、エンジンが作り直されることはありません。
+
+```tsx no-run
+// BrowserRouter の実装と同じ構造
+const engine = useSingleton(() => new NavigationApiEngine());
+return <Router engine={engine} routes={routes} />;
+```
+
+## Navigation API 非対応の環境 [#unsupported]
+
+`NavigationApiEngine` のコンストラクターは、実行環境で `Navigation API` が見つからない場合に `NavigationApiNotSupportedError` を投げます。`BrowserRouter` は初回レンダリング中にエンジンを作るため、このエラーはレンダリング時に発生します。エラーバウンダリーで受け取るか、別のエンジンに差し替えてください。
+
+エンジンを自分で選びたい場合は [Router](/packages/react/reference/router) を使います。差し替えの手順は[カスタムエンジン](/guides/custom-engines)で説明しています。
+
+## 使い方 [#usage]
+
+```tsx
+import { BrowserRouter } from "@pera1/react";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+
+import { routes } from "./routes.js";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <BrowserRouter routes={routes} />
+  </StrictMode>,
+);
+```
+
+## 注意 [#notes]
+
+- `routes` はモジュールスコープなどに置き、レンダリングのたびに作り直さないでください。参照が変わると `Router` がルーターを作り直し、ローダーのキャッシュも失われます。
+- 内部リンクに専用コンポーネントはありません。通常の `<a>` と `<form>` が Navigation API を通じてルーターに届きます。
+
+## 関連 [#related]
+
+- [Router](/packages/react/reference/router) — 任意のエンジンを受け取る汎用版
+- [ルーティング](/guides/routing) — ルート定義とパスパターン
+- [カスタムエンジン](/guides/custom-engines) — エンジンを差し替える

@@ -1,0 +1,38 @@
+---
+title: パッケージ
+description: "pera1 を構成する 2 つのパッケージの役割と、インストールの選び方を示します。"
+---
+
+pera1 はフレームワークに依存しないコアと、UI フレームワークごとのバインディングに分かれています。現在提供されているのは React 向けのバインディングだけです。
+
+<CardGroup cols={2}>
+  <Card title="@pera1/core" href="/packages/core" icon="box">
+    ルーティング、マッチング、ローダー、アクション、エンジンの実装。UI に依存しません。
+  </Card>
+  <Card title="@pera1/react" href="/packages/react" icon="atom">
+    React 19 向けの `BrowserRouter`、`Outlet`、各種フック。コアを React に接続します。
+  </Card>
+</CardGroup>
+
+## どちらをインストールするか [#which]
+
+React アプリでは `@pera1/react` をインストールしてください。`@pera1/core` は依存として自動的に入ります。
+
+```package-install
+npm i @pera1/react react react-dom valibot
+```
+
+コアだけを使う場合 (独自の UI バインディングやカスタムエンジンを作る場合) は `@pera1/core` を単独でインストールします。
+
+```package-install
+npm i @pera1/core valibot
+```
+
+## バージョン [#versions]
+
+各パッケージのバージョンは独立しています。変更履歴と最新バージョンは [GitHub のリポジトリ](https://github.com/tai-kun/pera1) で確認できます。
+
+## 次に読む [#next]
+
+- [@pera1/core の概要](/packages/core)
+- [@pera1/react の概要](/packages/react)

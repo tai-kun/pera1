@@ -1,0 +1,210 @@
+---
+title: データ更新
+description: "アクションによる登録・更新・削除、フォーム送信、リダイレクトの流れを、実例とともに解説します。"
+---
+
+データを書き換える処理は、ルートにアクション関数を宣言して実装します。このページでは、アクションがどう選ばれるか、送信から再取得までの流れ、リダイレクトの返し方、そしてフォームとの接続方法を説明します。
+
+## アクションはルートに宣言する [#declaring]
+
+アクションは `action` プロパティーに渡す関数です。引数にはパラメーターと、POST リクエストを表す `request` が入ります。フォームの内容は `request.formData` から読み取ります。
+
+```tsx
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs } from "@pera1/core";
+
+async function createContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "名前を入力してください。" };
+  }
+  const contact = await createContact(name);
+  return redirect(`/contacts/${contact.id}`);
+}
+
+const routes = [
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    action: createContactAction,
+  },
+];
+```
+
+同期の処理でも非同期の処理でもかまいません。戻り値はそのままアクションデータとして保持されるか、リダイレクトの指示として解釈されます。`params` の値は `string | undefined` で届くため、パラメーターを使うアクションでは存在を確かめてください。
+
+## 実行されるアクションは 1 つだけ [#selection]
+
+POST の遷移先に対してもルートの照合が行われます。照合結果は詳細度の高い順 (子から親) なので、pera1 はその順に「アクションを持つ最初のルート」を選び、1 つだけ実行します。複数のアクションが同時に走ることはありません。
+
+```tsx
+const routes = [
+  { path: "/contacts", component: ContactsLayout, action: layoutAction },
+  { path: "/contacts/:id", component: ContactPage, action: contactAction },
+];
+```
+
+`/contacts/42` への POST では `contactAction` が、`/contacts` への POST では `layoutAction` が選ばれます。親のアクションには、親ルートで抽出された `params` が渡されます。
+
+## アクションの後は必ず再取得が走る [#revalidation]
+
+アクションが完了すると、確定した URL のローダーが実行されます。ローダーの再取得条件 (`shouldReload`) の既定値は、POST のときは常に `true` です。更新後の一覧を最新化するための処理を、アクションの中に書く必要はありません。
+
+再取得の流れは次のとおりです。
+
+1. アクションが完了し、リダイレクト先 (または現在の URL) が確定する。
+2. 確定した URL にマッチするルートのローダーが実行される。
+3. 新しい状態が UI に通知され、画面が再描画される。
+
+完了を待つ間、ブラウザーのタブには読み込み表示が出ます。ローダーの完了を待ってから操作を再開できます。
+
+## 画面遷移するなら `redirect` を返す [#redirect]
+
+画面を移したい場合は、`redirect` の戻り値をそのまま返します。
+
+```tsx
+import { redirect } from "@pera1/core";
+
+async function deleteContactAction({ params }: ActionFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("id が指定されていません。");
+  }
+  await deleteContact(id);
+  return redirect("/contacts");
+}
+```
+
+リダイレクトは同期でも非同期でも構いません。`redirect` が返す `RedirectResponse` はフレームワークが受け取り、画面にデータとして露出させる代わりに `undefined` に置き換えます。`useActionData` にリダイレクト応答が渡ることはありません。
+
+リダイレクトを返さずに値を返した場合は、現在の URL に留まります。バリデーションエラーのように「同じ画面で結果を表示したい」ときに適しています。
+
+```tsx
+async function updateContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "名前を入力してください。" };
+  }
+  await updateContact(name);
+  return { error: null };
+}
+```
+
+## コンポーネントで結果を受け取る [#consume]
+
+結果はローダーと同じく `NinjaPromise` です。`useActionData` で取り出し、`React.use` に渡します。まだ一度もアクションが実行されていない履歴エントリーでは `undefined` が返るため、`use` を呼ぶ部分は子コンポーネントに分けます。
+
+```tsx
+import type { ActionData } from "@pera1/react";
+import { useActionData } from "@pera1/react";
+import { use } from "react";
+
+function ContactForm() {
+  const actionData = useActionData<typeof updateContactAction>();
+
+  return (
+    <form method="post" action="/contacts">
+      <input name="name" />
+      {actionData ? <ActionError actionData={actionData} /> : null}
+      <button type="submit">保存</button>
+    </form>
+  );
+}
+
+function ActionError({ actionData }: { actionData: ActionData<typeof updateContactAction> }) {
+  const data = use(actionData);
+  if (data && "error" in data && data.error) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+送信中はアクションの `NinjaPromise` が未解決のため、`use` がサスペンドして `Suspense` のフォールバックに切り替わります。フォームの直後に結果が現れる、という流れです。
+
+結果は履歴エントリー単位でキャッシュされます。POST の後で前の画面に戻ると、そのエントリーに紐づく結果が再び表示されます。
+
+## フォームは素のままで送信できる [#forms]
+
+pera1 に専用の `<Form>` コンポーネントはありません。通常の `<form method="post">` が Navigation API を通じてルーターに届きます。
+
+```tsx
+<form method="post" action="/contacts">
+  <input name="name" />
+  <button type="submit">追加</button>
+</form>
+```
+
+送信先は `action` 属性で決まります。省略した場合は現在の URL が使われます。`method="post"` のフォームはアクションとして、`method="get"` のフォームはクエリーの更新として処理されます。
+
+## プログラムから送信する [#use-submit]
+
+ボタンのクリックや非同期処理の完了後など、フォームの外から送信したい場合は `useSubmit` を使います。`FormData` を渡すと POST 相当、`URLSearchParams` を渡すと GET 相当になります。
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function DeleteButton({ id }: { id: string }) {
+  const submit = useSubmit();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const formData = new FormData();
+        formData.set("intent", "delete");
+        formData.set("id", id);
+        submit(formData, { action: `/contacts/${id}` });
+      }}
+    >
+      削除
+    </button>
+  );
+}
+```
+
+`FormData` に `File` を含めることもできます。内部では非表示のフォームが一時的に作られ、multipart/form-data として送信されます。
+
+| オプション | 対象 | 内容 |
+| --- | --- | --- |
+| `action` | 両方 | 送信先を上書きする。省略時は現在のルートの `urlPath` |
+| `replace` | GET のみ | 履歴を追加せず上書きする |
+
+フォームの送信先として使う URL は `useFormAction` で取得できます。現在のルートのパラメーターを実値で埋めたパスを返します。
+
+```tsx
+function ContactForm() {
+  const formAction = useFormAction();
+  return <form method="post" action={formAction}>...</form>;
+}
+```
+
+## 失敗したときの表示を分ける [#errors]
+
+失敗の伝え方は 2 通りあります。使い分けの基準は「ユーザーに直してもらう問題か、それとも想定外の障害か」です。
+
+入力の不備のように直してもらう問題は、例外を投げずに `{ error: "..." }` を返します。上の `ActionError` のように、同じ画面にメッセージを表示できます。
+
+想定外の障害は例外として投げてください。例外は Promise の拒否として保持され、`React.use` を使っているコンポーネントからエラーバウンダリーへ届きます。実行中に握りつぶすと、ユーザーには何も起きていないように見えてしまいます。
+
+```tsx
+async function saveAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "名前を入力してください。" };
+  }
+  // 通信の失敗など、ユーザーでは直せない問題は投げる
+  await saveToServer(name);
+  return { error: null };
+}
+```
+
+エラーバウンダリーの構成は[エラー処理](/guides/error-handling)を参照してください。
+
+## アクションとローダーの役割分担 [#action-and-loader]
+
+役割は「書き込む」と「読む」に分かれています。アクションの中でデータを取得して画面に反映するのではなく、書き込みだけを行い、表示に必要なデータはローダーに任せてください。完了後にローダーが自動で走るため、この分担で画面は常に最新化されます。
+
+## 次に読む [#next]
+
+ボタンクリックなどプログラムからの遷移全般は[ナビゲーション](/guides/navigation)で説明します。更新後の再取得をもっと細かく制御したい場合は[データ取得](/guides/data-loading)の `shouldReload` を参照してください。

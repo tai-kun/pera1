@@ -1,0 +1,84 @@
+---
+title: インストール
+description: "パッケージを追加し、前提条件と Navigation API の対応状況を確認します。"
+---
+
+React アプリで使うなら `@pera1/react` だけを追加します。`@pera1/react` は `@pera1/core` に依存しているため、コアパッケージは自動的にインストールされます。
+
+<Steps>
+  <Step title="React アプリを用意する">
+    お手持ちの React 19 アプリに追加するか、Vite などで新しいアプリを作成します。
+
+    ```sh
+    npm create vite@latest my-app -- --template react-ts
+    ```
+
+  </Step>
+  <Step title="パッケージを追加する">
+    `react`、`react-dom`、`valibot` はピア依存関係です。アプリ側でまだインストールしていない場合は一緒に追加してください。
+
+    ```package-install
+    npm i @pera1/react react react-dom valibot
+    ```
+
+  </Step>
+  <Step title="ルートを定義して描画する">
+    `BrowserRouter` にルート定義の配列を渡します。詳しくは[クイックスタート](/getting-started/quickstart)で説明します。
+
+    ```tsx main.tsx
+    import { BrowserRouter } from "@pera1/react";
+    import { createRoot } from "react-dom/client";
+
+    const routes = [{ path: "/", component: () => <h1>Hello, pera1</h1> }];
+
+    createRoot(document.getElementById("root")!).render(<BrowserRouter routes={routes} />);
+    ```
+
+  </Step>
+</Steps>
+
+## コアだけを使う [#core-only]
+
+UI フレームワークに依存しないルーター本体だけが必要なら、`@pera1/core` を単独で追加できます。独自のバインディングやカスタムエンジンを実装したいときに使います。
+
+```package-install
+npm i @pera1/core valibot
+```
+
+## 前提条件 [#requirements]
+
+| 項目 | 要件 |
+| --- | --- |
+| React | 19 系 (`@pera1/react` を使う場合) |
+| valibot | 1 系 |
+| ブラウザー | Navigation API を実装したブラウザー |
+| モジュール形式 | ESM のみ (`type: "module"` を推奨) |
+
+pera1 は Navigation API を直接利用します。執筆時点では Chromium 系ブラウザーが中心です。未対応の環境では `NavigationApiEngine` が `NavigationApiNotSupportedError` を投げます。対応状況は [MDN の互換性表](https://developer.mozilla.org/docs/Web/API/Navigation_API#browser_compatibility) を確認してください。
+
+pera1 はブラウザー専用です。サーバーサイドレンダリング (SSR) には対応していません。
+
+## TypeScript の設定例 [#typescript]
+
+最小限の設定例です。DOM の型と ESNext のライブラリーが必要です。
+
+```json tsconfig.json lineNumbers
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true
+  }
+}
+```
+
+## バンドラーについて [#bundlers]
+
+pera1 は ESM のみを配信します。Vite、Rollup、webpack 5 など、ESM を解決できるバンドラーであれば追加設定は不要です。
+
+## 次のステップ [#next]
+
+準備ができたら[クイックスタート](/getting-started/quickstart)に進んでください。実際に動くアプリを作りながら、ルーティング、ローダー、アクションの流れを確認できます。

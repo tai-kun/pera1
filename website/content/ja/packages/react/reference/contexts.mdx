@@ -1,0 +1,80 @@
+---
+title: コンテキスト
+description: "RouteContext と RouterContext が供給する値と、低レベルな拡張での使い方です。"
+---
+
+`@pera1/react` は 2 つのコンテキストを公開しています。通常のアプリケーションならフックを使えば足りますが、独自のフックやコンポーネントを作る場合は、コンテキストの値を直接扱えます。
+
+## RouteContext [#route-context]
+
+各ルートのコンポーネントは、マッチしたルートの情報を `RouteContext` から受け取ります。`Router` がルートごとにプロバイダーを置くため、コンポーネントから見える値は自分の階層のものになります。
+
+```ts
+const RouteContext: React.Context<RouteContextValue | null>;
+
+type RouteContextValue = MatchedRoute<React.ComponentType<{}>> & {
+  readonly outlet: React.ReactElement | null;
+};
+```
+
+`MatchedRoute` は、正規化済みのルートにマッチ結果を加えた型です。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `path` | `string` | ルート定義のパスパターンです。 |
+| `index` | `boolean` | インデックスルートかどうかです。 |
+| `params` | `RouteParams` | URL から抽出したパラメーターです。 |
+| `urlPath` | `string` | パラメーターを実値で埋めたパスです。 |
+| `component` | `React.ComponentType<{}> \| undefined` | 描画するコンポーネントです。 |
+| `action` | アクション関数または `undefined` | 親から継承した値を含みます。 |
+| `loader` | ローダー関数または `undefined` | 親から継承した値を含みます。 |
+| `shouldReload` | `ShouldReloadFunction` | 再取得の判定関数です。 |
+| `utils` | `RoutePatternUtils` | パターンの照合とパラメーター抽出のユーティリティーです。 |
+| `outlet` | `React.ReactElement \| null` | 子ルートの要素です。 |
+
+`useRouteContext` はこの値の全体を返します。`useParams` や `useFormAction` は、この値から必要な部分だけを取り出します。
+
+## RouterContext [#router-context]
+
+`RouterContext` は、ルーターの実体への参照と購読関数を供給します。プロバイダー自身は状態が変わっても更新されません。子コンポーネントは `subscribe` と `useSyncExternalStore` を組み合わせ、必要な部分だけを購読します。
+
+```ts
+type RouterRef = Readonly<React.RefObject<RouterSnapshot>>;
+
+type RouterContextValue = {
+  readonly routerRef: RouterRef;
+  readonly subscribe: (onRouterChange: () => void) => () => void;
+};
+
+const RouterContext: React.Context<RouterContextValue | null>;
+```
+
+`routerRef.current` は `@pera1/core` の `RouterSnapshot` です。オブジェクトの参照は生成時に固定され、遷移のたびに `currentEntry` だけが更新されます。内容は [`createRouter`](/packages/core/reference/create-router#snapshot) を参照してください。
+
+## 低レベルな使い方 [#low-level]
+
+コンテキストを直接読む例です。同じことをする [`useRouteContext`](/packages/react/reference/use-route-context) と [`useRouterContext`](/packages/react/reference/use-router-context) が公開されています。通常はそちらを使ってください。
+
+```tsx
+import { use } from "react";
+
+import { RouteContext } from "@pera1/react";
+
+function CurrentPath() {
+  const route = use(RouteContext);
+  if (!route) {
+    throw new Error("Router の外で使われました。");
+  }
+  return <p>{route.urlPath}</p>;
+}
+```
+
+## 例外 [#throws]
+
+コンテキストが供給されていない状態でフックを使うと、`RouteContextMissingError` または `RouterContextMissingError` が投げられます。コンテキストを直接 `use` した場合は `null` が返ります。`null` のチェックは呼び出し側の責任です。
+
+## 関連 [#related]
+
+- [useRouteContext](/packages/react/reference/use-route-context)
+- [useRouterContext](/packages/react/reference/use-router-context)
+- [createRouter](/packages/core/reference/create-router) — `RouterSnapshot` の内容

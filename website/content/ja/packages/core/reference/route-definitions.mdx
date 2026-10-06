@@ -1,0 +1,223 @@
+---
+title: RouteDefinition
+description: "ルート定義の 2 形式と、ローダー、アクション、shouldReload、パラメーターの型をまとめます。"
+---
+
+`RouteDefinition` はルート定義の型です。`createRouter` や React の `Router` に渡す配列の要素を表します。オブジェクト形式とモジュール形式の 2 通りがあり、どちらも `path` が必須です。
+
+定義は `createRouter` が内部で正規化し、`Route` に変換します。このページでは、定義側の型、正規化後の `Route`、ローダーとアクションの引数型をまとめて説明します。
+
+## 型の一覧 [#types]
+
+| 型 | 役割 |
+| --- | --- |
+| `RouteDefinition` | 2 つの形式をまとめたユニオンです。 |
+| `RouteDefinitionObject` | オブジェクト形式の定義です。 |
+| `RouteDefinitionModule` | モジュール形式の定義です。 |
+| `Route` | 正規化後に内部で使われるルートです。 |
+| `RouteParams` | パスパターンからパラメーターの型を導出します。 |
+| `LoaderFunction` / `LoaderFunctionArgs` | データ取得関数とその引数です。 |
+| `ActionFunction` / `ActionFunctionArgs` | データ更新関数とその引数です。 |
+| `ShouldReloadFunction` / `ShouldReloadFunctionArgs` | 再取得の判定関数とその引数です。 |
+
+## RouteDefinitionObject [#route-definition-object]
+
+```ts
+type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
+  readonly path: TPath;
+  readonly index?: boolean;
+  readonly action?: ActionFunction<TPath>;
+  readonly shouldReload?: ShouldReloadFunction<TPath>;
+  readonly loader?: LoaderFunction<TPath>;
+  readonly component?: TComponent;
+};
+```
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `path` | `TPath` | はい | マッチングの対象となるパスパターンです。 |
+| `index` | `boolean` | いいえ | 親パスに完全一致したときだけ使うインデックスルートにします。 |
+| `action` | `ActionFunction<TPath>` | いいえ | POST 時に実行するデータ更新関数です。 |
+| `shouldReload` | `ShouldReloadFunction<TPath>` | いいえ | ローダーを再実行するかを判定します。 |
+| `loader` | `LoaderFunction<TPath>` | いいえ | 画面に必要なデータを取得する関数です。 |
+| `component` | `TComponent` | いいえ | 描画するコンポーネントです。 |
+
+`index` を付けなければ、ルートはレイアウトとして働きます。子ルートを前方一致で内包します。`index: true` を付けたルートがマッチするのは、そのパスに完全一致したときだけです。
+
+## RouteDefinitionModule [#route-definition-module]
+
+モジュール形式は、オブジェクト形式に `default` を加えた形です。`component` があればそちらが優先されます。なければ `default` がコンポーネントとして使われます。
+
+```tsx
+import * as contactRoute from "./routes/contact.js";
+
+const routes = [{ path: "/contacts/:id", ...contactRoute }];
+```
+
+ES モジュールの名前空間のうち、`Symbol.toStringTag` が `"Module"` を返すものだけがモジュール形式として扱われます。上の例のように、名前空間を展開して渡します。
+
+## RouteDefinition [#route-definition]
+
+`RouteDefinitionObject` と `RouteDefinitionModule` をまとめたのが `RouteDefinition` です。`TComponent` は描画対象の型で、React なら `React.ComponentType` を指定します。
+
+```ts
+type RouteDefinition<TPath extends string = string, TComponent = any> =
+  | RouteDefinitionObject<TPath, TComponent>
+  | RouteDefinitionModule<TPath, TComponent>;
+```
+
+## Route [#route]
+
+正規化を終えたルートが `Route` です。`createRouter` が定義を変換するときに作り、`matchRoutes` やエンジンが受け取ります。省略可能だったプロパティーは、この時点で確定します。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `path` | `string` | パスパターンです。 |
+| `index` | `boolean` | インデックスルートかどうかです。 |
+| `utils` | `RoutePatternUtils` | パターンの解析と生成を行うユーティリティーです。 |
+| `action` | `ActionFunction \| undefined` | データ更新関数です。 |
+| `shouldReload` | `ShouldReloadFunction` | 再取得の判定関数です。 |
+| `loader` | `LoaderFunction \| undefined` | データ取得関数です。 |
+| `component` | `TComponent \| undefined` | 描画するコンポーネントです。 |
+
+正規化の時点で `shouldReload` は必ず関数になります。定義で省略した場合は関数が割り当てられます。`defaultShouldReload` をそのまま返す関数です。
+
+## RouteParams [#route-params]
+
+`RouteParams` を使うと、パスパターンの文字列リテラル型からパラメーターの型を導出できます。
+
+```ts
+import type { RouteParams } from "@pera1/core";
+
+type ContactParams = RouteParams<"/contacts/:id">;
+// { readonly id: string }
+
+type ArchiveParams = RouteParams<"/archive/:year?">;
+// { readonly year?: string }
+
+type MovieParams = RouteParams<"/movies/:title.mp4">;
+// { readonly title: string }
+
+type FileParams = RouteParams<"/files/*">;
+// { readonly "*": string }
+
+type LooseParams = RouteParams;
+// { readonly [key: string]?: string }
+```
+
+パラメーターの値はパーセントエンコードされた文字列です。URL 側で省略された任意パラメーターのキーは、抽出結果に含まれません。パターンの書き方は[ルーティング](/guides/routing)を参照してください。
+
+## ローダーの型 [#loader-types]
+
+```ts
+type LoaderFunctionArgs<TRoutePattern extends string = string> = {
+  params: RouteParams<TRoutePattern>;
+  request: RouteGetRequest;
+};
+
+interface LoaderFunction<TRoutePattern extends string = string, TData = unknown> {
+  (args: LoaderFunctionArgs<TRoutePattern>): TData;
+}
+```
+
+`request` は GET 用の `RouteGetRequest` です。`method` は `"GET"`、`formData` は常に `null` です。`url`、`signal`、`toRequest()` を持ちます。
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params, request }: LoaderFunctionArgs<"/contacts/:id">) {
+  const response = await fetch(`/api/contacts/${params.id}`, { signal: request.signal });
+  return response.json();
+}
+```
+
+`TData` はローダーが返す値の型です。ローダー関数の型を [useLoaderData](/packages/react/reference/use-loader-data) に渡すと、解決後の値の型が決まります。
+
+## アクションの型 [#action-types]
+
+```ts
+type ActionFunctionArgs<TRoutePattern extends string = string> = {
+  params: RouteParams<TRoutePattern>;
+  request: RoutePostRequest;
+};
+
+interface ActionFunction<TRoutePattern extends string = string, TData = unknown> {
+  (args: ActionFunctionArgs<TRoutePattern>): TData;
+}
+```
+
+`request` は POST 用の `RoutePostRequest` です。`method` は `"POST"` で、送信された `formData` を読み取れます。
+
+```tsx
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs } from "@pera1/core";
+
+async function contactAction({ params, request }: ActionFunctionArgs<"/contacts/:id">) {
+  await updateContact(params.id, request.formData);
+  return redirect(`/contacts/${params.id}`);
+}
+```
+
+戻り値が `RedirectResponse` のときは、アクションデータが `undefined` に置き換わります。詳しくは [startAction](/packages/core/reference/actions) で確認できます。
+
+## shouldReload の引数 [#should-reload-arguments]
+
+`ShouldReloadFunctionArgs` は `triggerMethod` で分かれる判別可能ユニオンです。GET では送信データがありません。POST では `formData` と `actionData` が加わります。
+
+| プロパティ | GET | POST | 内容 |
+| --- | --- | --- | --- |
+| `triggerMethod` | `"GET"` | `"POST"` | 再取得のきっかけです。 |
+| `currentUrl` / `prevUrl` | あり | あり | 遷移前後の URL です。 |
+| `currentParams` / `prevParams` | あり | あり | 遷移前後のパラメーターです。 |
+| `formData` | なし | あり | 送信されたフォームデータです。 |
+| `actionData` | なし | あり | 直前のアクションの結果です。 |
+| `defaultShouldReload` | あり | あり | 既定の判定結果です。 |
+
+`triggerMethod` で分岐すると、存在しないプロパティーに触れずに済みます。
+
+```ts
+import type { ShouldReloadFunction } from "@pera1/core";
+
+const shouldReload: ShouldReloadFunction<"/contacts/:id"> = (args) => {
+  if (args.triggerMethod === "POST") {
+    return true;
+  }
+  return args.defaultShouldReload;
+};
+```
+
+判定の既定値と、`shouldReload` が呼ばれる条件は[ローダー](/packages/core/reference/loaders)にまとめています。
+
+## 使い方 [#usage]
+
+```tsx
+const routes = [
+  { path: "/", component: RootLayout },
+  { path: "/", index: true, component: HomePage },
+  { path: "/contacts", component: ContactsLayout },
+  {
+    path: "/contacts/:id",
+    component: ContactPage,
+    loader: contactLoader,
+    action: contactAction,
+    shouldReload,
+  },
+];
+```
+
+型引数には文字列リテラルを渡します。`RouteParams` はリテラル型からキーを読み取るため、`string` 型を渡すとキーの型が確定しません。
+
+## 注意 [#notes]
+
+- `RouteDefinition` は入力、`Route` は出力です。`Route` を自分で組み立てる必要はありません。
+- `routes` の配列はモジュールスコープに置きます。参照が変わるとルーターが作り直され、キャッシュも失われます。
+- モジュール形式では `component` が `default` より優先されます。
+- `path` のパターン記法と詳細度のルールは[ルーティング](/guides/routing)にまとめています。
+
+## 関連 [#related]
+
+- [createRouter](/packages/core/reference/create-router) — 定義からルーターを作る
+- [matchRoutes](/packages/core/reference/routes) — 定義と URL を照合する
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — ローダーの実行と再取得
+- [startAction](/packages/core/reference/actions) — アクションの選出と実行
+- [IEngine](/packages/core/reference/engine) — エンジンが受け取るルートの型

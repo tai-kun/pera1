@@ -1,0 +1,131 @@
+---
+title: エラークラス
+description: "エラークラスの一覧、meta の内容、日本語メッセージの差し替え方をまとめます。"
+---
+
+`@pera1/core` のエラーはすべて `ErrorBase` を継承しています。各クラスは `meta` プロパティーに発生時のコンテキストを保持し、既定の英語メッセージと登録済みの日本語メッセージを持ちます。名前は衝突を避けるため `Pera1` の接頭辞付きです。
+
+```ts
+import {
+  ErrorBase,
+  setErrorMessage,
+  UnreachableError,
+  ValidationErrorBase,
+  UnexpectedValidationError,
+  NavigationApiNotSupportedError,
+  LoaderConditionError,
+  LoaderDataNotFoundError,
+  RouterContextMissingError,
+  RouteContextMissingError,
+} from "@pera1/core";
+import type { ErrorMeta, ErrorOptions, Issue } from "@pera1/core";
+```
+
+## 基底クラス [#base]
+
+```ts
+class ErrorBase<TMeta extends ErrorMeta | undefined = undefined> extends I18nErrorBase<TMeta> {}
+
+class ValidationErrorBase<
+  TMeta extends ErrorMeta | undefined = ErrorMeta | undefined,
+> extends ErrorBase<TMeta> {}
+```
+
+`ErrorBase` は国際化に対応した `i18n-error-base` の `I18nErrorBase` を pera1 向けに再エクスポートした型です。`ValidationErrorBase` は検証系エラーの共通の親です。`UnexpectedValidationError` がこれを継承します。
+
+### meta プロパティー [#meta]
+
+各エラーは生成時に `meta` オブジェクトを受け取ります。`meta` にはエラーの原因を特定する値が入ります。たとえば `LoaderConditionError` なら、対象の `url`、`shouldReload`、実際の `returnValue` です。
+
+`meta` はメッセージの組み立てにも使われます。既定のメッセージは `meta` を参照して動的に作られます。
+
+## 型 [#types]
+
+| 型 | 説明 |
+| --- | --- |
+| `ErrorMeta` | `meta` の基本形です。文字列キーと `unknown` 値を持ちます。 |
+| `ErrorOptions` | `cause` などの標準的なエラーオプションです。 |
+| `Issue` | `valibot` の `BaseIssue<unknown>` です。検証で見つかった問題点を表します。 |
+
+## エラーの一覧 [#classes]
+
+| クラス | `name` | 発生条件 | Meta / Args |
+| --- | --- | --- | --- |
+| `UnreachableError` | `Pera1UnreachableError` | 到達しないはずのコードに到達した | `UnreachableErrorMeta`（`{ value?: unknown }`）/ `UnreachableErrorArgs`（`actual: [never?]` とオプション） |
+| `UnexpectedValidationError` | `Pera1UnexpectedValidationError` | スキーマ検証で予期しない値に遭遇した | `UnexpectedValidationErrorMeta`（`{ issues, value }`）/ `UnexpectedValidationErrorArgs` |
+| `NavigationApiNotSupportedError` | `Pera1NavigationApiNotSupportedError` | Navigation API がサポートされていない | なし |
+| `LoaderConditionError` | `Pera1LoaderConditionError` | `shouldReload` が同期的な真偽値以外を返した | `LoaderConditionErrorMeta`（`{ url, shouldReload, returnValue }`）/ `LoaderConditionErrorArgs` |
+| `LoaderDataNotFoundError` | `Pera1LoaderDataNotFoundError` | ローダーの結果が見つからない | `LoaderDataNotFoundErrorMeta`（`{ loader }`）/ `LoaderDataNotFoundErrorArgs` |
+| `RouterContextMissingError` | `Pera1RouterContextMissingError` | `RouterContext` が供給されていない | なし |
+| `RouteContextMissingError` | `Pera1RouteContextMissingError` | `RouteContext` が供給されていない | なし |
+
+`UnexpectedValidationErrorMeta` の `issues` は 1 件以上を保証した `readonly [Issue, ...Issue[]]` です。`Args` 型は、対応する `Meta` 型に `ErrorOptions` を交差した型です。
+
+## 日本語メッセージ [#i18n]
+
+メッセージの言語は `valibot` のグローバル設定から取得されます。`lang` を `"ja"` にすると登録済みの日本語メッセージが使われます。
+
+```ts
+import { setGlobalConfig } from "valibot";
+
+setGlobalConfig({ lang: "ja" });
+```
+
+`UnexpectedValidationError` だけは別扱いです。`issues` の `message` を `": "` で連結してメッセージにします。表示される文言は検証に使ったスキーマの言語設定に依存します。
+
+## メッセージの差し替え [#set-error-message]
+
+`setErrorMessage` を使うとクラスごとに任意の言語のメッセージを登録できます。
+
+```ts
+function setErrorMessage<TMeta extends ErrorMeta | undefined>(
+  reference: new (...args: any) => ErrorBase<TMeta>,
+  message: string | ((meta: TMeta) => string),
+  lang: string | Iterable<string>,
+): void;
+```
+
+```ts no-run
+import { setErrorMessage, UnreachableError } from "@pera1/core";
+
+setErrorMessage(UnreachableError, "設定値が不正です。", "ja");
+```
+
+第 2 引数には `meta` を受け取って文字列を返す関数も指定できます。
+
+```ts no-run
+import { setErrorMessage, LoaderDataNotFoundError } from "@pera1/core";
+
+setErrorMessage(
+  LoaderDataNotFoundError,
+  ({ loader }) => `ローダー ${loader?.name ?? "不明"} が見つかりません。`,
+  "ja",
+);
+```
+
+## 使い方 [#usage]
+
+`instanceof` で判別し、`meta` から詳細を取り出せます。
+
+```ts no-run
+import { ErrorBase } from "@pera1/core";
+
+try {
+  runTask();
+} catch (error) {
+  if (error instanceof ErrorBase) {
+    console.error(error.meta);
+  }
+}
+```
+
+## 注意 [#notes]
+
+- `name` の接頭辞は pera1 由来のエラーだと判別するために使います。`instanceof ErrorBase` でも判定できます。
+- `cause` は `ErrorOptions` として渡せます。`new RouterContextMissingError({ cause })` のように指定します。
+
+## 関連 [#related]
+
+- [RoutePatternUtils](/packages/core/reference/route-pattern-utils) — パターン不一致時にエラーを投げる
+- [履歴エントリースキーマ](/packages/core/reference/schemas) — `UnexpectedValidationError` を投げる
+- [createRouter](/packages/core/reference/create-router) — エラーの発生元となる処理

@@ -1,0 +1,175 @@
+---
+title: IEngine
+description: "エンジンが実装する 4 つのメソッドの契約と、引数・戻り値の型をまとめます。"
+---
+
+`IEngine` は `createRouter` とルーティングエンジンをつなぐ契約です。エンジンはブラウザーの履歴やナビゲーションを監視し、URL の変化をルートの状態に変換します。既定の実装は [NavigationApiEngine](/packages/core/reference/navigation-api-engine) です。
+
+ここでは `IEngine` の 4 つのメソッドと、`IEngine` 名前空間にまとめられた関連型を順に説明します。実装の例は[カスタムエンジン](/guides/custom-engines)にあります。
+
+## シグネチャ [#signature]
+
+```ts
+interface IEngine<TComponent = any> {
+  init(args: IEngine.InitArgs<TComponent>): IEngine.InitReturn<TComponent>;
+  start(args: IEngine.StartArgs<TComponent>): IEngine.StartReturn;
+  submit(args: IEngine.SubmitArgs): void;
+  navigate(args: IEngine.NavigateArgs): void;
+}
+```
+
+`TComponent` には描画対象のコンポーネントの型を指定します。React なら `React.ComponentType` などです。バインディングに合わせて選びます。
+
+## メソッドの契約 [#contract]
+
+| メソッド | 呼ばれるタイミング | 役割 |
+| --- | --- | --- |
+| `init` | ルーター生成時 | 現在の URL の状態を同期的に返します。 |
+| `start` | 開始時 | イベント購読を開始し、任意で停止関数を返します。 |
+| `submit` | フォーム送信時 | 送信データを処理します。 |
+| `navigate` | プログラムからの遷移時 | 画面遷移を処理します。 |
+
+初期表示に必要なローダーは `init` の中で起動します。同期メソッドなので、完了を待ってから戻ってはいけません。結果の `NinjaPromise` は `loaderDataStore` へ登録します。
+
+`start` の戻り値は `IStopEngine` か `void` です。停止関数が返ってきたときは、購読の解除と進行中のアクションやローダーの中断に使います。
+
+`submit` と `navigate` に戻り値はありません。状態の通知は `start` で受け取った `update` を通じて行います。
+
+## InitArgs [#init-args]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `routes` | `readonly Route<TComponent>[]` | 正規化と詳細度の並べ替えが済んだルートです。 |
+| `loaderDataStore` | `Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>` | 履歴エントリー単位のローダー結果です。 |
+| `getSignal` | `() => AbortSignal` | 初期化処理を中断するシグナルを取得します。 |
+
+`InitReturn<TComponent>` の型は `RouterState<TComponent> | null` です。マッチするルートと有効な履歴エントリーがあれば状態を返します。なければ `null` です。
+
+## StartArgs [#start-args]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `routes` | `readonly Route<TComponent>[]` | 正規化済みのルートです。 |
+| `actionDataStore` | `Map<HistoryEntryId, Map<ActionFunction, NinjaPromise<unknown>>>` | 履歴エントリー単位のアクション結果です。 |
+| `loaderDataStore` | `Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>` | 履歴エントリー単位のローダー結果です。 |
+| `update` | `{ (): void; (state: RouterState<TComponent> \| null): void }` | 状態を UI へ通知します。 |
+| `getSignal` | `() => AbortSignal` | 監視を中断するシグナルを取得します。 |
+
+`StartReturn` の型は `IStopEngine | void` です。返した停止関数は `createRouter` の停止時に呼ばれます。
+
+## update の 2 つの呼び方 [#update]
+
+`update` には 2 つの呼び方があります。役割は呼び方で変わります。
+
+| 呼び方 | 意味 |
+| --- | --- |
+| `update()` | 現在の状態を保ったまま、再描画だけを要求します。 |
+| `update(newState)` | 新しい状態を通知します。`null` は未マッチを表します。 |
+
+引数なしの呼び出しは、アクション開始時のローディング表示などに使います。アクションの結果そのものはストアに登録し、画面側は `React.use` などで非同期の結果を受け取ります。
+
+## SubmitArgs [#submit-args]
+
+`SubmitArgs` は `type` で分かれる判別可能ユニオンです。`FORM_DATA` が HTTP の POST に、`URL_SEARCH_PARAMS` が GET 相当のクエリー更新に対応します。
+
+```ts
+type SubmitArgs =
+  | {
+      type: "FORM_DATA";
+      target: ReadonlyFormData;
+      action: string;
+    }
+  | {
+      type: "URL_SEARCH_PARAMS";
+      target: ReadonlyURLSearchParams;
+      action: string;
+      history: "replace" | "push";
+    };
+```
+
+| プロパティ | `FORM_DATA` | `URL_SEARCH_PARAMS` | 内容 |
+| --- | --- | --- | --- |
+| `target` | `ReadonlyFormData` | `ReadonlyURLSearchParams` | 送信するデータです。 |
+| `action` | あり | あり | 送信先の URL パスです。 |
+| `history` | なし | あり | `"push"` で追加、`"replace"` で上書きします。 |
+
+## NavigateArgs [#navigate-args]
+
+`NavigateArgs` も判別可能ユニオンです。`type` によって `LINK` と `MOVE` に分かれます。`LINK` は明示的なアドレス指定、`MOVE` は履歴スタック内の相対移動です。
+
+| プロパティ | `LINK` | `MOVE` | 内容 |
+| --- | --- | --- | --- |
+| `to` | `STATIC` または `DYNAMIC` | なし | 遷移先の指定です。 |
+| `history` | あり | なし | `"push"` で追加、`"replace"` で上書きします。 |
+| `delta` | なし | あり | 履歴を移動する差分ステップ数です。 |
+
+`LINK` の `to` には 2 形式あります。`STATIC` では完全なパス文字列を `path` で渡します。`DYNAMIC` では `patch(path: RoutePath)` に関数を渡し、現在の URL を部分的に書き換えます。
+
+```ts
+engine.navigate({
+  type: "LINK",
+  to: { type: "STATIC", path: "/contacts/42" },
+  history: "push",
+});
+
+engine.navigate({ type: "MOVE", delta: -1 });
+```
+
+## IStopEngine [#istop-engine]
+
+```ts
+interface IStopEngine {
+  (): void;
+}
+```
+
+購読を解除し、進行中の非同期処理を中断します。二重に呼んでもエラーにならないように実装します。
+
+## RouterState [#routerstate]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `entry` | `HistoryEntry` | 現在アクティブな履歴エントリーです。 |
+| `routes` | `readonly [MatchedRoute<TComponent>, ...MatchedRoute<TComponent>[]]` | マッチしたルートです。1 件以上を保証したタプルです。 |
+
+`routes` は詳細度の高い子から親の順に並びます。描画時に逆順でたどると親が子を包む形になります。
+
+## エンジンを実装する [#implementing]
+
+```ts no-run
+import type { IEngine } from "@pera1/core";
+
+const engine: IEngine = {
+  init({ routes, loaderDataStore, getSignal }) {
+    // 現在の URL をマッチし、ローダーを起動して { entry, routes } を返す
+  },
+  start({ update, getSignal }) {
+    // イベントを購読し、変化のたびに update を呼ぶ
+    return () => {
+      // 購読の解除と進行中の処理の中断
+    };
+  },
+  submit(args) {
+    // FORM_DATA または URL_SEARCH_PARAMS を処理する
+  },
+  navigate(args) {
+    // LINK または MOVE を処理する
+  },
+};
+```
+
+より完全な例は[カスタムエンジン](/guides/custom-engines)にあります。
+
+## 注意 [#notes]
+
+- `init` の中では `await` しないでください。ローダーは起動するだけで、待機は UI 側に任せます。
+- データストアの所有者は `createRouter` です。エンジンは渡された `Map` を更新し、自前のキャッシュを持ちません。
+- `update()` を引数なしで呼んでも状態は変わりません。再描画だけが起きます。
+- `start` が停止関数を返さない場合、エンジン側の後処理は呼ばれません。`getSignal()` のシグナルは停止時に abort されるため、購読はシグナル経由でも解除できます。
+
+## 関連 [#related]
+
+- [createRouter](/packages/core/reference/create-router) — エンジンを呼び出す側
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — 既定の実装
+- [カスタムエンジン](/guides/custom-engines) — 実装の例
+- [ナビゲーション](/guides/navigation) — 遷移の使い方

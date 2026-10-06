@@ -1,0 +1,99 @@
+---
+title: カスタムエンジン
+description: "IEngine の契約と、テスト用のメモリールーターを自作する手順を解説します。"
+---
+
+pera1 はルーティングの実行を、`IEngine` を実装したエンジンに委ねています。既定の `NavigationApiEngine` は Navigation API を使いますが、契約さえ満たせばエンジンは差し替えられます。このページでは、エンジンの役割と、テスト用に差し替える最小構成の例を説明します。
+
+## エンジンの契約 [#contract]
+
+エンジンは次の 4 つのメソッドを実装します。すべて `createRouter` から呼ばれます。
+
+| メソッド | 呼ばれるタイミング | 役割 |
+| --- | --- | --- |
+| `init` | ルーター生成時 (`Router` のマウント時) | 現在の URL をマッチさせ、初期状態を同期的に返す |
+| `start` | マウント後 | イベント購読を開始し、停止関数を返す |
+| `submit` | `useSubmit` から | フォームデータまたはクエリーの送信を処理する |
+| `navigate` | `useNavigate` から、またはリンク操作で | 画面遷移を処理する |
+
+`init` は同期的である必要があります。ローダーの実行は `initLoaders` に任せ、結果の `NinjaPromise` を `loaderDataStore` に登録します。
+
+`start` はクリーンアップ関数を返します。`Router` がアンマウントすると呼ばれるため、ここでイベントリスナーを解除し、進行中の処理を中断します。
+
+## テスト用の偽エンジン [#test-engine]
+
+コンポーネントのテストでは、実際の Navigation API を使わず、固定の URL で初期化するエンジンに差し替えると安定します。次の例は、マウント時にローダーを起動するだけの最小構成です。
+
+```tsx test-engine.tsx
+import type { IEngine } from "@pera1/core";
+import { expectHistoryEntry, initLoaders, matchRoutes } from "@pera1/core";
+import type { RouterProps } from "@pera1/react";
+import { Router } from "@pera1/react";
+
+export function createTestEngine(href: string): IEngine {
+  const entry = expectHistoryEntry({
+    id: crypto.randomUUID(),
+    url: href,
+    index: 0,
+  })!;
+
+  return {
+    init({ routes, loaderDataStore, getSignal }) {
+      const matched = matchRoutes(routes, entry.url);
+      if (!matched) {
+        return null;
+      }
+      loaderDataStore.set(
+        entry.id,
+        initLoaders(matched, { url: entry.url, signal: getSignal() }),
+      );
+      return { entry, routes: matched };
+    },
+    start() {
+      // テストではナビゲーションを起こさないため、購読は不要です。
+    },
+    submit() {},
+    navigate() {},
+  };
+}
+
+export function TestRouter(props: Pick<RouterProps, "routes">) {
+  return <Router engine={createTestEngine("https://example.com/")} routes={props.routes} />;
+}
+```
+
+:::note
+`createTestEngine` はレンダリングのたびに新しいエンジンを作ります。テスト対象の再レンダリングで状態を保ちたい場合は、`useState` や `useRef` でエンジンを保持するか、`createRouter` を直接使ってください。
+:::
+
+## `createRouter` を直接使う [#create-router]
+
+React 以外の UI バインディングを作るなら、`createRouter` が提供するコントローラーを使えます。購読関数とスナップショット取得関数を、各フレームワークのリアクティブ機構に接続します。
+
+```ts no-run
+import { createRouter } from "@pera1/core";
+
+const controller = createRouter({ engine, routes });
+const stop = controller.start();
+
+const unsubscribe = controller.subscribe(() => {
+  const routes = controller.getRoutes();
+  const snapshot = controller.getSnapshot();
+  // ここで UI を更新する
+});
+```
+
+`getSnapshot()` が返すオブジェクトの参照は安定しており、`currentEntry` だけが遷移のたびに更新されます。購読は状態が変わるたびに呼ばれるため、セレクターで必要な部分だけを取り出して比較するのが効率的です。
+
+## エンジンを自作する場合の注意 [#caveats]
+
+- `init` で URL がマッチしないとき、または現在の履歴エントリーが存在しないときは `null` を返してください。`Router` は何も描画しなくなります。
+- `start` の停止関数は、購読の解除だけでなく、進行中のアクションやローダーの中断も行ってください。`NavigationApiEngine` は `AbortController` を `Router` から受け取り、停止時にまとめて中断しています。
+- `update()` を引数なしで呼ぶと、現在の状態を保ったまま再描画だけを要求できます。アクション開始時のローディング表示などに使います。
+- データストア (`loaderDataStore`、`actionDataStore`) の管理は `Router` が行います。エンジンは渡されたマップを書き換えるだけで、自分でキャッシュを持たないでください。
+
+エンジンの例をもう 1 つ挙げるなら、ハッシュベースのルーティングです。`hashchange` を購読し、`location.hash` を URL として `matchRoutes` に渡せば、GitHub Pages のような深い URL を配信できない環境でも動かせます。
+
+## 次に読む [#next]
+
+型パラメーターの使い方は [TypeScript](/guides/typescript) でまとめています。エンジンを含む各モジュールの仕様は [@pera1/core のリファレンス](/packages/core/reference/create-router)を参照してください。

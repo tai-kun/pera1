@@ -1,0 +1,53 @@
+---
+title: Outlet
+description: "親のレイアウトに、マッチした子ルートを差し込むプレースホルダーです。"
+---
+
+`Outlet` は、ネストしたルート構造で子ルートを表示する位置を示すプレースホルダーです。親のレイアウトコンポーネントで、子を差し込みたい場所に置きます。
+
+```tsx
+import { Outlet } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function Outlet(): React.ReactElement | null;
+```
+
+## 戻り値 [#returns]
+
+現在のルートに紐づく `RouteContext` の `outlet` を返します。さらに下位にマッチする子ルートがなければ `null` を返します。
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouteContextMissingError` | `Router` の外など、`RouteContext` が供給されていない場所で描画した |
+
+## 使い方 [#usage]
+
+```tsx
+import { Outlet } from "@pera1/react";
+
+function ContactsLayout() {
+  return (
+    <section>
+      <h2>連絡先</h2>
+      <Outlet />
+    </section>
+  );
+}
+```
+
+このレイアウトに `/contacts` のレイアウトルートを割り当てると、一覧や詳細の画面が `Outlet` の位置に表示されます。ネストはパスパターンの前方一致で決まります。詳しくは[ルーティング](/guides/routing)を参照してください。
+
+## 注意 [#notes]
+
+- マッチしたルートの `component` がない場合も、子の `outlet` がそのまま描画されます。`component` を省略したルートは、子を通すだけのレイアウトとして機能します。
+- 同じルートの `component` から `Outlet` を複数回描画すると、子ツリーが複製されます。子は 1 か所だけに置いてください。
+
+## 関連 [#related]
+
+- [Router](/packages/react/reference/router) — ルート階層の描画
+- [コンテキスト](/packages/react/reference/contexts) — 供給される値の形

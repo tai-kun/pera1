@@ -1,0 +1,114 @@
+---
+title: startAction
+description: "アクションの選出ルール、実行結果、リダイレクトの扱いを解説します。"
+---
+
+`startAction` は、マッチしたルートの中からアクションを 1 つだけ選んで実行する関数です。フォーム送信のたびに複数のアクションが走ることはありません。最初に見つかった 1 つを選んだ時点で打ち切ります。
+
+実行結果は `NinjaPromise` として保持され、`StartedAction.idle()` で完了を待てます。リダイレクトの指示はデータとして画面に渡しません。`idle()` の戻り値から取り出します。
+
+## シグネチャ [#signature]
+
+```ts
+function startAction(
+  routes: readonly Pick<MatchedRoute, "params" | "action" | "urlPath">[],
+  request: ActionStartRequest,
+): StartedAction | null;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `routes` | `readonly Pick<MatchedRoute, "params" \| "action" \| "urlPath">[]` | 送信先の URL にマッチしたルートです。 |
+| `request.url` | `HistoryEntryUrl` | アクションの送信先の URL です。 |
+| `request.formData` | `ReadonlyFormData` | 送信されたフォームデータです。 |
+| `request.signal` | `AbortSignal` | アクションを中断するシグナルです。 |
+
+`routes` はあらかじめ送信先の URL にマッチした状態で渡します。`matchRoutes` の結果をそのまま渡すのが基本です。
+
+## 戻り値 [#returns]
+
+実行対象のアクションが見つかれば `StartedAction` を、1 つも見つからなければ `null` を返します。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `data` | `NinjaPromise<unknown>` | アクションの結果、または進行中の状態です。 |
+| `func` | `ActionFunction` | 実際に選出されたアクション関数です。 |
+| `idle` | `() => Promise<{ redirectTo: RedirectResponse \| undefined }>` | 完了を待ち、リダイレクト要求を取り出します。 |
+
+## 選出ルール [#selection]
+
+`routes` を先頭から走査し、次の条件をすべて満たす最初のルートを選びます。
+
+1. `action` が関数として定義されていること。
+2. リクエストのパスが、そのルートの `urlPath` と一致するか、`urlPath` の子パスであること。
+
+子パスの判定はセグメント単位です。`urlPath` が `/users` のとき、`/users/42` はマッチしますが、`/usersettings` はマッチしません。文字列の前方一致だけではセグメントの境界をまたぐので、`/users` の直後が `/` であることも条件に含まれます。`/foo` と `/foo-bar` の関係も同じです。
+
+パスが `/` のルートは別扱いです。絶対パスの先頭は必ず `/` なので、ほかに候補がなければルートアクションが選ばれます。
+
+マッチ済みの配列は詳細度の高い子から親の順です。したがって、より深いルートのアクションが優先されます。`/contacts/42` では `/contacts/:id` のアクションが選ばれ、`/contacts` のアクションは実行されません。
+
+## 実行と結果 [#execution]
+
+選出されたアクションには、POST 用の `RouteRequest` が渡されます。`params` はそのルートで抽出された値です。
+
+アクションは同期でも非同期でもかまいません。同期で例外を投げた場合も、`Promise` が拒否された場合も、`data` は `rejected` になり、例外は外へ投げられません。エラーの表示は、`data` を `use` しているコンポーネントからエラーバウンダリーに委ねられます。
+
+戻り値が `RedirectResponse` のときはそのインスタンスを画面に露出させません。`data` は `undefined` を解決する `NinjaPromise` に置き換わり、`idle()` の `redirectTo` に元の `RedirectResponse` が入ります。同期でも非同期でも扱いは同じです。
+
+| アクションの結果 | `data` の状態 | `idle()` の `redirectTo` |
+| --- | --- | --- |
+| 通常の値 | `fulfilled` | `undefined` |
+| `RedirectResponse` | `fulfilled`（値は `undefined`） | 返された `RedirectResponse` |
+| 例外、または拒否 | `rejected` | `undefined` |
+
+`idle()` は `data` の失敗を内部で処理するため、拒否されることはありません。
+
+## 使い方 [#usage]
+
+```ts
+import { matchRoutes, startAction } from "@pera1/core";
+
+const matched = matchRoutes(routes, url);
+const action = startAction(matched ?? [], {
+  url,
+  formData,
+  signal,
+});
+
+if (action) {
+  const { redirectTo } = await action.idle();
+  if (redirectTo) {
+    // redirectTo の指す先へ遷移する
+  }
+}
+```
+
+アクションの中では、POST 用の `request` からフォームデータを読み取れます。
+
+```tsx
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs } from "@pera1/core";
+
+async function deleteContactAction({ params }: ActionFunctionArgs<"/contacts/:id">) {
+  await deleteContact(params.id);
+  return redirect("/contacts");
+}
+```
+
+## 注意 [#notes]
+
+- 選出は 1 つで打ち切られます。親のアクションも同時に走ることはありません。
+- `routes` が送信先の URL にマッチしていない場合、そのルートは選ばれません。
+- アクションの結果は [NavigationApiEngine](/packages/core/reference/navigation-api-engine) がストアへ登録します。`startAction` 自身はストアを操作しません。
+- アクションが完了すると、続けてローダーが実行されます。書き込みと取得の分担は[データ更新](/guides/mutations)で説明しています。
+
+## 関連 [#related]
+
+- [RouteDefinition](/packages/core/reference/route-definitions) — アクションと引数の型
+- [matchRoutes](/packages/core/reference/routes) — 選出に使うルート配列
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — アクション後の再取得
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — POST 時にこの関数を呼ぶ
+- [データ更新](/guides/mutations) — アクションの使い方

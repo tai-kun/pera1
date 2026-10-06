@@ -1,0 +1,94 @@
+---
+title: useActionData
+description: "アクションの結果を購読し、React.use で読み取るためのフックです。"
+---
+
+`useActionData` は、現在のルート階層に紐づくアクションの結果を購読します。返り値の `NinjaPromise` を `React.use` に渡すと、実行中はサスペンドし、完了すると結果が返ります。
+
+```tsx
+import { useActionData } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useActionData<TData = unknown>(): ActionData<TData> | undefined;
+```
+
+## 型パラメーター [#type-parameters]
+
+| 名前 | 既定値 | 説明 |
+| --- | --- | --- |
+| `TData` | `unknown` | アクション関数の型、または解決後のデータ型です。関数型を渡すと、その戻り値からデータ型を導出します。 |
+
+```ts
+type ActionResult<TResult> = Awaited<TResult extends RedirectResponse ? undefined : TResult>;
+
+type FulfilledActionData<TData = unknown> = ActionResult<
+  TData extends (...args: any) => infer TReturn ? TReturn : TData
+>;
+
+type ActionData<TData = unknown> = NinjaPromise<FulfilledActionData<TData>>;
+```
+
+`useActionData<typeof action>()` のように関数を渡すか、`ActionData<Result>()` のようにデータ型を直接渡します。
+
+## 戻り値 [#returns]
+
+アクションが実行済みか実行中であれば `NinjaPromise` を返し、まだ一度も実行されていない履歴エントリーでは `undefined` を返します。データの選択は `@pera1/core` の `selectActionData` に委譲しており、現在の履歴エントリー ID とアクション関数の参照でキャッシュを引きます。
+
+`undefined` のときは `use` を呼べないため、`use` を呼ぶ部分を子コンポーネントに分けます。
+
+```tsx
+function ContactForm() {
+  const actionData = useActionData<typeof updateContactAction>();
+
+  return (
+    <form method="post" action="/contacts">
+      <input name="name" />
+      {actionData ? <ActionError actionData={actionData} /> : null}
+      <button type="submit">保存</button>
+    </form>
+  );
+}
+
+function ActionError({ actionData }: { actionData: ActionData<typeof updateContactAction> }) {
+  const data = use(actionData);
+  if (data && "error" in data && data.error) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+実行中はサスペンドするため、送信中は `Suspense` のフォールバックが表示されます。失敗した場合は拒否の理由が投げられ、エラーバウンダリーが受け取ります。
+
+## リダイレクトと `value` の型 [#redirect]
+
+アクションが `redirect()` を返した場合、フレームワークは応答を画面に渡さず `undefined` に置き換えます。ただし、非同期アクションが `{ error }` と `RedirectResponse` のユニオンを返す場合、型の上では `RedirectResponse` が残ります。`in` 演算子で絞り込んでから値を読んでください。
+
+```tsx
+const data = use(actionData);
+if (data && "error" in data) {
+  return <p role="alert">{data.error}</p>;
+}
+```
+
+型の詳しい扱いは [TypeScript ガイド](/guides/typescript#action-data)を参照してください。
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` が供給されていない |
+| `RouterContextMissingError` | `RouterContext` が供給されていない |
+
+## 親のアクションを継承する [#inheritance]
+
+子ルートにアクションがない場合、親ルートのアクションが引き継がれます。子で定義した場合は子が優先されます。この規則は `useLoaderData` と同じです。
+
+## 関連 [#related]
+
+- [useLoaderData](/packages/react/reference/use-loader-data) — ローダーの結果を購読する
+- [データ更新](/guides/mutations) — アクションとフォームのつなぎ込み
+- [TypeScript](/guides/typescript#action-data) — 型の導出

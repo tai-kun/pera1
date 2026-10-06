@@ -1,0 +1,132 @@
+---
+title: RoutePatternUtils
+description: "パターンの一致判定、パラメーター抽出、パス生成を行うユーティリティーです。"
+---
+
+`RoutePatternUtils` は `/users/:id` のようなルートパターンと実際のパスを照合するクラスです。一致判定、パラメーターの抽出、パラメーターを埋め込んだパスの生成を、静的メソッドとインスタンスメソッドのどちらからでも実行できます。
+
+```ts
+import { RoutePatternUtils } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+type Optional<T> = { readonly [P in keyof T]?: T[P] | undefined };
+
+class RoutePatternUtils<const TRoutePattern extends string = string> {
+  constructor(routePattern: TRoutePattern, options?: RoutePatternUtilsOptions);
+
+  readonly route: string;
+  readonly pattern: RegExp;
+  readonly paramKeys: readonly string[];
+
+  match(target: string | RoutePatternMatchURL): boolean;
+  parse(target: string | RoutePatternMatchURL): RouteParams<TRoutePattern>;
+  parseSafe(target: string | RoutePatternMatchURL): RouteParams<TRoutePattern> | null;
+  inject(params: Readonly<RouteParams<TRoutePattern>>): string;
+  replace(target: string | RoutePatternMatchURL, params: Optional<RouteParams<TRoutePattern>>): string;
+  replaceSafe(
+    target: string | RoutePatternMatchURL,
+    params: Optional<RouteParams<TRoutePattern>>,
+  ): string | null;
+}
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `routePattern` | `TRoutePattern extends string` | はい | 基準となるルートパターンです。 |
+| `target` | `string \| RoutePatternMatchURL` | はい | 照合または解析の対象です。 |
+| `params` | `RouteParams<TRoutePattern>` | はい | 埋め込む、または上書きするパラメーターです。 |
+| `options` | `RoutePatternUtilsOptions` | いいえ | 一致判定の挙動を制御します。 |
+
+## RoutePatternUtilsOptions [#options]
+
+| プロパティ | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `allowChild` | `boolean` | `false` | `true` にすると、子ディレクトリーへの前方一致を許可します。 |
+
+```ts no-run
+const parent = new RoutePatternUtils("/users", { allowChild: true });
+parent.match("/users/123"); // true
+```
+
+## RoutePatternMatchURL [#match-url]
+
+`target` には文字列のほかに、`pathname` を持つオブジェクトも渡せます。オブジェクトを渡した場合は `pathname` だけが使われ、`search` や `hash` は無視されます。
+
+```ts
+interface RoutePatternMatchURL {
+  readonly pathname: string;
+}
+```
+
+文字列でもオブジェクトでも、内部では `RoutePath` を通して正規化されます。そのため、重複したスラッシュや末尾のスラッシュは一致判定の前に取り除かれます。
+
+## メソッド [#methods]
+
+静的メソッドとインスタンスメソッドは名前が同じで、結果も同じです。静的メソッドは内部でインスタンスを作り、対応するインスタンスメソッドを呼び出します。
+
+| メソッド | 不一致時の挙動 | 説明 |
+| --- | --- | --- |
+| `match` | `false` を返す | パターンに一致するかを判定します。 |
+| `parse` | エラーを投げる | パスからパラメーターを抽出します。 |
+| `parseSafe` | `null` を返す | `parse` の安全版です。 |
+| `inject` | 常に文字列を返す | パラメーターをパターンに埋め込んでパスを生成します。 |
+| `replace` | エラーを投げる | 既存のパスの一部のパラメーターだけを差し替えます。 |
+| `replaceSafe` | `null` を返す | `replace` の安全版です。 |
+
+## パターンの記法 [#patterns]
+
+| 記法 | 例 | 挙動 |
+| --- | --- | --- |
+| `:name` | `/users/:id` | 1 セグメントを `id` として取り出します。 |
+| `:name?` | `/users/:id?` | セグメントを省略できます。省略時は `params` に含まれません。 |
+| `*` | `/files/*` | 残りのパス全体をキー `"*"` として取り出します。 |
+| `*?` | `/files/*?` | 残りが空でも一致します。 |
+| `:name.ext` | `/movies/:title.mp4` | 拡張子で区切り、`title` だけを取り出します。 |
+
+## パラメーターの値 [#params]
+
+`parse` と `parseSafe` が返す値は、正規化後のパスからそのまま取り出されます。`RoutePath` がパス名の Unicode をエンコードするため、値もエンコードされたままです。`inject` は逆に、渡された値をそのまま埋め込みます。
+
+```ts
+RoutePatternUtils.parseSafe("/users/:id", "/users/%20hello");
+// { id: "%20hello" }
+
+RoutePatternUtils.parseSafe("/users/:name", "/users/日本語");
+// { name: "%E6%97%A5%E6%9C%AC%E8%AA%9E" }
+
+RoutePatternUtils.inject("/users/:name", { name: "日本語" });
+// "/users/日本語"
+```
+
+## 使い方 [#usage]
+
+```ts no-run
+import { RoutePatternUtils } from "@pera1/core";
+
+RoutePatternUtils.match("/users/:id", "/users/123"); // true
+RoutePatternUtils.parse("/users/:id", "/users/123"); // { id: "123" }
+RoutePatternUtils.parseSafe("/users/:id", "/posts/123"); // null
+RoutePatternUtils.inject("/users/:id", { id: "123" }); // "/users/123"
+RoutePatternUtils.replace(
+  "/users/:id/posts/:postId",
+  "/users/1/posts/2",
+  { postId: "9" },
+); // "/users/1/posts/9"
+```
+
+## 注意 [#notes]
+
+- `inject` に値が不足しているパラメーターがあると、その部分はプレースホルダーのまま出力されます。呼び出し側で必要な値をそろえてください。
+- `parse` と `replace` が投げるのは、パターン不一致を表す専用のエラーです。値がない場合を想定するときは `parseSafe` と `replaceSafe` を使ってください。
+- `paramKeys` には、パターンから抽出されたパラメーター名が定義順で入ります。ワイルドカードのキーは `"*"` です。
+
+## 関連 [#related]
+
+- [RoutePath](/packages/core/reference/route-path) — 対象パスの正規化
+- [createRouter](/packages/core/reference/create-router) — ルート定義とパターンの利用
+- [エラークラス](/packages/core/reference/errors) — 検証エラーの共通の扱い

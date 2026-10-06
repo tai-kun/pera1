@@ -1,0 +1,88 @@
+---
+title: redirect
+description: "アクションから別のパスへ遷移させる redirect と RedirectResponse の仕様です。"
+---
+
+`redirect` は、アクションの結果として別のページへ移動させる `RedirectResponse` を作成します。アクションからこのオブジェクトを返すと、エンジンがそのページへリダイレクトします。
+
+```ts
+import { redirect, RedirectResponse } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function redirect(destination: string): RedirectResponse;
+
+class RedirectResponse {
+  constructor(destination: string);
+  readonly pathname: string;
+  readonly search: string;
+  readonly hash: string;
+}
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `destination` | `string` | はい | リダイレクト先のパスです。空文字を渡すとルートを指します。 |
+
+## RedirectResponse のプロパティ [#properties]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `pathname` | `string` | ドメイン部分を除いたパスです。先頭は常に `/` になります。 |
+| `search` | `string` | 先頭に `?` を含むクエリーです。常にソートされます。 |
+| `hash` | `string` | 先頭に `#` を含むハッシュです。 |
+
+入力の解析規則は `RoutePath` と同じです。正規化の詳しい挙動は [RoutePath](/packages/core/reference/route-path) を参照してください。
+
+## 使い方 [#usage]
+
+アクションの戻り値として返します。アクションは `request.formData` から送信内容を取り出せます。
+
+```ts no-run
+import { redirect } from "@pera1/core";
+import type { ActionFunction } from "@pera1/core";
+
+const createUser: ActionFunction = async ({ request }) => {
+  const formData = request.formData;
+  await saveUser(formData);
+
+  return redirect("/users?created=1");
+};
+```
+
+`RedirectResponse` 自体はリダイレクト先を保持するだけのデータです。エンジンはアクションの結果からこの型を見つけると、その URL へ遷移します。リダイレクトを返したアクションの結果は、`useActionData` では `undefined` として扱われます。
+
+## 正規化の例 [#normalization]
+
+```ts
+redirect("/users/profile?id=123&sort=desc#bio");
+// pathname: "/users/profile"
+// search: "?id=123&sort=desc"
+// hash: "#bio"
+
+redirect("/users?z=1&a=2");
+// search: "?a=2&z=1"
+
+redirect("relative/path");
+// pathname: "/relative/path"
+
+redirect("");
+// pathname: "/"
+```
+
+## 注意 [#notes]
+
+- クエリーは常に昇順にソートされます。
+- 先頭にスラッシュがない相対パスには、自動で `/` が付与されます。
+- 絶対 URL を渡しても URL として解析されません。`"https://example.com/a"` は文字列全体が 1 つのパスとして扱われ、`pathname` は `"/https:/example.com/a"` になります。
+- 連続するスラッシュや末尾のスラッシュは、`RoutePath` と同じ規則で取り除かれます。
+
+## 関連 [#related]
+
+- [RoutePath](/packages/core/reference/route-path) — パスの正規化と操作
+- [RouteRequest](/packages/core/reference/route-request) — アクションが受け取るリクエスト
+- [selectActionData と selectLoaderData](/packages/core/reference/router-store) — アクション結果の購読

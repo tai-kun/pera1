@@ -1,0 +1,156 @@
+---
+title: ナビゲーション
+description: "リンク、useNavigate、useSubmit の使い分けと、履歴の扱いを解説します。"
+---
+
+画面遷移の方法は 3 つあります。リンクを置く方法、`useNavigate` による命令的な遷移、`useSubmit` でデータを送ってからの遷移です。このページではそれぞれの使いどころと、履歴や URL の扱いを説明します。
+
+## リンクは普通の `<a>` でよい [#links]
+
+内部リンクに専用コンポーネントはありません。`<a href="/contacts/42">` と書けば、クリックは Navigation API の `navigate` イベントとしてルーターに届き、ページ全体を読み直さずに遷移します。
+
+```tsx
+<a href={`/contacts/${contact.id}`}>{contact.name}</a>
+```
+
+次のナビゲーションはインターセプトせず、ブラウザーの標準動作に任せます。
+
+- 外部オリジンへのリンク
+- ハッシュだけの変化 (`#section` へのジャンプ)
+- ダウンロードを伴うリンク (`download` 属性)
+- ページの再読み込み
+
+`target="_blank"` を付けて新しいタブを開くリンクも、標準動作のままです。
+
+## プログラムから遷移する [#use-navigate]
+
+ボタンのクリックや処理の完了後に遷移させたい場合は `useNavigate` を使います。引数の形は 4 通りあります。
+
+```tsx
+import { useNavigate } from "@pera1/react";
+
+function Actions() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      {/* パスを文字列で指定する */}
+      <button onClick={() => navigate("/contacts")}>一覧へ</button>
+
+      {/* 現在の URL の一部だけを差し替える */}
+      <button onClick={() => navigate({ search: "?page=2" })}>次のページ</button>
+
+      {/* RoutePath を直接操作する */}
+      <button onClick={() => navigate((path) => path.searchParams.set("sort", "name"))}>
+        名前順
+      </button>
+
+      {/* 履歴を戻る・進む */}
+      <button onClick={() => navigate(-1)}>戻る</button>
+    </>
+  );
+}
+```
+
+2 番目のオブジェクト形式は、指定しなかった部分を現在の URL から引き継ぎます。3 番目の関数形式では `RoutePath` を受け取り、`pathname`、`search`、`hash` を自由に書き換えられます。
+
+| 引数 | 動作 |
+| --- | --- |
+| `string` | そのパスへ遷移する |
+| `{ pathname?, search?, hash? }` | 指定した部分だけを差し替える |
+| `(path: RoutePath) => void` | 現在の URL を基に自由に組み立てる |
+| `number` | 履歴スタック内を相対移動する (`-1` で戻る) |
+
+`replace: true` をオプションに渡すと、履歴を追加せず現在のエントリーを上書きします。検索条件の更新のように、戻るボタンで 1 つずつ戻る必要がない場合に使います。
+
+```tsx
+navigate("/contacts?page=2", { replace: true });
+```
+
+## データを送って遷移する [#use-submit]
+
+`useNavigate` は URL を変えるだけですが、`useSubmit` はデータを送信してから遷移します。`FormData` を渡すとアクション (POST)、`URLSearchParams` を渡すとローダーの再取得 (GET) が走ります。
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function Toolbar() {
+  const submit = useSubmit();
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          const formData = new FormData();
+          formData.set("intent", "archive");
+          submit(formData);
+        }}
+      >
+        アーカイブ
+      </button>
+
+      <button
+        onClick={() => {
+          const params = new URLSearchParams();
+          params.set("view", "grid");
+          submit(params, { replace: true });
+        }}
+      >
+        グリッド表示
+      </button>
+    </>
+  );
+}
+```
+
+`action` オプションで送信先を上書きできます。省略すると、現在のルートの `urlPath` (パラメーターを実値で埋めたパス) に送信されます。
+
+```tsx
+submit(formData, { action: "/contacts/42" });
+```
+
+## URL は `RoutePath` で扱う [#route-path]
+
+URL の組み立てや解析には `RoutePath` を使えます。連続するスラッシュの除去、末尾スラッシュの削除、クエリーのソートを自動で行います。URL の表記揺れでキャッシュが無駄になったり、無限ループに陥ったりするのを防げます。
+
+```ts
+import { RoutePath } from "@pera1/core";
+
+const path = new RoutePath("/contacts///42/?b=2&a=1#profile");
+path.pathname; // "/contacts/42"
+path.search; // "?a=1&b=2"
+path.hash; // "#profile"
+path.toString(); // "/contacts/42?a=1&b=2#profile"
+
+path.searchParams.set("page", "3");
+path.toString(); // "/contacts/42?a=1&b=2&page=3#profile"
+```
+
+`useRoutePath` を使うと、現在の URL に対応する読み取り専用の `RoutePath` をコンポーネントから取得できます。
+
+```tsx
+import { useRoutePath } from "@pera1/react";
+
+function CurrentLocation() {
+  const path = useRoutePath();
+  return <p>{path.pathname}</p>;
+}
+```
+
+## ハッシュとスクロール [#hash]
+
+`#section` だけが変わるリンクはインターセプトされず、ブラウザーが標準のスクロールを行います。`useNavigate` でハッシュを変えると、遷移自体はインターセプトされますが、スクロール位置の制御はブラウザーに任されます。
+
+## 履歴の仕組み [#history]
+
+各遷移は Navigation API の履歴エントリーを作り、pera1 はエントリーごとにデータを保持します。「戻る」で前のエントリーに戻ると、同じ URL のローダー結果がキャッシュから復元されます。再取得が必要かどうかは[データ取得](/guides/data-loading)の `shouldReload` で制御します。
+
+`navigate(-1)` や `navigate(1)` は、履歴スタック内に該当するエントリーがある場合だけ移動します。範囲を超える要求は無視され、エラーにはなりません。
+
+## 外部 URL への移動 [#external]
+
+外部サイトへ移動する場合は、通常の `<a href="https://...">` を使ってください。`useNavigate` はアプリ内のルーティングを対象にしており、外部 URL への遷移は想定していません。
+
+## 次に読む [#next]
+
+遷移が失敗したときの表示は[エラー処理](/guides/error-handling)、画面ごとの遅延読み込みは[コード分割](/guides/code-splitting)で説明します。

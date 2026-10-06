@@ -1,0 +1,137 @@
+---
+title: RoutePath
+description: "パス、クエリー、ハッシュを正規化して操作する RoutePath の仕様です。"
+---
+
+`RoutePath` はアプリケーション内のパスを構築・解析・操作するクラスです。ホストやプロトコルといった余分な情報を排除し、パス名、クエリー、ハッシュだけを一貫した規則で管理します。`useNavigate` の関数形式が受け取るのもこのインスタンスです。
+
+```ts
+import { RoutePath } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+class RoutePath implements ReadonlyRoutePath {
+  constructor(path?: string | Pick<ReadonlyURL, "pathname" | "search" | "hash">);
+
+  static encode(path: string | Pick<ReadonlyURL, "pathname" | "search" | "hash">): string;
+
+  get pathname(): string;
+  set pathname(value: string);
+
+  get search(): string;
+  set search(value: string);
+
+  get searchParams(): URLSearchParams;
+
+  get hash(): string;
+  set hash(value: string);
+
+  toString(): string;
+  clone(): RoutePath;
+}
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `path` | `string \| Pick<ReadonlyURL, "pathname" \| "search" \| "hash">` | いいえ | 解析するパスです。省略時は空文字として扱われ、ルート (`/`) になります。 |
+
+## プロパティ [#properties]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `pathname` | `string` | 正規化されたパス名です。代入時にも正規化が走ります。 |
+| `search` | `string` | 先頭に `?` を含むクエリーです。取得のたびにソートされます。 |
+| `searchParams` | `URLSearchParams` | クエリーを操作するためのオブジェクトです。変更は `search` と `toString()` に反映されます。 |
+| `hash` | `string` | 先頭に `#` を含むハッシュです。 |
+
+## メソッド [#methods]
+
+| メソッド | 戻り値 | 説明 |
+| --- | --- | --- |
+| `toString()` | `string` | パス名、ソート済みのクエリー、ハッシュを連結した文字列を返します。 |
+| `clone()` | `RoutePath` | 同じ内容の独立したインスタンスを返します。 |
+| `RoutePath.encode(path)` | `string` | 入力を正規化した文字列を返す静的メソッドです。 |
+
+## 正規化の規則 [#normalization]
+
+文字列でもオブジェクトでも、次の規則で正規化されます。
+
+- 先頭にスラッシュがない場合は `/` が付与されます。
+- 連続するスラッシュは 1 本にまとめられます。
+- ルート (`/`) 以外では、末尾のスラッシュが取り除かれます。
+- クエリーは取得時に昇順へソートされます。
+- `hash` に `#` がない値を代入すると、自動で `#` が付与されます。
+- パス名に含まれる Unicode や特殊文字はパーセントエンコードされます。すでにエンコード済みの文字列はそのまま保持されます。
+
+```ts
+new RoutePath("/users///profile//").toString();
+// "/users/profile"
+
+new RoutePath("/page?b=2&a=1#section").toString();
+// "/page?a=1&b=2#section"
+
+new RoutePath({ pathname: "/search", search: "?z=1&a=2", hash: "#top" }).toString();
+// "/search?a=2&z=1#top"
+```
+
+絶対 URL の文字列を渡しても、URL として解析されません。文字列全体がパスとして扱われます。
+
+```ts
+new RoutePath("http://google.com/path").toString();
+// "/http:/google.com/path"
+```
+
+## 静的メソッド encode [#encode]
+
+`encode` は、正規化後の文字列だけが欲しいときに使います。内部で `RoutePath` を作り、`toString()` した値を返します。
+
+```ts
+RoutePath.encode("//items//123//");
+// "/items/123"
+```
+
+## ReadonlyRoutePath [#readonly-route-path]
+
+`ReadonlyRoutePath` は取得だけを許可する読み取り専用ビューです。参照を受け取るだけの関数の引数に使います。
+
+```ts
+interface ReadonlyRoutePath {
+  readonly pathname: string;
+  readonly search: string;
+  readonly searchParams: ReadonlyURLSearchParams;
+  readonly hash: string;
+  toString(): string;
+  clone(): RoutePath;
+}
+```
+
+## useNavigate との関係 [#use-navigate]
+
+`useNavigate` に関数を渡すと、引数の `route` には `RoutePath` のインスタンスが入ります。現在の URL を基にしたインスタンスへセッターで変更を加えると、その内容が次の遷移先になります。
+
+```tsx
+import { RoutePath } from "@pera1/core";
+
+navigate((route: RoutePath) => {
+  route.pathname = "/settings";
+  route.search = "?tab=account";
+});
+```
+
+パス全体を静的な文字列で指定したいだけなら、[toNavigateArgs](/packages/core/reference/navigation-utils) を通して文字列を渡すほうが簡単です。関数形式は、現在のクエリーを保ったまま一部だけを変えたいときに適しています。
+
+## 注意 [#notes]
+
+- `searchParams` は内部の `URL` が持つオブジェクトをそのまま返します。`append` などの変更は即座に反映されます。
+- `clone()` で作ったインスタンスは元のインスタンスと独立しています。片方を変更してももう片方には影響しません。
+- クエリーとハッシュに含まれる Unicode も、`URL` の規則に従ってエンコードされます。
+
+## 関連 [#related]
+
+- [toNavigateArgs](/packages/core/reference/navigation-utils) — 関数形式の遷移を受け付ける正規化関数
+- [redirect](/packages/core/reference/redirects) — 同じ規則でリダイレクト先を解析する
+- [RoutePatternUtils](/packages/core/reference/route-pattern-utils) — パスパターンの解析と生成

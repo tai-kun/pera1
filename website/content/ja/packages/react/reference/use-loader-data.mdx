@@ -1,0 +1,102 @@
+---
+title: useLoaderData
+description: "ローダーの結果を購読し、React.use で読み取るためのフックです。"
+---
+
+`useLoaderData` は、現在のルート階層に紐づくローダーの結果を購読します。返り値の `NinjaPromise` を `React.use` に渡すと、読み込み中はサスペンドし、完了すると解決済みの値が返ります。
+
+```tsx
+import { useLoaderData } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useLoaderData<TData = unknown>(): LoaderData<TData>;
+```
+
+## 型パラメーター [#type-parameters]
+
+| 名前 | 既定値 | 説明 |
+| --- | --- | --- |
+| `TData` | `unknown` | ローダー関数の型、または解決後のデータ型です。関数型を渡すと、その戻り値からデータ型を導出します。 |
+
+```ts
+type FulfilledLoaderData<TData> = Awaited<
+  TData extends (...args: any) => infer TReturn ? TReturn : TData
+>;
+
+type LoaderData<TData> = NinjaPromise<FulfilledLoaderData<TData>>;
+```
+
+`useLoaderData<typeof loader>()` のように関数を渡すか、`useLoaderData<LoaderData<Contact>>()` のようにデータ型を直接渡します。
+
+## 戻り値 [#returns]
+
+現在の履歴エントリーに紐づくローダーの結果を表す `NinjaPromise` です。`NinjaPromise` は thenable なので、`React.use` にそのまま渡せます。
+
+| 状態 | `React.use` に渡したときの挙動 |
+| --- | --- |
+| 未解決 | サスペンドし、最も近い `Suspense` のフォールバックを表示します。 |
+| 成功 | 解決済みの値を返します。 |
+| 失敗 | 拒否の理由を投げ、最も近いエラーバウンダリーが受け取ります。 |
+
+## 使い方 [#usage]
+
+レイアウト側で `Suspense` を用意し、データを使うコンポーネントで `use` に渡します。
+
+```tsx
+import { Outlet, useLoaderData } from "@pera1/react";
+import { Suspense, use } from "react";
+
+function Layout() {
+  return (
+    <Suspense fallback={<p>読み込み中…</p>}>
+      <Outlet />
+    </Suspense>
+  );
+}
+
+function ContactPage() {
+  const contact = use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+```
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `LoaderDataNotFoundError` | 現在のルート階層にローダーが 1 つもない、または `Router` の外で呼び出した |
+| `RouterContextMissingError` | `RouterContext` がコンポーネントツリーに供給されていない |
+
+## 親のローダーを継承する [#inheritance]
+
+子ルートにローダーがない場合、親ルートのローダーが引き継がれます。親で取得したデータを複数の子ページで共有できます。
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts", index: true, component: ContactsPage },
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    loader: contactsLoader,
+  },
+];
+
+function ContactsPage() {
+  // /contacts のレイアウトに付けたローダーの結果
+  const contacts = use(useLoaderData<typeof contactsLoader>());
+  // ...
+}
+```
+
+子にローダーがある場合は子が優先され、親のローダーは子から見えなくなります。
+
+## 関連 [#related]
+
+- [データ取得ガイド](/guides/data-loading) — ローダーの宣言と再取得の制御
+- [useActionData](/packages/react/reference/use-action-data) — アクションの結果を購読する
+- [selectLoaderData](/packages/core/reference/router-store) — フレームワーク非依存の選択ロジック

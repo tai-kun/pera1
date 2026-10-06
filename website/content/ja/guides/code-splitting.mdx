@@ -1,0 +1,109 @@
+---
+title: コード分割
+description: "React.lazy で画面を遅らせて読み込む方法と、Suspense の置き場所を解説します。"
+---
+
+アプリが大きくなると、初期表示に不要な画面まで 1 つのバンドルに含めたくなくなります。このページでは、画面コンポーネントを遅延読み込みする方法と、pera1 のルート定義で気をつける点を説明します。
+
+## `React.lazy` はそのままでは渡せない [#why-wrapper]
+
+`component` は関数か、`default` エクスポートが関数の ES モジュールであることを前提にしています。`React.lazy` が返すのはコンポーネント風のオブジェクトで、関数ではありません。そのまま `component` に渡すと「コンポーネントなし」と判定されます。`React.lazy` を使うときは、`Suspense` で包む小さな関数を用意します。
+
+```tsx
+import { lazy, Suspense, type ComponentType } from "react";
+
+function lazyPage(importer: () => Promise<{ default: ComponentType }>) {
+  const Lazy = lazy(importer);
+  return function LazyPage() {
+    return (
+      <Suspense fallback={<p>読み込み中…</p>}>
+        <Lazy />
+      </Suspense>
+    );
+  };
+}
+
+const routes = [
+  { path: "/", component: HomePage },
+  {
+    path: "/reports",
+    component: lazyPage(() => import("./pages/reports.js")),
+  },
+];
+```
+
+`lazyPage` はインポート関数を受け取り、`default` エクスポートを遅延読み込みするコンポーネントを返します。`importer` はレンダリングのたびに作り直されても、`React.lazy` 側が初回の結果を保持するため問題はありません。
+
+## 読み込み中の表示はどこに置くか [#suspense-placement]
+
+`Suspense` をルートごとのラッパーに置くと、その画面だけがフォールバックに切り替わります。レイアウト (ヘッダーやナビゲーション) を切り替えたくない場合は、レイアウトではなく `Outlet` の周りに `Suspense` を置きます。
+
+```tsx
+function RootLayout() {
+  return (
+    <>
+      <Header />
+      <main>
+        <Suspense fallback={<p>読み込み中…</p>}>
+          <Outlet />
+        </Suspense>
+      </main>
+    </>
+  );
+}
+```
+
+この場合、画面コンポーネントは `React.lazy` のラッパーを外して直接 `lazy()` しても構いません。
+
+遅延コンポーネントがサスペンドすると、最も近い `Suspense` (この場合は `Outlet` を包むもの) がフォールバックを表示します。
+
+```tsx
+const ReportsPage = lazy(() => import("./pages/reports.js"));
+
+const routes = [
+  { path: "/reports", component: () => <ReportsPage /> },
+];
+```
+
+## ローダーも遅延読み込みできる [#lazy-loaders]
+
+画面だけでなく、その画面専用のローダーも一緒に分割できます。ローダー関数の中で動的インポートをするのが簡単です。
+
+```tsx
+async function reportsLoader({ request }: LoaderFunctionArgs) {
+  const { loadReports } = await import("./loaders/reports.js");
+  return loadReports(request.signal);
+}
+```
+
+ローダーのキャッシュは関数の参照で管理されるため、`reportsLoader` はモジュールスコープに置いて参照を安定させてください。動的インポートした関数を毎回ラップし直すと、キャッシュが効きません。
+
+## ルート定義をモジュールに分ける [#route-modules]
+
+ルート定義そのものをファイルごとに分割したい場合は、モジュール形式が使えます。デフォルトエクスポートにコンポーネントを置くと、`component` を省略できます。
+
+```tsx routes/reports.tsx
+export default function ReportsPage() {
+  return <h2>レポート</h2>;
+}
+```
+
+```tsx routes.tsx
+import * as reportsRoute from "./routes/reports.js";
+
+const routes = [{ path: "/reports", ...reportsRoute }];
+```
+
+モジュール形式にしても `React.lazy` が自動で使われるわけではありません。コンポーネントの遅延読み込みは前述の `lazyPage` や `Suspense` で行ってください。
+
+## 遅延読み込みの注意点 [#caveats]
+
+導入前に、次の 3 点を確認してください。
+
+- 遅延読み込みした画面のローダーは、コンポーネントの読み込みとは別に走ります。データ取得を待たせたくない場合は、[ローダー](/guides/data-loading)を先に実行しておく設計にしてください。
+- 失敗したチャンクの再読み込みは自動では行われません。ネットワークエラーが起きた場合は、エラーバウンダリーで再試行の導線を用意してください。
+- 分割しすぎると、遷移のたびに小さなリクエストが増えて体感が悪くなります。まずは大きな画面単位で分割し、必要になってから細かくしてください。
+
+## 次に読む [#next]
+
+遅延読み込みした画面のエラー表示は[エラー処理](/guides/error-handling)を参照してください。ルーティングの土台を自分で実装する場合は[カスタムエンジン](/guides/custom-engines)に進みます。

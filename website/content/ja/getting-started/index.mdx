@@ -1,0 +1,35 @@
+---
+title: はじめに
+description: "pera1 の全体像と、初回に読む 3 ページ、その後の参照の仕方を案内します。"
+---
+
+pera1 を使い始めるための入口です。まず動かしたいなら「インストール」と「クイックスタート」を順に進めてください。仕組みを理解してから設計したいなら「基本概念」を先に読んでください。以降のガイドが読みやすくなります。
+
+## 初回に読む 3 ページ [#first-three]
+
+1. [インストール](/getting-started/installation) — パッケージの追加と前提条件を確認します。
+2. [クイックスタート](/getting-started/quickstart) — 連絡先管理アプリを作りながら、ルート定義、ローダー、アクション、遷移を一通り体験します。
+3. [基本概念](/getting-started/concepts) — ルートのマッチング、履歴エントリー、データフローの全体像を押さえます。
+
+## その後は用途で引く [#after-that]
+
+ここから先は参照部です。すべてを順に読む必要はありません。困ったときや、実装したい機能が決まったときは、該当するページだけを開いてください。
+
+<CardGroup cols={2}>
+  <Card title="URL とパラメーターを設計する" href="/guides/routing" icon="route">
+    パスパターン、index ルート、ネスト、詳細度の決まりを説明します。
+  </Card>
+  <Card title="データを取得する" href="/guides/data-loading" icon="database">
+    ローダーの宣言、キャッシュ、再取得条件を扱います。
+  </Card>
+  <Card title="データを更新する" href="/guides/mutations" icon="pencil">
+    アクション、フォーム送信、リダイレクトの流れを追います。
+  </Card>
+  <Card title="プログラムから遷移する" href="/guides/navigation" icon="arrow-right">
+    `useNavigate` と `useSubmit` の使い分けを見ていきます。
+  </Card>
+</CardGroup>
+
+## バージョンについて [#versions]
+
+このサイトは最新の pera1 を対象にしています。各パッケージのバージョンは [GitHub のリポジトリ](https://github.com/tai-kun/pera1) で確認できます。

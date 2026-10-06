@@ -1,0 +1,87 @@
+---
+title: toSubmitArgs
+description: "useSubmit の引数をエンジン用の送信引数へ振り分ける変換関数です。"
+---
+
+`toSubmitArgs` は `useSubmit` が受け取る `FormData` または `URLSearchParams` を、エンジンの `IEngine.SubmitArgs` へ変換します。どちらのデータかは実行時に判定します。呼び出し側で分岐を書く必要はありません。
+
+```ts
+import { toSubmitArgs } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function toSubmitArgs(
+  target: ReadonlyURLSearchParams | ReadonlyFormData,
+  formAction: string,
+  options?: SubmitGetOptions | SubmitPostOptions,
+): IEngine.SubmitArgs;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `target` | `ReadonlyURLSearchParams \| ReadonlyFormData` | はい | 送信するフォームデータ、または検索クエリーです。 |
+| `formAction` | `string` | はい | 現在のルートに対応する既定のフォームアクションパスです。 |
+| `options` | `SubmitGetOptions \| SubmitPostOptions` | いいえ | 送信先の上書きや履歴の扱いを指定します。 |
+
+## オプション [#options]
+
+`FormData` を送るときは `SubmitPostOptions`、`URLSearchParams` を送るときは `SubmitGetOptions` を使います。どちらも `action` を受け付け、GET 側だけが `replace` を持ちます。
+
+| プロパティ | 型 | 対象 | 既定値 | 説明 |
+| --- | --- | --- | --- | --- |
+| `action` | `string` | 両方 | `formAction` | 送信先の URL パスを上書きします。 |
+| `replace` | `boolean` | GET のみ | `false` | `true` の場合は現在の履歴を上書きし、`false` または省略時は新規追加します。 |
+
+## 戻り値 [#returns]
+
+戻り値は `IEngine.SubmitArgs` で、`target` の実体に応じて 2 つの形に分かれます。
+
+| 入力 | 返される引数 |
+| --- | --- |
+| `FormData` | `{ type: "FORM_DATA", target, action }` |
+| `URLSearchParams` | `{ type: "URL_SEARCH_PARAMS", target, action, history }` |
+
+`FORM_DATA` は POST 相当としてアクションを起動し、`URL_SEARCH_PARAMS` は GET 相当としてローダーを起動します。`history` は `"push"` または `"replace"` で、GET 側だけに含まれます。
+
+## 使い方 [#usage]
+
+`useSubmit` から受け取った `submit` 関数は、内部でこの関数を呼びます。呼び出し側は送りたいデータをそのまま渡すだけです。
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function SearchBox() {
+  const submit = useSubmit();
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    submit(new FormData(event.currentTarget));
+  }
+
+  function resetQuery() {
+    submit(new URLSearchParams(), { replace: true });
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="q" />
+      <button type="submit">検索</button>
+    </form>
+  );
+}
+```
+
+## 注意 [#notes]
+
+- 判定には `FormData` の `instanceof` を使います。`target` の型は読み取り専用ですが、実行時には本物の `FormData` である必要があります。
+- `replace` は GET 側のオプションである `SubmitGetOptions` にだけあります。POST 側では履歴の扱いを指定できません。
+
+## 関連 [#related]
+
+- [useSubmit](/packages/react/reference/use-submit) — React から送信を実行するフック
+- [formDataToHTMLFormElement](/packages/core/reference/form-data) — FormData から送信用のフォームを生成する
+- [createRouter](/packages/core/reference/create-router) — スナップショットの `submit` メソッド

@@ -1,0 +1,116 @@
+---
+title: 履歴エントリースキーマ
+description: "履歴エントリーの ID と URL を検証するスキーマと expectHistoryEntry を説明します。"
+---
+
+`HistoryEntryIdSchema` と `HistoryEntryUrlSchema` は履歴エントリーの識別子と URL を検証する `valibot` スキーマです。`expectHistoryEntry` は両方を組み合わせて、履歴エントリー全体を検証します。
+
+```ts
+import {
+  HistoryEntryIdSchema,
+  HistoryEntryUrlSchema,
+  expectHistoryEntry,
+} from "@pera1/core";
+import type {
+  HistoryEntry,
+  HistoryEntryId,
+  HistoryEntryIdLike,
+  HistoryEntryLike,
+  HistoryEntryUrl,
+  HistoryEntryUrlLike,
+} from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+import type * as v from "valibot";
+
+function HistoryEntryIdSchema(): v.GenericSchema<HistoryEntryIdLike, HistoryEntryId>;
+function HistoryEntryUrlSchema(): v.GenericSchema<HistoryEntryUrlLike, HistoryEntryUrl>;
+
+function expectHistoryEntry(entry: HistoryEntryLike): HistoryEntry;
+function expectHistoryEntry(entry: HistoryEntryLike | null | undefined): HistoryEntry | null;
+```
+
+## HistoryEntryIdSchema [#history-entry-id-schema]
+
+文字列が UUID かどうかを検証し、通った値を `HistoryEntryId` として出力します。大文字を含む UUID も受け付けます。
+
+空文字や桁不足は失敗します。
+
+## HistoryEntryUrlSchema [#history-entry-url-schema]
+
+文字列が絶対 URL かどうかを検証します。通れば正規化した `ReadonlyURL` を `HistoryEntryUrl` として出力し、通らなければ失敗します。クエリーは `RoutePath` の規則でソートされます。
+
+```ts no-run
+import { HistoryEntryUrlSchema } from "@pera1/core";
+import * as v from "valibot";
+
+const url = v.parse(HistoryEntryUrlSchema(), "https://example.com/page?c=3&a=1&b=2");
+
+url.search; // "?a=1&b=2&c=3"
+```
+
+## expectHistoryEntry [#expect-history-entry]
+
+`{ id, url, index }` の形を検証し、確定的な `HistoryEntry` へ変換します。`url` は `null` を許容し、`index` は `-1` 以上の整数です。次の場合は検証に失敗せず `null` を返します。
+
+- 引数が `null` または `undefined`
+- `url` が `null`
+- `index` が `0` 未満（`-1` など）
+
+形式が不正な場合は `UnexpectedValidationError` を投げます。余分なプロパティーは無視されます。
+
+```ts no-run
+import { expectHistoryEntry } from "@pera1/core";
+
+const entry = expectHistoryEntry({
+  id: "123e4567-e89b-12d3-a456-426614174000",
+  url: "https://example.com",
+  index: 0,
+}); // HistoryEntry
+
+expectHistoryEntry(null); // null
+
+// 形式が不正な場合は UnexpectedValidationError
+expectHistoryEntry({
+  id: "123e4567-e89b-12d3-a456-426614174000",
+  url: "not a url",
+  index: 0,
+});
+```
+
+## 型 [#types]
+
+| 型 | 入力 / 出力 | 説明 |
+| --- | --- | --- |
+| `HistoryEntryIdLike` | 入力（`string`） | UUID 文字列です。 |
+| `HistoryEntryId` | 出力 | ブランド化された UUID 文字列です。 |
+| `HistoryEntryUrlLike` | 入力（`string`） | 絶対 URL の文字列です。 |
+| `HistoryEntryUrl` | 出力（`ReadonlyURL`） | 正規化された読み取り専用 URL です。 |
+| `HistoryEntryLike` | 入力 | `{ id, url, index }` の生のオブジェクトです。`url` は `null` を許容します。 |
+| `HistoryEntry` | 出力 | 検証済みの `{ id, url, index }` です。 |
+
+## シングルトンキャッシュ [#singleton]
+
+スキーマ関数は内部のキャッシュに初回の生成結果を保存しているため、何度呼び出しても同じインスタンスを返します。スキーマを取得するコストを気にせず、必要な場所で呼び出せます。
+
+```ts
+import { HistoryEntryIdSchema } from "@pera1/core";
+
+const a = HistoryEntryIdSchema();
+const b = HistoryEntryIdSchema();
+a === b; // true
+```
+
+## 注意 [#notes]
+
+- `v.parse` を直接呼んだ場合、失敗すると `valibot` の検証エラーが投げられます。`UnexpectedValidationError` が投げられるのは `expectHistoryEntry` だけです。
+- `expectHistoryEntry` の `index` は小数や `NaN` を拒否します。
+
+## 関連 [#related]
+
+- [エラークラス](/packages/core/reference/errors) — `UnexpectedValidationError` の仕様
+- [RoutePath](/packages/core/reference/route-path) — URL の正規化規則
+- [createRouter](/packages/core/reference/create-router) — 履歴エントリーの利用

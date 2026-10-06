@@ -1,0 +1,176 @@
+---
+title: データ取得
+description: "ローダーの宣言、履歴エントリー単位のキャッシュ、再取得の条件を、実例とともに解説します。"
+---
+
+画面に必要なデータは、ルートにローダー関数を宣言して取得します。このページでは、ローダーの書き方、実行されるタイミング、キャッシュと再取得の決まり、そしてコンポーネントでの受け取り方を説明します。
+
+## ローダーはルートに宣言する [#declaring]
+
+ローダーは `loader` プロパティーに渡す関数です。引数には、そのパターンから抽出された `params` と、GET リクエストを表す `request` が入ります。
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params, request }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("id が指定されていません。");
+  }
+  const response = await fetch(`/api/contacts/${id}`, { signal: request.signal });
+  if (!response.ok) {
+    throw new Error("連絡先を取得できませんでした。");
+  }
+  return response.json();
+}
+
+const routes = [
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+];
+```
+
+ルート定義の `path` は `string` に広がるため、`params` の値は `string | undefined` で届きます。使う前に存在を確かめてください。
+
+`request` は `RouteRequest` の GET 版です。`url`、`signal`、`formData` (常に `null`) を持ち、`toRequest()` で Web 標準の `Request` に変換できます。`fetch` に `signal` を渡しておくと、連続した遷移で古いリクエストが中断されます。
+
+## ローダーは 3 つの場面で走る [#when]
+
+**初回表示**では、マッチしたすべてのルートのローダーが `initLoaders` によって一斉に起動されます。階層の深いルートも浅いルートも同時に走るため、親のデータ待ちで子の取得が遅れることはありません。すべてのローダーは 1 つの `request` オブジェクトを共有します。
+
+**GET の遷移**では、`startLoaders` が遷移前後のルートを比較し、ローダーごとにキャッシュの再利用か再実行かを判定します。新しい状態はローダーの完了を待たずに UI へ通知されるため、画面はすぐに読み込み中の状態で描画されます。ブラウザーのタブの読み込み表示は、すべてのローダーが完了するまで続きます。
+
+**POST の後**は、アクションが完了した時点で、遷移先のローダーが実行されます。データ更新後は再取得が安全なため、`shouldReload` の既定値は常に `true` です。詳しくは[データ更新](/guides/mutations)を参照してください。
+
+## 結果は履歴エントリー単位でキャッシュされる [#cache]
+
+ローダーの結果は、履歴エントリーの ID とローダー関数の組み合わせでキャッシュされます。同じエントリーに戻ってきたとき、キャッシュがあれば `shouldReload` の判定に進みます。
+
+キャッシュが使われるのは、ローダー関数が前回と同じ参照である場合だけです。ルート定義の中でインラインの関数を渡すと、定義を作り直すたびに別の関数として扱われます。ローダーはモジュールスコープで定義してください。
+
+```tsx
+// 良い例: 参照が安定する
+async function listLoader() {
+  return listContacts();
+}
+
+// 悪い例: ルート定義を作り直すたびに別の関数になる
+const routes = [{ path: "/contacts", loader: async () => listContacts() }];
+```
+
+## 再取得するかどうかは `shouldReload` が決める [#should-reload]
+
+`shouldReload` を省略した場合、GET では次のどちらかに当てはまるときだけ再取得します。
+
+- 遷移前後でクエリー文字列が変わったとき (`?page=1` から `?page=2` など)
+- 遷移前のルート階層に、そのルートが含まれていなかったとき
+
+ブラウザーの「戻る」で同じ URL に戻る場合はどちらも当てはまらないため、キャッシュが再利用され、再取得は起こりません。
+
+挙動を変えたい場合は `shouldReload` を渡します。引数は GET と POST で形が異なる判別可能ユニオンです。
+
+```tsx
+const routes = [
+  {
+    path: "/dashboard",
+    component: DashboardPage,
+    loader: dashboardLoader,
+    shouldReload({ currentUrl, prevUrl, defaultShouldReload, triggerMethod }) {
+      if (triggerMethod === "GET" && currentUrl.hash !== prevUrl.hash) {
+        return false;
+      }
+      return defaultShouldReload;
+    },
+  },
+];
+```
+
+| プロパティー | GET | POST | 内容 |
+| --- | --- | --- | --- |
+| `triggerMethod` | `"GET"` | `"POST"` | 再取得のきっかけ |
+| `currentUrl` / `prevUrl` | あり | あり | 遷移前後の URL |
+| `currentParams` / `prevParams` | あり | あり | 遷移前後のパラメーター |
+| `formData` | なし | あり | 送信されたフォームデータ |
+| `actionData` | なし | あり | 直前のアクションの結果 |
+| `defaultShouldReload` | あり | あり | 既定の判定結果 |
+
+`shouldReload` は同期的に真偽値を返す必要があります。Promise を返したり真偽値以外を返したりすると、そのローダーの結果は `LoaderConditionError` で拒否されます。例外を投げた場合も、その例外がそのまま拒否の理由になります。
+
+## コンポーネントでデータを受け取る [#consume]
+
+コンポーネントでは `useLoaderData` で結果を受け取り、`React.use` に渡します。型引数にローダー関数の型を渡すと、解決後の値の型が決まります。
+
+```tsx
+import { Suspense, use } from "react";
+
+function ContactPage() {
+  const contact = use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+
+function Layout() {
+  return (
+    <Suspense fallback={<p>読み込み中…</p>}>
+      <Outlet />
+    </Suspense>
+  );
+}
+```
+
+読み込み中はサスペンドし、最も近い `Suspense` のフォールバックが表示されます。ローダーが投げた例外はそのままエラーバウンダリーへ届くため、コンポーネント側で失敗を確認するコードは不要です。エラーバウンダリーの組み方は[エラー処理](/guides/error-handling)で説明します。
+
+## 親のローダーを子から使う [#inheritance]
+
+子ルートにローダーがない場合、`useLoaderData` は親ルートのローダーを引き継ぎます。親で取得した一覧データを、複数の子ページで共有したいときに便利です。
+
+```tsx
+function ContactsLayout() {
+  return (
+    <section>
+      <Outlet />
+    </section>
+  );
+}
+
+function ContactsPage() {
+  // 親の /contacts に付けたローダーの結果を受け取る
+  const contacts = use(useLoaderData<typeof contactsLoader>());
+  // ...
+}
+```
+
+子にローダーがあれば子が優先され、親のローダーは子のコンポーネントからは見えなくなります。両方のデータが必要な場合は、子のローダーの中で親のデータも取得するか、親のローダーに統一してください。
+
+## ローダーがないときはエラーになる [#not-found]
+
+`useLoaderData` は、現在のルート階層にローダーが 1 つもない場合、`LoaderDataNotFoundError` を投げます。`Router` の外で呼んだ場合も同様です。ローダーを付け忘れていないか確認してください。
+
+## クエリーの変化で再取得する [#query]
+
+検索条件をクエリー文字列に持たせる場合、条件の更新は `useSubmit` に `URLSearchParams` を渡して行います。クエリーが変われば既定の判定で再取得されるため、`shouldReload` を書く必要はありません。
+
+```tsx
+function SearchBox() {
+  const submit = useSubmit();
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const params = new URLSearchParams();
+        params.set("q", String(formData.get("q") ?? ""));
+        submit(params, { replace: true });
+      }}
+    >
+      <input name="q" />
+      <button type="submit">検索</button>
+    </form>
+  );
+}
+```
+
+`useSubmit` の詳しい使い方は[ナビゲーション](/guides/navigation)を参照してください。
+
+## 次に読む [#next]
+
+取得したデータを書き換える手順は[データ更新](/guides/mutations)で説明します。ローダーの失敗を画面に出す方法は[エラー処理](/guides/error-handling)を参照してください。

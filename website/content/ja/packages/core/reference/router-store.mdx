@@ -1,0 +1,67 @@
+---
+title: selectActionData と selectLoaderData
+description: "スナップショットからアクションとローダーの結果を選び出すセレクターです。"
+---
+
+`selectActionData` と `selectLoaderData` はルーターのスナップショットからデータを取得する純粋なセレクター関数です。React バインディングの `useActionData` と `useLoaderData` は内部でこれらを呼んでいます。フレームワークには依存しません。そのため、Solid.js 向けのバインディングやテストからも同じロジックを共有できます。
+
+```ts
+import { selectActionData, selectLoaderData } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function selectActionData(
+  snapshot: Pick<RouterSnapshot, "currentEntry" | "actionDataStore">,
+  action: ActionFunction | undefined,
+): NinjaPromise<unknown> | undefined;
+
+function selectLoaderData(
+  snapshot: Pick<RouterSnapshot, "currentEntry" | "loaderDataStore">,
+  loader: LoaderFunction | undefined,
+): NinjaPromise<unknown> | undefined;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `snapshot` | `Pick<RouterSnapshot, ...>` | はい | `createRouter` が返すコントローラーの `getSnapshot()` の結果です。 |
+| `action` / `loader` | `ActionFunction \| undefined`、`LoaderFunction \| undefined` | はい | 取得したい対象の関数です。`undefined` を渡すと `undefined` を返します。 |
+
+第 1 引数は `RouterSnapshot` 全体ではなく、必要なプロパティーだけを取り出した `Pick` 型です。そのため、テストでは最小限のオブジェクトをそのまま渡せます。
+
+## 戻り値 [#returns]
+
+| 条件 | 戻り値 |
+| --- | --- |
+| 関数が `undefined` | `undefined` |
+| 現在の履歴エントリーに対応するデータがない | `undefined` |
+| 実行済みまたは実行中 | `NinjaPromise<unknown>` |
+
+`NinjaPromise` は解決済みとは限りません。thenable なので、UI 側では `React.use` に渡し、未解決なら `Suspense`、拒否ならエラーバウンダリーに任せるのが基本です。まだ一度も実行されていない場合だけ `undefined` になります。
+
+```ts no-run
+import { selectLoaderData } from "@pera1/core";
+
+const snapshot = controller.getSnapshot();
+const data = selectLoaderData(snapshot, loader);
+
+if (data) {
+  // thenable として UI 層の非同期プリミティブに渡す
+  // React なら use(data) が Suspense とエラーバウンダリーにつなぐ
+}
+```
+
+## 注意 [#notes]
+
+- どちらの関数も状態を変更しません。新しい値を作らず、ストアから既存の `NinjaPromise` を返すだけです。
+- データは履歴エントリー ID ごとに保持されます。照合に使われるのは `snapshot.currentEntry.id` だけです。
+- `action` や `loader` が関数でない場合は、ストアを参照せずに `undefined` を返します。
+
+## 関連 [#related]
+
+- [useLoaderData](/packages/react/reference/use-loader-data) — React からローダーの結果を購読する
+- [useActionData](/packages/react/reference/use-action-data) — React からアクションの結果を購読する
+- [createRouter](/packages/core/reference/create-router) — スナップショットとストアの生成元

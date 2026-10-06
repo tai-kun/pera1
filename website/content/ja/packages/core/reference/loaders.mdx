@@ -1,0 +1,151 @@
+---
+title: initLoaders / startLoaders
+description: "ローダーの並行起動、キャッシュの再利用、再取得の判定を解説します。"
+---
+
+`initLoaders` と `startLoaders` は、ルートに宣言されたローダー関数を実行する関数です。初回表示を一斉に起動するのが `initLoaders`、遷移のたびにキャッシュの再利用と再実行を判定するのが `startLoaders` です。
+
+どちらもローダーの戻り値を `NinjaPromise` に包んで返し、完了を待ちません。待機が必要な場合だけ `StartedLoaders.idle()` を呼びます。
+
+## initLoaders [#init-loaders]
+
+```ts
+function initLoaders(
+  routes: readonly Pick<MatchedRoute, "loader" | "params">[],
+  request: LoaderInitRequest,
+): Map<LoaderFunction, NinjaPromise<unknown>>;
+```
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `routes` | `readonly Pick<MatchedRoute, "loader" \| "params">[]` | マッチしたルートです。`loader` と `params` だけを使います。 |
+| `request.url` | `HistoryEntryUrl` | 対象の履歴エントリーの URL です。 |
+| `request.signal` | `AbortSignal` | ローダーを中断するシグナルです。 |
+
+戻り値はローダー関数をキー、`NinjaPromise` を値とする `Map` です。マッチしたすべてのローダーは同時に起動するため、親のデータ待ちで子の取得が遅れることはありません。
+
+ローダーに渡す `request` は 1 つだけ作り、すべてのローダーが同じ GET 用の `RouteRequest` を受け取ります。同じ `loader` 関数が複数のルートで使われると、`Map` のキーが重複します。あとから実行した結果で上書きされます。
+
+## startLoaders [#start-loaders]
+
+```ts
+function startLoaders(
+  args: StartLoadersArgs,
+  options?: StartLoadersOptions,
+): StartedLoaders;
+```
+
+### StartLoadersArgs [#start-loaders-args]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `prevRoutes` | `readonly Pick<MatchedRoute, "path" \| "params">[] \| null` | 遷移前にマッチしていたルートです。 |
+| `currentRoutes` | `readonly Pick<MatchedRoute, "path" \| "params" \| "action" \| "loader" \| "shouldReload">[]` | 遷移先にマッチしているルートです。 |
+| `prevEntry` | `Pick<HistoryEntry, "id" \| "url">` | 遷移前の履歴エントリーです。 |
+| `currentEntry` | `Pick<HistoryEntry, "id" \| "url">` | 遷移先の履歴エントリーです。 |
+| `loaderDataStore` | `Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>` | 履歴エントリー単位のキャッシュです。 |
+| `signal` | `AbortSignal` | ローダーを中断するシグナルです。 |
+
+### StartLoadersOptions [#start-loaders-options]
+
+`options` を渡すと POST 後の再取得として扱われます。省略すると GET 遷移として扱われます。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `formData` | `FormData` | 送信されたフォームデータです。 |
+| `actionData` | `unknown` | 直前のアクションの結果です。 |
+
+### StartedLoaders [#started-loaders]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `idle` | `() => Promise<void>` | 今回のフェーズで確定したすべてのローダーの完了を待ちます。 |
+
+## 再取得の判定 [#reload-decision]
+
+`startLoaders` は `currentRoutes` を先頭から走査し、ローダーごとに処理を決めます。
+
+ローダーが関数でなければスキップします。前回のキャッシュが見つからなければ、判定を挟まず新しいローダーを実行します。キャッシュがある場合だけ `shouldReload` を呼び、`true` なら再実行、`false` なら前回の `NinjaPromise` をそのまま再利用します。
+
+キャッシュは `prevEntry.id` に紐づく `Map` から、ローダー関数そのものをキーに探します。同じ履歴エントリーに戻ったときは、この経路でキャッシュが使われます。
+
+`shouldReload` を省略すると、既定の判定が使われます。
+
+| きっかけ | 既定の判定 |
+| --- | --- |
+| GET | クエリー文字列が変わったとき、または遷移前のルート階層にそのルートがなかったとき。 |
+| POST | 常に `true`。更新後は取得し直すのが安全なためです。 |
+
+既定の判定結果は `defaultShouldReload` として `shouldReload` に渡されます。GET では上の 2 条件、POST では常に `true` です。自分で判定を書く場合も、この値をそのまま返すと既定の挙動を保てます。
+
+[shouldReload の引数](/packages/core/reference/route-definitions#should-reload-arguments)は GET と POST で形が異なる判別可能ユニオンです。`triggerMethod` で分岐します。
+
+## 結果の保存 [#storing]
+
+決定した `NinjaPromise` は、いったん今回のフェーズ用の `Map` に集めます。そのあと `loaderDataStore` の `currentEntry.id` へ、既存のエントリーを残したままマージします。同じ履歴エントリー ID に複数のフェーズが書き込んでも、他のローダーの結果は失われません。
+
+今回マッチしたローダーが 1 つもない場合、ストアには書き込みません。
+
+## エラーの扱い [#errors]
+
+ローダーの例外は、その場で投げずに `NinjaPromise` の `rejected` として保存します。その拒否は、データを `use` しているコンポーネントからエラーバウンダリーへ届きます。
+
+`shouldReload` だけは例外です。同期的に真偽値を返す必要があり、次の場合は `LoaderConditionError` で拒否された `NinjaPromise` が保存されます。
+
+- `Promise` などの thenable を返したとき。
+- 真偽値以外の値を返したとき。
+
+`shouldReload` の実行中に投げられた例外は、その例外を理由とする `rejected` になります。
+
+## 使い方 [#usage]
+
+GET 遷移の例です。
+
+```ts
+const started = startLoaders({
+  signal,
+  prevEntry,
+  prevRoutes,
+  currentEntry,
+  currentRoutes,
+  loaderDataStore,
+});
+
+await started.idle();
+```
+
+POST 後は第 2 引数を渡します。このとき既定の判定が常に `true` になるため、更新後の一覧が自動で取得し直されます。
+
+```ts
+const started = startLoaders(
+  {
+    signal,
+    prevEntry,
+    prevRoutes,
+    currentEntry,
+    currentRoutes,
+    loaderDataStore,
+  },
+  {
+    formData,
+    actionData,
+  },
+);
+
+await started.idle();
+```
+
+## 注意 [#notes]
+
+- `idle()` は `Promise.allSettled` で待つため、ローダーの失敗では拒否されません。個々の結果は `NinjaPromise` を参照して判断します。
+- 再取得するかどうかに関係なく、新しいローダーの結果は新しい `NinjaPromise` として登録されます。`false` のときだけ前回と同じ参照を引き継ぎます。
+- キャッシュのキーはローダー関数の参照です。ルート定義の中でインライン関数を書くと、定義を作り直すたびに別の関数として扱われます。
+- `prevRoutes` が `null` でもエラーにはなりません。空の階層として扱われます。
+
+## 関連 [#related]
+
+- [RouteDefinition](/packages/core/reference/route-definitions) — ローダーと `shouldReload` の型
+- [matchRoutes](/packages/core/reference/routes) — ローダーを実行する対象を集める
+- [startAction](/packages/core/reference/actions) — POST のきっかけを作る
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — 遷移時にこの関数を呼ぶ
+- [データ取得](/guides/data-loading) — ローダーの使い方

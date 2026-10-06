@@ -1,0 +1,85 @@
+---
+title: createRouter
+description: "ルート定義とエンジンを接続し、購読とスナップショットを提供するコントローラーです。"
+---
+
+`createRouter` は宣言的なルート定義と命令的なエンジンを仲介し、購読・スナップショット・ライフサイクル管理をまとめたコントローラーを作成します。React バインディングの `Router` も内部でこの関数を使っており、UI フレームワーク向けの独自バインディングやカスタムエンジンを作るときの土台になります。
+
+```ts
+import { createRouter } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function createRouter<TComponent = any>(
+  args: CreateRouterArgs<TComponent>,
+): RouterController<TComponent>;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `engine` | `IEngine<TComponent>` | はい | ルーティングを実行するエンジンです。`NavigationApiEngine` または自作のエンジンを渡します。 |
+| `routes` | `readonly RouteDefinition<string, TComponent>[]` | はい | アプリケーションのルート定義です。オブジェクト形式とモジュール形式の両方を受け付けます。 |
+
+## 戻り値 [#returns]
+
+戻り値は `RouterController<TComponent>` です。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `start` | `() => () => void` | エンジンのイベント購読を開始し、停止関数を返します。 |
+| `subscribe` | `(cb: () => void) => () => void` | 状態変更の購読を登録し、解除関数を返します。 |
+| `getRoutes` | `() => readonly MatchedRoute<TComponent>[] \| undefined` | 現在マッチしているルート階層を返します。未マッチの場合は `undefined` です。 |
+| `getSnapshot` | `() => RouterSnapshot` | ルーターの現在状態を返します。オブジェクトの参照は安定しています。 |
+
+## `RouterSnapshot` の内容 [#snapshot]
+
+`getSnapshot()` が返すオブジェクトです。参照は生成時に固定され、遷移のたびに更新されるのは `currentEntry` だけです。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `submit` | `(args: IEngine.SubmitArgs) => void` | 送信をエンジンへ委譲します。 |
+| `navigate` | `(args: IEngine.NavigateArgs) => void` | 遷移をエンジンへ委譲します。 |
+| `currentEntry` | `HistoryEntry` | 現在アクティブな履歴エントリーです。 |
+| `actionDataStore` | `ReadonlyMap<HistoryEntryId, ReadonlyMap<ActionFunction, NinjaPromise<unknown>>>` | 履歴エントリーごとのアクション結果です。 |
+| `loaderDataStore` | `ReadonlyMap<HistoryEntryId, ReadonlyMap<LoaderFunction, NinjaPromise<unknown>>>` | 履歴エントリーごとのローダー結果です。 |
+
+## ライフサイクル [#lifecycle]
+
+1. `createRouter` の呼び出しで、ルート定義が正規化・ソートされ、`engine.init` が同期的に呼ばれます。初期ロードのローダーはここで起動されます。
+2. `start()` を実行すると `engine.start` が呼ばれ、エンジンがイベントを購読します。エンジンが状態を確定すると、返された `update` 関数を通じてコントローラーへ通知され、`subscribe` の購読者全員に再描画が伝わります。
+3. 停止関数を呼び出すと、エンジンが停止処理を行い、進行中の処理を中断します。
+
+```ts no-run
+import { createRouter } from "@pera1/core";
+
+const controller = createRouter({ engine, routes });
+const stop = controller.start();
+
+const unsubscribe = controller.subscribe(() => {
+  render(controller.getRoutes());
+});
+
+// アンマウント時
+unsubscribe();
+stop();
+```
+
+:::note
+`start()` は複数回呼べます。停止のたびに内部の `AbortController` が作り直されるため、再度 `start()` すると新しい中断シグナルで動作します。`stop()` は二重に呼んでもエラーになりません。
+:::
+
+## 注意 [#notes]
+
+- `routes` の参照が変わると、ルーターを作り直したのと同じ結果になります。React から使う場合、`Router` の `useMemo` 依存関係に `routes` が含まれるため、レンダリングごとに新しい配列を渡すとキャッシュが失われます。
+- `getSnapshot()` の戻り値は読み取り専用として扱ってください。直接書き換えても購読者に通知されません。
+- エンジンは `init` の中で `loaderDataStore` を更新しますが、ストア自体の管理はコントローラーが行います。
+
+## 関連 [#related]
+
+- [Router](/packages/react/reference/router) — React での利用
+- [IEngine](/packages/core/reference/engine) — エンジンの契約
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — 既定のエンジン

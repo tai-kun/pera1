@@ -1,0 +1,64 @@
+---
+title: useRouteContext
+description: "現在の階層のルート情報をまとめて取得する低レベルのフックです。"
+---
+
+`useRouteContext` は、現在の階層のルート情報をまとめて返します。`useParams`、`useFormAction`、`useActionData`、`useLoaderData` は、内部でこの値から必要な部分を取り出しています。独自のフックやレイアウトコンポーネントを作るときに使います。
+
+```tsx
+import { useRouteContext } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useRouteContext(): RouteContextValue;
+```
+
+## 戻り値 [#returns]
+
+戻り値は `RouteContextValue` です。マッチしたルートの情報に `outlet` を加えた型です。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `path` | `string` | ルート定義のパスパターンです。 |
+| `index` | `boolean` | インデックスルートかどうかです。 |
+| `params` | `RouteParams` | URL から抽出したパラメーターです。 |
+| `urlPath` | `string` | パラメーターを実値で埋めたパスです。 |
+| `component` | `React.ComponentType<{}> \| undefined` | 描画するコンポーネントです。 |
+| `action` | アクション関数または `undefined` | 親から継承した値を含みます。 |
+| `loader` | ローダー関数または `undefined` | 親から継承した値を含みます。 |
+| `shouldReload` | `ShouldReloadFunction` | 再取得の判定関数です。 |
+| `utils` | `RoutePatternUtils` | パターンの照合とパラメーター抽出のユーティリティーです。 |
+| `outlet` | `React.ReactElement \| null` | 子ルートの要素です。 |
+
+## 使い方 [#usage]
+
+```tsx
+import { useRouteContext } from "@pera1/react";
+
+function RouteDebug() {
+  const { path, params, urlPath } = useRouteContext();
+  return (
+    <p>
+      {path} → {urlPath}（{Object.keys(params).length} 個のパラメーター）
+    </p>
+  );
+}
+```
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` が供給されていない |
+
+## 注意 [#notes]
+
+- 特定の情報だけが必要なら、`useParams` や `useFormAction` などの専用フックを優先してください。値の全体を分割代入すると、どの情報に依存しているかが読み取りにくくなります。
+
+## 関連 [#related]
+
+- [コンテキスト](/packages/react/reference/contexts) — `RouteContextValue` の形
+- [useRouterContext](/packages/react/reference/use-router-context) — ルーター全体の状態
+- [useLoaderData](/packages/react/reference/use-loader-data) — ローダーの結果

@@ -1,0 +1,88 @@
+---
+title: matchRoutes
+description: "URL にマッチするルート階層を集める matchRoutes と、結果の MatchedRoute 型です。"
+---
+
+`matchRoutes` は正規化済みのルート配列と URL を照合し、マッチしたすべてのルートを集める関数です。1 つの URL に対して、子から親までのルートが配列で返ります。`createRouter` や [NavigationApiEngine](/packages/core/reference/navigation-api-engine) は、この関数で現在の URL のルート階層を求めます。
+
+## シグネチャ [#signature]
+
+```ts
+function matchRoutes<TComponent = any>(
+  routes: readonly Route<TComponent>[],
+  url: ReadonlyURL,
+): readonly [MatchedRoute<TComponent>, ...MatchedRoute<TComponent>[]] | null;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `routes` | `readonly Route<TComponent>[]` | 正規化と詳細度の並べ替えが済んだルートです。 |
+| `url` | `ReadonlyURL` | 照合する URL です。標準の `URL` を渡せます。 |
+
+`createRouter` がエンジンへ渡す `routes` は、すでに正規化と並べ替えが済んでいます。カスタムエンジンでは、その配列をそのまま渡してください。`matchRoutes` を単体で使う場合は、同じ前処理を済ませた配列を用意します。
+
+## 戻り値 [#returns]
+
+マッチしたルートがある場合は、`MatchedRoute<TComponent>` の読み取り専用タプルを返します。要素は 1 つ以上あります。1 つもマッチしなければ `null` です。
+
+`MatchedRoute` は正規化済みの `Route` に 2 つのプロパティーを加えた型です。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `params` | `RouteParams` | URL から抽出されたパラメーターです。 |
+| `urlPath` | `string` | パターンにパラメーターを埋め戻した実際のパスです。 |
+
+`path`、`index`、`loader`、`action` などの `Route` のプロパティーもそのまま引き継ぎます。
+
+## 使い方 [#usage]
+
+`/contacts/42` に対して、3 階層のルートがマッチする例です。`routes` には `createRouter` が正規化した `Route` の配列を渡します。
+
+```ts no-run
+import { matchRoutes } from "@pera1/core";
+
+const matched = matchRoutes(routes, new URL("https://example.com/contacts/42"));
+
+for (const route of matched ?? []) {
+  console.log(route.path, route.params, route.urlPath);
+}
+// /contacts/:id { id: "42" } /contacts/42
+// /contacts     {}           /contacts
+// /             {}           /
+```
+
+`urlPath` はパラメーターを実値で埋めたパスです。アクションの送信先を選ぶときや、フォームの `action` に使えます。
+
+## マッチの規則 [#matching-rules]
+
+照合に使われるのは URL のパス部分だけです。`/search?query=1#hash` は `/search` と同じようにマッチし、末尾スラッシュの有無も無視されます。
+
+ルート配列は詳細度の高い順に並んでいます。詳しい順序は次のとおりです。
+
+1. 静的セグメント (`/contacts`)
+2. 接尾辞付きパラメーター (`/:title.mp4`)
+3. 名前付きパラメーター (`/:id`)
+4. 省略可能パラメーター (`/:id?`)
+5. ワイルドカード (`/*`)
+6. 省略可能ワイルドカード (`/*?`)
+
+同じ詳細度なら、セグメント数が多いほうが先になります。それも同じなら文字列の辞書順です。たとえば `/users/me` と `/users/:id` が候補にあるとき、`/users/me` が先に照合されます。どちらも URL にマッチするため、結果には両方が含まれ、先頭の `/users/me` が子、`/users/:id` が親として並びます。
+
+パターンが重なったルートを除外せず、親子として残すのがこの関数の特徴です。詳細度のルールは[ルーティング](/guides/routing)にまとめています。
+
+## 注意 [#notes]
+
+- 返る配列の順序は、渡した `routes` の順序をそのまま反映します。`createRouter` 経由では詳細度の高い子から親の順です。
+- クエリーとハッシュは照合に影響しません。クエリーの変化で再取得したい場合は `shouldReload` を使います。
+- この関数はローダーを実行しません。データ取得は [initLoaders](/packages/core/reference/loaders) が担当します。
+- ルート配列が空の場合も `null` を返します。
+
+## 関連 [#related]
+
+- [RouteDefinition](/packages/core/reference/route-definitions) — ルート定義と `Route` の型
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — マッチしたルートのローダーを実行する
+- [startAction](/packages/core/reference/actions) — マッチしたルートからアクションを選ぶ
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — 遷移時にこの関数を使う
+- [ルーティング](/guides/routing) — パスパターンと詳細度の全ルール

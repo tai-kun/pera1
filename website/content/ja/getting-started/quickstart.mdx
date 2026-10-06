@@ -1,0 +1,312 @@
+---
+title: クイックスタート
+description: "連絡先管理アプリを題材に、ルート定義、データ取得、フォーム送信をひととおり体験します。"
+---
+
+小さな連絡先管理アプリを作りながら、pera1 の基本を一通り体験します。完成するのは、一覧、詳細、新規作成の 3 画面を持つアプリです。外部 API は使わず、メモリー上のデータだけで動きます。所要時間は 15 分ほどです。
+
+このページで扱うのは、ルート定義、ネストしたレイアウト、ローダーによるデータ取得、フォーム送信とアクション、リダイレクトです。動く完全版は [examples/contacts](https://github.com/tai-kun/pera1/tree/main/examples/contacts) に置いてあります。手元で動かしながら読み進めたい場合は、そちらを開いてください。
+
+## プロジェクトを用意する [#setup]
+
+Vite で React + TypeScript のプロジェクトを作り、パッケージを追加します。
+
+```sh
+npm create vite@latest pera1-contacts -- --template react-ts
+cd pera1-contacts
+npm install
+```
+
+```package-install
+npm i @pera1/react react react-dom valibot
+```
+
+`src` フォルダーの中身は、この後で置き換えます。
+
+## データを用意する [#data]
+
+まず、連絡先を保持するモジュールを作ります。実務ではローダーから API を呼び出しますが、ここではデータの流れに集中できるよう Map を使います。
+
+```ts src/data.ts lineNumbers
+export type Contact = {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+};
+
+const contacts = new Map<string, Contact>([
+  ["1", { id: "1", name: "Ada Lovelace", email: "ada@example.com" }],
+  ["2", { id: "2", name: "Grace Hopper", email: "grace@example.com" }],
+]);
+
+let nextId = contacts.size + 1;
+
+export async function listContacts(): Promise<Contact[]> {
+  return [...contacts.values()];
+}
+
+export async function findContact(id: string): Promise<Contact | undefined> {
+  return contacts.get(id);
+}
+
+export async function createContact(name: string, email: string): Promise<Contact> {
+  const contact = { id: String(nextId++), name, email };
+  contacts.set(contact.id, contact);
+  return contact;
+}
+```
+
+## ルートとデータ処理を定義する [#routes]
+
+`src/routes.tsx` に、ルート定義とデータ処理をまとめます。ルート定義はフラットな配列です。親子関係は URL の前方一致で表現するため、`/contacts` のレイアウトは `/contacts/42` の親になります。
+
+`index: true` のルートは、そのパスに完全一致したときだけ使われます。一覧のように「その階層そのもの」の画面に付けます。
+
+```tsx src/routes.tsx lineNumbers
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@pera1/core";
+
+import { createContact, findContact, listContacts } from "./data.js";
+import {
+  ContactPage,
+  ContactsLayout,
+  ContactsPage,
+  HomePage,
+  NotFoundPage,
+  RootLayout,
+} from "./pages.js";
+
+export async function contactsLoader() {
+  return listContacts();
+}
+
+export async function contactLoader({ params }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("id が指定されていません。");
+  }
+  const contact = await findContact(id);
+  if (!contact) {
+    throw new Error(`連絡先 ${id} は見つかりませんでした。`);
+  }
+  return contact;
+}
+
+export async function createContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  const email = String(request.formData.get("email") ?? "").trim();
+  if (name === "") {
+    return { error: "名前を入力してください。" };
+  }
+  const contact = await createContact(name, email);
+  return redirect(`/contacts/${contact.id}`);
+}
+
+export const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts", index: true, component: ContactsPage },
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    loader: contactsLoader,
+    action: createContactAction,
+  },
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+  { path: "/*", component: NotFoundPage },
+];
+```
+
+:::warning
+同じ `path` を持つレイアウトと `index` ルートを並べるときは、`index` ルートを先に定義してください。詳細度が同じルートは定義順が保たれるため、`index` を先に書くと「レイアウトの中に一覧」の順でネストします。逆にすると親子が入れ替わり、レイアウトの `Outlet` に一覧が表示されません。
+:::
+
+:::note[`params` の型について]
+ルート定義の `path` は `string` に広がるため、ローダーに渡る `params` の値は `string | undefined` になります。上の `contactLoader` のように、使う前に存在を確かめてください。コンポーネント側で型を付けたい場合は `useParams<"/contacts/:id">()` が使えます。
+:::
+
+## 画面コンポーネントを書く [#components]
+
+`src/pages.tsx` にコンポーネントを書きます。親のレイアウトは、子を差し込みたい位置に `Outlet` を置きます。`Outlet` の周りを `Suspense` で囲むと、ローダーの読み込み中にフォールバックが表示されます。
+
+```tsx src/pages.tsx lineNumbers
+import type { ActionData } from "@pera1/react";
+import { Outlet, useActionData, useLoaderData, useParams } from "@pera1/react";
+import { Suspense, use } from "react";
+
+import type { contactLoader, contactsLoader, createContactAction } from "./routes.js";
+
+export function RootLayout() {
+  return (
+    <>
+      <header>
+        <h1>
+          <a href="/">連絡先帳</a>
+        </h1>
+      </header>
+      <main>
+        <Suspense fallback={<p>読み込み中…</p>}>
+          <Outlet />
+        </Suspense>
+      </main>
+    </>
+  );
+}
+```
+
+ローダーの結果は `NinjaPromise` として届きます。`React.use` に渡すと、読み込み中はサスペンドして `Suspense` のフォールバックが表示され、完了すると解決済みの値が返ります。
+
+```tsx src/pages.tsx lineNumbers
+export function ContactsPage() {
+  const contacts = use(useLoaderData<typeof contactsLoader>());
+
+  return (
+    <>
+      <ul>
+        {contacts.map((contact) => (
+          <li key={contact.id}>
+            <a href={`/contacts/${contact.id}`}>{contact.name}</a>
+          </li>
+        ))}
+      </ul>
+      <CreateContactForm />
+    </>
+  );
+}
+```
+
+フォームは素の `<form method="post">` です。専用のコンポーネントは不要で、送信はアクションとしてルーターに届きます。アクションの結果も `NinjaPromise` なので、同じように `use` で受け取ります。まだアクションが実行されていない場合は `undefined` が返るため、`use` を呼ぶ部分を子コンポーネントに分けています。
+
+```tsx src/pages.tsx lineNumbers
+function CreateContactForm() {
+  const actionData = useActionData<typeof createContactAction>();
+
+  return (
+    <form method="post" action="/contacts">
+      <h3>連絡先を追加</h3>
+      <label>
+        名前
+        <input name="name" />
+      </label>
+      <label>
+        メールアドレス
+        <input name="email" type="email" />
+      </label>
+      {actionData ? <ActionError actionData={actionData} /> : null}
+      <button type="submit">追加</button>
+    </form>
+  );
+}
+
+function ActionError({ actionData }: { actionData: ActionData<typeof createContactAction> }) {
+  const data = use(actionData);
+  if (data && "error" in data) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+詳細ページでは、パラメーターを `useParams` で受け取ります。型引数にルートパターンを渡すと、`params.id` が文字列として型付けられます。
+
+```tsx src/pages.tsx lineNumbers
+export function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  const contact = use(useLoaderData<typeof contactLoader>());
+
+  return (
+    <article>
+      <h2>{contact.name}</h2>
+      <p>{contact.email}</p>
+      <p>ID: {params.id}</p>
+      <p>
+        <a href="/contacts">一覧に戻る</a>
+      </p>
+    </article>
+  );
+}
+```
+
+残りの画面コンポーネントは短いので、まとめて載せます。
+
+```tsx src/pages.tsx lineNumbers
+export function HomePage() {
+  return (
+    <p>
+      連絡先の一覧は <a href="/contacts">こちら</a> です。
+    </p>
+  );
+}
+
+export function ContactsLayout() {
+  return (
+    <section>
+      <h2>連絡先</h2>
+      <Outlet />
+    </section>
+  );
+}
+
+export function NotFoundPage() {
+  return (
+    <div>
+      <h2>ページが見つかりません</h2>
+      <p>
+        <a href="/">ホームに戻る</a>
+      </p>
+    </div>
+  );
+}
+```
+
+## エントリーポイントを書く [#entry]
+
+最後に `src/main.tsx` でルーターを起動します。
+
+```tsx src/main.tsx lineNumbers
+import { BrowserRouter } from "@pera1/react";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+
+import { routes } from "./routes.js";
+
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <BrowserRouter routes={routes} />
+  </StrictMode>,
+);
+```
+
+## 動かして確かめる [#run]
+
+開発サーバーを起動し、`/contacts` を開きます。
+
+```sh
+npm run dev
+```
+
+次の流れを確認してください。
+
+- 一覧のリンクをクリックすると `/contacts/1` に遷移し、詳細が表示される。
+- 戻るボタンで一覧に戻ると、ローダーの結果がキャッシュから即座に表示される。
+- フォームに名前を入れて追加すると、`/contacts/3` にリダイレクトされ、新しい連絡先が表示される。
+- 名前を空のまま追加すると、同じ `/contacts` の画面にエラーが表示される。
+
+開発中はネットワークタブを開いておくと、画面遷移のたびに HTML を読み直していないこと、アクションの完了後に必要なローダーだけが動くことを確認できます。
+
+## ここまでで起きたこと [#what-happened]
+
+フォームの送信は Navigation API の `navigate` イベントとしてルーターに届き、`/contacts` に定義したアクションが実行されます。アクションが `redirect()` を返すと、その URL のローダーが動き、画面が差し替わります。
+
+`useLoaderData` と `useActionData` が返すのは `NinjaPromise` です。`React.use` に渡すだけで、読み込み中は `Suspense` のフォールバック、失敗時は最も近いエラーバウンダリーへと、React 標準の仕組みに乗せられます。状態を自分で確認するコードは必要ありません。
+
+## 静的ホスティングに公開する場合 [#deploy]
+
+ビルドしたファイルを静的ホスティングに置く場合、`/contacts/42` のような深い URL への直接アクセスを `index.html` にフォールバックさせる設定が必要です。GitHub Pages のように設定できない環境では、`404.html` を `index.html` と同じ内容にする方法がよく使われます。
+
+## 次のステップ [#next]
+
+- [ルーティング](/guides/routing) — パスパターンと詳細度の全ルールを確認する。
+- [データ取得](/guides/data-loading) — 再取得の条件とキャッシュの挙動を制御する。
+- [データ更新](/guides/mutations) — アクションの選ばれ方とフォームの応用を学ぶ。
+- [エラー処理](/guides/error-handling) — ローダーの失敗をエラーバウンダリーで受け止める。

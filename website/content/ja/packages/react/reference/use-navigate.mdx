@@ -1,0 +1,88 @@
+---
+title: useNavigate
+description: "プログラムから画面遷移や履歴移動を行う関数を返します。"
+---
+
+`useNavigate` は、ボタンのクリックや非同期処理の完了後など、リンク以外のきっかけで画面を遷移させる関数を返します。専用の `<Link>` コンポーネントは提供していないため、通常のリンクは `<a>` を使います。
+
+```tsx
+import { useNavigate } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useNavigate(): NavigateFunction;
+
+interface NavigateFunction {
+  (to: NavigateTo, options?: NavigateOptions): void;
+  (delta: number): void;
+}
+```
+
+## 引数 [#arguments]
+
+`NavigateFunction` は 4 形式の引数を受け取ります。
+
+| 引数 | 動作 |
+| --- | --- |
+| `string` | そのパスへ遷移します。 |
+| `{ pathname?, search?, hash? }` | 指定した部分だけを現在の URL から差し替えます。 |
+| `(path: RoutePath) => void` | 現在の URL を基に自由に組み立てます。 |
+| `number` | 履歴スタック内を相対移動します。`-1` で 1 つ戻ります。 |
+
+```ts
+type NavigateTo =
+  | string
+  | { pathname?: string; search?: string; hash?: string }
+  | ((route: RoutePath) => void);
+
+type NavigateOptions = {
+  replace?: boolean;
+};
+```
+
+`replace: true` を渡すと、履歴を追加せず現在のエントリーを上書きします。
+
+## 戻り値 [#returns]
+
+`NavigateFunction` を返します。この関数は引数の正規化を `@pera1/core` の `toNavigateArgs` に委譲し、エンジンに渡す形式へ変換します。
+
+## 使い方 [#usage]
+
+```tsx
+import { useNavigate } from "@pera1/react";
+
+function Actions() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <button onClick={() => navigate("/contacts")}>一覧へ</button>
+      <button onClick={() => navigate({ search: "?page=2" })}>次のページ</button>
+      <button onClick={() => navigate((path) => path.searchParams.set("sort", "name"))}>
+        名前順
+      </button>
+      <button onClick={() => navigate(-1)}>戻る</button>
+    </>
+  );
+}
+```
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouterContextMissingError` | `RouterContext` が供給されていない |
+
+## 注意 [#notes]
+
+- 戻り値の関数は `useCallback` でラップされています。依存が変わらない限り、参照は安定します。`useEffect` の依存関係にそのまま置けます。
+- オブジェクト形式と関数形式の遷移は、組み立てた URL が現在と同じなら実行されません。無駄な履歴を増やさないための挙動です。
+- `useNavigate` はアプリ内のルーティングを対象にしています。外部 URL へ移動する場合は `<a>` を使ってください。
+
+## 関連 [#related]
+
+- [ナビゲーション](/guides/navigation) — リンクと履歴の扱い
+- [useSubmit](/packages/react/reference/use-submit) — データを送って遷移する
+- [useRoutePath](/packages/react/reference/use-route-path) — 現在の URL の操作

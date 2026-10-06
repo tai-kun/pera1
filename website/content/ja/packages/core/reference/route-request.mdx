@@ -1,0 +1,98 @@
+---
+title: RouteRequest
+description: "ローダーとアクションに渡される GET / POST リクエストの構造を説明します。"
+---
+
+`RouteRequest` はローダーやアクションに渡される `request` の実体です。GET と POST を型で区別します。Web 標準の `Request` へ変換できます。ローダーには GET、アクションには POST のインスタンスが渡されます。
+
+```ts
+import { RouteRequest } from "@pera1/core";
+import type { RouteGetRequest, RoutePostRequest } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+class RouteRequest {
+  static new(method: "GET", url: ReadonlyURL, signal: AbortSignal): RouteGetRequest;
+  static new(
+    method: "POST",
+    url: ReadonlyURL,
+    signal: AbortSignal,
+    formData: ReadonlyFormData,
+  ): RoutePostRequest;
+
+  constructor(method: "GET", url: ReadonlyURL, signal: AbortSignal);
+  constructor(method: "POST", url: ReadonlyURL, signal: AbortSignal, formData: ReadonlyFormData);
+}
+
+interface RouteGetRequest {
+  readonly method: "GET";
+  readonly url: ReadonlyURL;
+  readonly signal: AbortSignal;
+  readonly formData: null;
+  toRequest(init?: RequestInit): Request;
+}
+
+interface RoutePostRequest {
+  readonly method: "POST";
+  readonly url: ReadonlyURL;
+  readonly signal: AbortSignal;
+  readonly formData: ReadonlyFormData;
+  toRequest(init?: RequestInit): Request;
+}
+```
+
+## 生成 [#new]
+
+`RouteRequest.new` はファクトリーメソッドで、メソッドに応じて返す型が変わります。`RouteGetRequest` または `RoutePostRequest` に絞り込まれるため、通常はこちらを使います。`new RouteRequest(...)` でも生成できますが、`method` の型は `"GET" | "POST"` のユニオンになります。
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `method` | `"GET" \| "POST"` | はい | HTTP メソッドです。ローダーは `"GET"`、アクションは `"POST"` を使います。 |
+| `url` | `ReadonlyURL` | はい | リクエスト対象の読み取り専用 URL です。 |
+| `signal` | `AbortSignal` | はい | 非同期処理を中断するためのシグナルです。 |
+| `formData` | `ReadonlyFormData` | POST のみ | 送信するフォームデータです。GET では不要です。 |
+
+## プロパティ [#properties]
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `method` | `"GET" \| "POST"` | HTTP メソッドです。 |
+| `url` | `ReadonlyURL` | リクエスト対象の URL です。 |
+| `signal` | `AbortSignal` | 生成時に渡された中断シグナルです。 |
+| `formData` | `ReadonlyFormData \| null` | POST では送信されたフォームデータ、GET では常に `null` です。 |
+
+## toRequest [#to-request]
+
+`toRequest(init?)` は、インスタンスの情報から Fetch API の `Request` を生成します。`init` で `body`、`method`、`signal` を指定すると、インスタンスが持つ既定値を上書きします。それ以外のプロパティーはそのまま `Request` へ渡されます。
+
+```ts no-run
+const request = RouteRequest.new("GET", new URL("https://example.com/api"), signal);
+
+const response = await fetch(
+  request.toRequest({ headers: { accept: "application/json" } }),
+);
+```
+
+POST では、`formData` がそのまま `Request` のボディになります。
+
+```ts no-run
+const request = RouteRequest.new("POST", new URL("https://example.com/users"), signal, formData);
+
+await fetch(request.toRequest());
+```
+
+## 注意 [#notes]
+
+- GET の `formData` は常に `null` です。
+- GET の `toRequest` に `body` を渡すと、`Request` コンストラクターが `TypeError` を投げます。
+- 生成時に渡した `signal` を中断すると、変換済みの `Request` の `signal` も中断状態になります。
+
+## 関連 [#related]
+
+- [createRouter](/packages/core/reference/create-router) — ローダーとアクションの起動
+- [redirect](/packages/core/reference/redirects) — アクションからのリダイレクト
+- [selectActionData と selectLoaderData](/packages/core/reference/router-store) — 実行結果の取得

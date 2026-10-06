@@ -1,0 +1,146 @@
+---
+title: NavigationApiEngine
+description: "既定エンジンが navigate イベントをどう処理するかを、初期化から後始末まで解説します。"
+---
+
+`NavigationApiEngine` は [IEngine](/packages/core/reference/engine) の既定実装です。ブラウザー標準の Navigation API を購読し、リンクのクリック、フォームの送信、戻る・進むをルーターの状態に変換します。React の `BrowserRouter` は内部でこのクラスを生成します。
+
+このページでは、コンストラクターの条件、`init` / `start` / `submit` / `navigate` の実挙動、そして履歴エントリーの後始末を説明します。
+
+## コンストラクター [#constructor]
+
+```ts
+import { NavigationApiEngine } from "@pera1/core";
+
+const engine = new NavigationApiEngine();
+```
+
+グローバルの `navigation` または `window.navigation` から Navigation API を取得します。いずれもオブジェクトとして取得できなければ、コンストラクターは `NavigationApiNotSupportedError` を投げます。取得の途中で例外が起きても同じです。
+
+:::warning
+Navigation API を実装しているのは、執筆時点では Chromium 系のブラウザーが中心です。対応状況は [MDN の互換性表](https://developer.mozilla.org/docs/Web/API/Navigation_API#browser_compatibility)を確認してください。未対応の環境では、ルーターを作る前にこのエラーが発生します。
+:::
+
+## init [#init]
+
+`init` は同期的に初期状態を計算します。非同期の待機はしません。
+
+1. `navigation.currentEntry` を検証します。エントリーがない、URL が `null`、index が `-1` のいずれかなら `null` を返します。
+2. [matchRoutes](/packages/core/reference/routes) で現在の URL に合うルートを探します。1 つもマッチしなければ `null` を返します。
+3. [initLoaders](/packages/core/reference/loaders) で、マッチしたすべてのローダーを一斉に起動します。`getSignal()` のシグナルが渡ります。
+4. 起動した `NinjaPromise` の `Map` を、現在の履歴エントリー ID をキーに `loaderDataStore` へ登録します。
+5. `{ entry, routes }` を返します。
+
+## start [#start]
+
+`start` は `navigate` イベントを購読し、状態が確定するたびに `update` を呼びます。あわせて `currententrychange` を購読し、新しい履歴エントリーを後始末の対象に加えます。`getSignal()` のシグナルが abort されると、進行中のナビゲーションを中断します。
+
+### navigate イベントのインターセプト条件 [#interception]
+
+次のいずれかに当てはまるイベントは処理せず、ブラウザーの標準動作に任せます。
+
+| 条件 | 意味 |
+| --- | --- |
+| `!event.isTrusted` | スクリプトによる合成イベントです。 |
+| `!event.canIntercept` | インターセプトできません。 |
+| `event.hashChange` | ハッシュだけの変更です。 |
+| `event.downloadRequest !== null` | ダウンロード要求です。 |
+| `event.navigationType === "reload"` | 再読み込みです。 |
+
+インターセプトの対象になっても、続行できない場合があります。現在の履歴エントリーが取得できないときと、移動先にマッチするルートがないときです。どちらの場合も `update(null)` で未マッチ状態にリセットし、制御をブラウザーへ返します。
+
+### 連続する遷移の中断 [#abort]
+
+インターセプトが決まると、進行中だった前回のナビゲーションを `AbortController` で中断します。続けて新しいコントローラーを作り、得たシグナルをアクションとローダーに渡します。短い間隔で遷移した場合も、古い非同期処理が結果を上書きしません。
+
+## GET の遷移 [#get-navigation]
+
+`event.formData` がない場合は、リンクのクリックや戻る・進むによる GET 遷移として扱います。`handler` は次の順に動きます。
+
+1. 現在の履歴エントリーを再取得し、なければ `update(null)` を呼びます。
+2. エントリーの URL が移動先と一致しなければ、何もしません。
+3. 遷移前の URL にマッチしていたルートを求めたうえで、[startLoaders](/packages/core/reference/loaders) を呼びます。
+4. ローダーの完了を待たず、`update({ entry, routes })` で新しい状態を通知します。
+5. `startedLoaders.idle()` を待ちます。ここで待つことで、すべてのローダーが終わるまでブラウザーのタブに読み込み表示が出ます。
+
+## POST の遷移 [#post-navigation]
+
+`event.formData` がある場合は、フォーム送信によるデータ変更として扱います。アクションの実行と画面の確定を分けるため、`precommitHandler` と `handler` の 2 段階で処理します。
+
+### precommitHandler [#precommit-handler]
+
+URL が書き換わる前の段階で、アクションを実行します。
+
+1. `sourceElement` が `data-pera1submit` 属性を持つ場合、[submit](#submit) が一時的に追加したフォームを DOM から削除します。
+2. [startAction](/packages/core/reference/actions) を呼びます。実行対象のアクションがなければ、そのまま終了します。
+3. アクションの `NinjaPromise` を、遷移前の履歴エントリー ID に紐づけて `actionDataStore` へ登録します。
+4. 引数なしの `update()` を呼び、ローディング表示などの再描画を促します。
+5. `action.idle()` を待ちます。アクションが失敗したときは `controller.redirect` で現在の URL へ戻します。成功したときは、リダイレクト指示があればその URL へ、なければ現在の URL へリダイレクトします。
+6. `{ action, actionData, redirectUrl }` を返し、次の段階へ渡します。
+
+`redirectTo` が省略されたときは現在の URL が使われます。アクションが値を返しただけのときも、リダイレクト先は現在の URL になります。
+
+### handler [#post-handler]
+
+ブラウザーのアドレスが確定してから表示を同期します。
+
+1. `precommitHandler` の結果がなければ、何もしません。
+2. 履歴エントリーを再取得し、なければ `update(null)` を呼びます。
+3. コミットされた URL が `redirectUrl` と一致しなければ、何もしません。
+4. アクションの結果を、確定した新しい履歴エントリー ID に紐づけ直します。
+5. 確定した URL にマッチするルートを求め、なければ `update(null)` を呼びます。
+6. `startLoaders` に `formData` と `actionData` を渡して、ローダーを再実行します。POST 後の既定の判定は常に再取得です。
+7. `update({ entry, routes })` で状態を通知し、`idle()` を待ちます。
+
+## 履歴エントリーの後始末 [#disposal]
+
+データストアは履歴エントリー ID ごとに結果を持ちます。エントリーを放置すると、セッション履歴から溢れた古いデータが残り続けます。エンジンは次の 2 つの経路で掃除します。
+
+`start` の時点で `navigation.entries()` を走査し、各エントリーの `dispose` を購読します。エントリーが破棄されると、その ID のアクションデータとローダーデータをストアから削除します。すでに購読済みの ID は重複して購読しません。
+
+`currententrychange` では、新しくアクティブになったエントリーを同じ仕組みで購読対象に加えます。遷移のたびに購読対象が増えるため、あとから作られたエントリーも破棄時に掃除されます。
+
+## submit [#submit]
+
+### FORM_DATA [#submit-form-data]
+
+`FORM_DATA` は POST として送信します。読み取り専用のフォームデータから非表示の `form` 要素を組み立て、DOM に一時的に追加して `form.submit()` を呼びます。
+
+エンジンは `form` に `method="POST"`、送信先の `action`、`enctype="multipart/form-data"`、`data-pera1submit` 属性を設定します。`File` を含む値はファイル入力に、それ以外は hidden 入力に変換されます。送信後は `data-pera1submit` を目印に、navigate イベントの処理中でフォームが DOM から削除されます。
+
+### URL_SEARCH_PARAMS [#submit-url-search-params]
+
+`URL_SEARCH_PARAMS` は GET 相当のクエリー更新です。`RoutePath` に送信先のパスを読み込ませ、`search` を渡されたパラメーターで置き換えます。そのうえで `navigation.navigate(path, { history })` を呼びます。`history` が `"replace"` なら履歴を上書きし、`"push"` なら新しいエントリーを追加します。
+
+## navigate [#navigate]
+
+### LINK (STATIC) [#link-static]
+
+`RoutePath.encode(to.path)` で余分なスラッシュなどを整えてから、`navigation.navigate(path, { history })` を呼びます。
+
+### LINK (DYNAMIC) [#link-dynamic]
+
+現在の `window.location` から `RoutePath` を作り、`patch` を適用します。パス、クエリー、ハッシュのうち変更したい部分だけを書き換えられます。文字列が実際に変わった場合だけ `navigate` を呼び、変化がなければ何もしません。
+
+### MOVE [#move]
+
+`delta` を現在のエントリーの index に足し、その index を持つエントリーを `navigation.entries()` から探します。見つかれば `traverseTo(entry.key)` で移動します。範囲を超える移動要求では何もしません。現在の履歴エントリーがなければ同じです。
+
+## カスタムエンジンを作るには [#custom-engines]
+
+エンジンの契約は [IEngine](/packages/core/reference/engine) にまとめています。最小構成の実装例と注意点は[カスタムエンジン](/guides/custom-engines)を参照してください。
+
+## 注意 [#notes]
+
+- このエンジンは `window` と `document` を使うため、クライアント専用です。
+- `start` は停止関数を返しません。`getSignal()` のシグナルを abort すると購読が解除されます。
+- アクション成功時のリダイレクトは、指示がなくても現在の URL に対して行われます。テストで `redirect` の呼び出しを確認するときは注意してください。
+- 一時的な送信フォームの後始末はエンジンが行います。フォームを自分で消す必要はありません。
+
+## 関連 [#related]
+
+- [IEngine](/packages/core/reference/engine) — エンジンの契約
+- [createRouter](/packages/core/reference/create-router) — エンジンを組み込む
+- [startAction](/packages/core/reference/actions) — POST 時に走るアクション
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — ローダーの実行と再取得
+- [カスタムエンジン](/guides/custom-engines) — 独自実装のガイド

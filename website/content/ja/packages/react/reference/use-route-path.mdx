@@ -1,0 +1,55 @@
+---
+title: useRoutePath
+description: "現在の URL を操作可能な RoutePath として取得します。"
+---
+
+`useRoutePath` は、現在の履歴エントリーの URL に対応する `RoutePath` を返します。URL を正規化された規則で組み立てたり解析したりしたいときに使います。
+
+```tsx
+import { useRoutePath } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useRoutePath(): ReadonlyRoutePath;
+```
+
+## 戻り値 [#returns]
+
+戻り値は、`router.currentEntry.url` から `useMemo` で生成した `ReadonlyRoutePath` です。URL が変わるまでは同じインスタンスが再利用されます。
+
+```ts
+interface ReadonlyRoutePath {
+  readonly pathname: string;
+  readonly search: string;
+  readonly searchParams: ReadonlyURLSearchParams;
+  readonly hash: string;
+  toString(): string;
+  clone(): RoutePath;
+}
+```
+
+`search` は常にソートされ、連続するスラッシュや末尾のスラッシュは取り除かれます。書き換えたい場合は `clone()` で複製してから操作してください。
+
+## 使い方 [#usage]
+
+```tsx
+import { useRoutePath } from "@pera1/react";
+
+function CurrentLocation() {
+  const path = useRoutePath();
+  return <p>{path.pathname}</p>;
+}
+```
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouterContextMissingError` | `RouterContext` が供給されていない |
+
+## 関連 [#related]
+
+- [ナビゲーション](/guides/navigation#route-path) — `RoutePath` の使い方
+- [useNavigate](/packages/react/reference/use-navigate) — `RoutePath` を受け取る遷移

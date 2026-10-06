@@ -1,0 +1,87 @@
+---
+title: toNavigateArgs
+description: "useNavigate の引数をエンジン用の遷移引数へ正規化する変換関数です。"
+---
+
+`toNavigateArgs` は、`useNavigate` などのフックが受け取る遷移先の指定を、低レイヤーの `IEngine.NavigateArgs` へ変換します。扱う入力は、文字列、部分オブジェクト、関数、履歴移動の数値の 4 通りです。同じ関数で扱えるため、React と Solid.js で挙動がそろいます。
+
+```ts
+import { toNavigateArgs } from "@pera1/core";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function toNavigateArgs(
+  to: NavigateTo | number,
+  options?: NavigateOptions,
+): IEngine.NavigateArgs;
+```
+
+## 遷移先の指定 [#navigate-to]
+
+`NavigateTo` が受け付ける形式は次の 3 つです。形式によって、返される引数の形が変わります。
+
+| 形式 | 型 | 返される引数 |
+| --- | --- | --- |
+| 完全なパス文字列 | `string` | `{ type: "LINK", to: { type: "STATIC", path } }` |
+| 部分オブジェクト | `{ pathname?, search?, hash? }` | `{ type: "LINK", to: { type: "DYNAMIC", patch } }` |
+| パッチ関数 | `(route: RoutePath) => void` | `{ type: "LINK", to: { type: "DYNAMIC", patch } }` |
+
+部分オブジェクトは、指定したコンポーネントだけを上書きします。たとえば `{ hash: "#top" }` を渡すと、現在のパス名とクエリーはそのまま残ります。置き換わるのはハッシュだけです。関数形式では `RoutePath` のセッターを自由に呼べるため、複数のコンポーネントをまとめて組み立てられます。
+
+数値は `NavigateTo` には含まれず、`toNavigateArgs` だけが受け付ける特別な引数です。数値を渡すとリンクではなく履歴移動を表す `{ type: "MOVE", delta }` を返します。このとき第 2 引数の `options` は使われません。
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `to` | `NavigateTo \| number` | はい | 遷移先の指定、または履歴を移動する差分のステップ数です。 |
+| `options` | `NavigateOptions` | いいえ | 履歴スタックへの追加方法を制御します。 |
+
+## NavigateOptions [#navigate-options]
+
+| プロパティ | 型 | 既定値 | 説明 |
+| --- | --- | --- | --- |
+| `replace` | `boolean` | `false` | `true` の場合は現在の履歴を上書きし、`false` または省略時は新しい履歴を追加します。 |
+
+## 戻り値 [#returns]
+
+戻り値は `IEngine.NavigateArgs` です。エンジンは返された引数の `type` に応じて、リンク遷移と履歴移動を切り替えます。
+
+```ts no-run
+import { toNavigateArgs } from "@pera1/core";
+
+engine.navigate(toNavigateArgs("/dashboard"));
+// { type: "LINK", to: { type: "STATIC", path: "/dashboard" }, history: "push" }
+
+engine.navigate(toNavigateArgs(-1));
+// { type: "MOVE", delta: -1 }
+```
+
+部分オブジェクトと関数形式の例です。`replace` を指定すると履歴を追加せずに上書きできます。
+
+```ts no-run
+// クエリーだけを差し替える
+engine.navigate(toNavigateArgs({ search: "?tab=activity" }, { replace: true }));
+
+// RoutePath を直接組み立てる
+engine.navigate(
+  toNavigateArgs((path) => {
+    path.pathname = "/settings";
+    path.hash = "profile";
+  }),
+);
+```
+
+## 注意 [#notes]
+
+- 部分オブジェクトで指定しなかったキーは変更されません。空のオブジェクトを渡した場合は現在の URL のままになります。
+- 関数形式の `patch` は、エンジンが現在の URL から作った `RoutePath` インスタンスを受け取ります。セッターだけを使って変更してください。
+- 文字列を渡した場合は、エンジンが `RoutePath` で正規化してから遷移します。重複したスラッシュや末尾のスラッシュは取り除かれます。
+
+## 関連 [#related]
+
+- [useNavigate](/packages/react/reference/use-navigate) — React から遷移を実行するフック
+- [RoutePath](/packages/core/reference/route-path) — 関数形式で受け取るパス操作オブジェクト
+- [createRouter](/packages/core/reference/create-router) — エンジンとコントローラーの接続

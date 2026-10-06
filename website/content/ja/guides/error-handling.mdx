@@ -1,0 +1,153 @@
+---
+title: エラー処理
+description: "失敗がどこへ届くのか、エラーバウンダリーの組み方、404 の作り方を解説します。"
+---
+
+pera1 のエラー処理は「投げる場所」と「受け取る場所」が分かれています。ローダーとアクションは失敗を投げるだけでよく、表示はエラーバウンダリーが担います。このページでは、失敗がどこへ届くのか、エラーバウンダリーの組み方、エラーの種類、環境起因のエラーを説明します。
+
+## ローダーの失敗はエラーバウンダリーが受け取る [#loader-errors]
+
+ローダーが投げた例外は、`NinjaPromise` の拒否として保持されます。コンポーネントが `React.use` に渡していれば、React がその拒否を検知し、最も近いエラーバウンダリーへ届けます。ローダー側で特別な処理を書く必要はありません。
+
+```tsx
+function ContactPage() {
+  const contact = use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+```
+
+`use` を使わず `await` する場合も、拒否はそのまま例外になります。いずれにせよ、失敗の表示はエラーバウンダリーに集約できます。
+
+## エラーバウンダリーでまとめて受け止める [#error-boundary]
+
+React のエラーバウンダリーをルートの外側に置けば、ローダー、アクション、遅延読み込みの失敗を一箇所で処理できます。
+
+```tsx
+import { Component, type ReactNode } from "react";
+
+class AppErrorBoundary extends Component<
+  { children: ReactNode },
+  { error: unknown }
+> {
+  state = { error: null as unknown };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div role="alert">
+          <p>問題が発生しました。</p>
+          <pre>{String(this.state.error)}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+```
+
+`Router` は非同期の拒否を自前で処理しないため、投げ直すかどうかはアプリの設計に委ねられます。一覧の 1 件が失敗しても他の表示を続けたい場合は、画面を小さなエラーバウンダリーで囲んでください。
+
+## アクションの失敗は元の画面に留まる [#action-errors]
+
+アクションが例外を投げた場合、遷移は確定せず元の URL に留まります。新しい履歴エントリーのアクションデータは拒否状態になり、そこを `use` しているコンポーネントからエラーバウンダリーへ届きます。
+
+ユーザーに直してもらう問題 (入力の不備など) は、例外にせず `{ error: "..." }` を返すのが向いています。同じ画面にメッセージを出せるうえ、エラーバウンダリーで画面全体を置き換えずに済みます。
+
+```tsx
+async function updateContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "名前を入力してください。" };
+  }
+  await updateContact(name);
+  return { error: null };
+}
+```
+
+表示側の実装は[データ更新](/guides/mutations#consume)を参照してください。投げるか返すかの使い分けは、[データ更新の失敗時の表示](/guides/mutations#errors)でまとめています。
+
+## 主なエラークラス [#errors]
+
+pera1 が投げるエラーはすべて `ErrorBase` を継承し、`message` に加えて `meta` に発生状況を保持します。`@pera1/core` から次のクラスをインポートできます。
+
+| クラス | 発生する場面 |
+| --- | --- |
+| `NavigationApiNotSupportedError` | Navigation API を持たないブラウザーで `NavigationApiEngine` を生成した |
+| `LoaderConditionError` | `shouldReload` が Promise を返した、真偽値以外を返した |
+| `LoaderDataNotFoundError` | ローダーがない階層で `useLoaderData` を呼んだ |
+| `RouterContextMissingError` | `<Router>` の外でルーターのフックを呼んだ |
+| `RouteContextMissingError` | ルート階層の外で `useRouteContext` や `<Outlet>` を使った |
+| `UnexpectedValidationError` | Navigation API が返したエントリーの形が想定と違った |
+| `UnreachableError` | 到達しないはずの分岐に入った (ライブラリーの不具合) |
+
+`UnreachableError` を見かけたら不具合のサインです。`LoaderConditionError` と `LoaderDataNotFoundError` は実装ミス、`NavigationApiNotSupportedError` は環境の問題です。
+
+## エラーメッセージを差し替える [#messages]
+
+pera1 は主要なエラーに日本語と英語のメッセージを登録しています。表示言語の切り替えには valibot のグローバル設定を使います。
+
+```ts
+import { setGlobalConfig } from "valibot";
+
+setGlobalConfig({ lang: "ja" });
+```
+
+独自の文言に差し替えたい場合は `setErrorMessage` を使います。エラークラス、メッセージ (または `meta` を受け取る関数)、言語コードの 3 つを渡します。
+
+```ts
+import { LoaderDataNotFoundError, setErrorMessage } from "@pera1/core";
+
+setErrorMessage(
+  LoaderDataNotFoundError,
+  ({ loader }) => `ローダー ${loader?.name ?? "unknown"} の結果が見つかりません。`,
+  "ja",
+);
+```
+
+## 404 を表示する [#not-found]
+
+`Router` はどのルートにもマッチしない場合、`null` を描画します。404 専用の API はないため、もっとも詳細度の低いワイルドカードルートをフォールバックとして定義します。
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/*", component: NotFoundPage },
+];
+```
+
+`/*` はすべての URL にマッチしますが、詳細度が最も低いため、他のルートが優先された残りの URL だけがここに来ます。`NotFoundPage` の中では `useRoutePath` を使うと、どの URL で来たかを表示できます。
+
+```tsx
+function NotFoundPage() {
+  const path = useRoutePath();
+  return (
+    <div>
+      <h2>ページが見つかりません</h2>
+      <p>{path.pathname} は存在しません。</p>
+    </div>
+  );
+}
+```
+
+## 環境エラーを起動時に検出する [#detect-early]
+
+Navigation API がない環境では、`BrowserRouter` の描画時に `NavigationApiNotSupportedError` が投げられます。アプリ全体のエラーバウンダリーで受け止めるか、起動前に `window.navigation` の有無を確認して案内を表示してください。
+
+```tsx
+if (!("navigation" in window)) {
+  // 非対応ブラウザー向けの案内を表示する
+}
+```
+
+:::note
+pera1 は SSR に対応していないため、サーバー側で `window` を参照するコードは実行しないでください。SSR を行う場合は、ルーター部分をクライアント専用のコンポーネントに閉じ込める必要があります。
+:::
+
+## 次に読む [#next]
+
+画面を遅延読み込みすると、読み込み失敗の扱いがもう 1 段増えます。[コード分割](/guides/code-splitting)で `Suspense` との組み合わせを説明します。

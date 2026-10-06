@@ -1,0 +1,83 @@
+---
+title: "@pera1/core"
+description: "UI に依存しないルーター本体の役割、エクスポートの入口、設計上の約束をまとめます。"
+---
+
+`@pera1/core` は pera1 のルーター本体です。ルート定義の正規化とマッチング、ローダーとアクションの実行、履歴エントリー単位のデータ管理、エンジンとの接続を担当します。React には依存していないため、他の UI フレームワーク向けのバインディングやテスト用の偽エンジンからも同じように使えます。
+
+## インストール [#install]
+
+```package-install
+npm i @pera1/core valibot
+```
+
+`valibot` は実行時バリデーションに使うピア依存関係です。`@pera1/react` を使うと、コアは自動的にインストールされます。
+
+## エクスポートの入口 [#entry-points]
+
+パッケージには 3 つのエントリーポイントがあります。通常はルートの `@pera1/core` だけを使えば十分です。
+
+| インポート | 内容 |
+| --- | --- |
+| `@pera1/core` | ルーター、マッチング、ローダー、アクション、エンジン、エラー、型 |
+| `@pera1/core/core` | ルーティングの中核 API (`createRouter`、`matchRoutes` など) |
+| `@pera1/core/engines` | エンジンのインターフェースと `NavigationApiEngine` |
+
+## 主な API [#api]
+
+### ルーター [#router]
+
+| API | 説明 |
+| --- | --- |
+| [`createRouter`](/packages/core/reference/create-router) | ルート定義とエンジンを接続し、購読とスナップショットを提供する |
+| [`RouterController`](/packages/core/reference/create-router) | `createRouter` が返すコントローラーの型 |
+| [`RouterSnapshot`](/packages/core/reference/create-router) | ルーターの現在状態のスナップショット |
+
+### ルート定義とマッチング [#routing]
+
+| API | 説明 |
+| --- | --- |
+| [`RouteDefinition` と関連型](/packages/core/reference/route-definitions) | ルート定義、ローダー、アクション、パラメーターの型 |
+| [`matchRoutes`](/packages/core/reference/routes) | URL にマッチするルート階層を集める |
+| [`RoutePatternUtils`](/packages/core/reference/route-pattern-utils) | パスパターンの解析、生成、置換 |
+| [`RoutePath`](/packages/core/reference/route-path) | パス、クエリー、ハッシュの正規化と操作 |
+
+### データ取得と更新 [#data]
+
+| API | 説明 |
+| --- | --- |
+| [`initLoaders` / `startLoaders`](/packages/core/reference/loaders) | ローダーの並行起動と再取得の判定 |
+| [`startAction`](/packages/core/reference/actions) | アクションの選出と実行 |
+| [`selectLoaderData` / `selectActionData`](/packages/core/reference/router-store) | スナップショットからデータを選択する |
+| [`redirect` / `RedirectResponse`](/packages/core/reference/redirects) | アクションからのリダイレクト |
+| [`RouteRequest`](/packages/core/reference/route-request) | GET / POST リクエストの抽象化 |
+
+### エンジン [#engines]
+
+| API | 説明 |
+| --- | --- |
+| [`IEngine`](/packages/core/reference/engine) | エンジンが実装すべきインターフェースと関連型 |
+| [`NavigationApiEngine`](/packages/core/reference/navigation-api-engine) | Navigation API を使う既定のエンジン |
+
+### 補助 API [#utilities]
+
+| API | 説明 |
+| --- | --- |
+| [`toNavigateArgs`](/packages/core/reference/navigation-utils) | `useNavigate` の引数をエンジン用に正規化する |
+| [`toSubmitArgs`](/packages/core/reference/submit-utils) | `useSubmit` の引数をエンジン用に正規化する |
+| [`HistoryEntryIdSchema` など](/packages/core/reference/schemas) | 履歴エントリーの検証スキーマ |
+| [`formDataToHTMLFormElement`](/packages/core/reference/form-data) | 読み取り専用フォームデータを DOM のフォームに変換する |
+| [エラークラス](/packages/core/reference/errors) | エラーの種類とメッセージの差し替え |
+| [読み取り専用の型](/packages/core/reference/readonly-types) | `ReadonlyURL`、`ReadonlyFormData` など |
+
+## 設計上の約束 [#principles]
+
+- **同期の `init`**: エンジンの初期化は同期です。初期描画に必要な情報はその場で返し、非同期のデータ取得は `NinjaPromise` に包んでストアへ登録します。
+- **参照の安定性**: ルーターのスナップショットは参照が安定しており、変化するのは `currentEntry` だけです。購読側はセレクターで必要な部分を取り出します。
+- **履歴エントリー単位のキャッシュ**: データは履歴エントリー ID ごとに保持され、破棄されたエントリーのデータは自動で削除されます。
+- **失敗はデータとして扱う**: ローダーやアクションの例外は `NinjaPromise` の `rejected` として保持し、表示の判断は UI 側に委ねます。
+
+## 次に読む [#next]
+
+- [@pera1/react の概要](/packages/react)
+- [API リファレンス](/packages/core/reference/create-router)

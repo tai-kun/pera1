@@ -1,0 +1,217 @@
+---
+title: ルーティング
+description: "パスパターン、詳細度、index ルート、ネストの決まりを、具体例とともに解説します。"
+---
+
+ルーティングの設計は、ルート定義の配列をどう並べるかで決まります。pera1 ではツリー構造を書かず、パスパターンの前方一致で親子を作ります。このページでは、使えるパターン、マッチの優先順位、ネストが成立する条件、重なり合うパターンの扱いを順に見ていきます。
+
+## ルート定義の形は 2 通りある [#definition-forms]
+
+基本はオブジェクト形式です。`path` が必須で、`index`、`component`、`loader`、`action`、`shouldReload` を任意で指定します。
+
+```tsx
+const routes = [
+  { path: "/", component: RootLayout },
+  { path: "/", index: true, component: HomePage },
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+];
+```
+
+モジュール形式も受け付けます。`component` を省略すると、モジュールのデフォルトエクスポートがコンポーネントとして使われます。ルートごとにファイルを分けたいときに便利です。
+
+```tsx
+import * as contactRoute from "./routes/contact.js";
+
+const routes = [{ path: "/contacts/:id", ...contactRoute }];
+```
+
+:::note
+ルート定義の配列はモジュールスコープに置き、毎回のレンダリングで作り直さないでください。`Router` は `routes` の参照が変わるとルーターを作り直し、ローダーのキャッシュも失われます。
+:::
+
+## 使えるパスパターン [#patterns]
+
+パターンの記法は [regexparam](https://github.com/lukeed/regexparam) に準拠しています。
+
+| パターン | 例 | マッチする URL | パラメーター |
+| --- | --- | --- | --- |
+| 静的 | `/contacts` | `/contacts` | なし |
+| 名前付きパラメーター | `/contacts/:id` | `/contacts/42` | `{ id: "42" }` |
+| 省略可能パラメーター | `/archive/:year?` | `/archive`、`/archive/2026` | 省略時はキーなし |
+| 接尾辞付きパラメーター | `/movies/:title.mp4` | `/movies/hello.mp4` | `{ title: "hello" }` |
+| ワイルドカード | `/files/*` | `/files/a/b.txt` | `{ "*": "a/b.txt" }` |
+| 省略可能ワイルドカード | `/files/*?` | `/files`、`/files/a` | 省略時はキーなし |
+
+接尾辞付きパラメーターは、`/movies/:title.(mp4|mov)` のような拡張子の選択にも使えます。
+
+```tsx
+const utils = new RoutePatternUtils("/movies/:title.mp4");
+utils.match("/movies/hello.mp4"); // true
+utils.match("/movies/hello.mov"); // false
+utils.parse("/movies/hello.mp4"); // { title: "hello" }
+```
+
+パラメーターの値はパーセントエンコードされたまま渡されます。`/users/%20hello` の `id` は `" "` ではなく `"%20hello"` です。表示する前に、必要に応じてデコードしてください。
+
+## クエリーとハッシュはマッチに影響しない [#query-hash]
+
+`matchRoutes` は URL のパス部分だけで照合します。`/search?query=1#hash` は `/search` と同じようにマッチし、末尾スラッシュの有無も無視されます。クエリーの変化でデータを再取得したい場合は、[データ取得](/guides/data-loading)の `shouldReload` を使います。
+
+## 詳細度の高いルートが先に照合される [#specificity]
+
+ルートは内部で正規化されたあと、詳細度の高い順に並べ替えられます。URL に対しては、その順にすべてのルートを照合し、マッチしたものを「子から親」の順で集めます。
+
+詳細度はセグメントごとに次の順で決まります。上が優先です。
+
+1. 静的セグメント (`/contacts`)
+2. 接尾辞付きパラメーター (`/:title.mp4`)
+3. 名前付きパラメーター (`/:id`)
+4. 省略可能パラメーター (`/:id?`)
+5. ワイルドカード (`/*`)
+6. 省略可能ワイルドカード (`/*?`)
+
+同じ詳細度のセグメントが並ぶときは、セグメント数が多いほうが優先されます。それも同じなら、文字列の辞書順です。たとえば `/users/v1`、`/users/:id/profile`、`/users/:id`、`/users` が候補にあるとき、`/users/v1` が最も先、`/users` が最も後になります。
+
+```tsx
+const routes = [
+  { path: "/users/:id", component: UserPage },
+  { path: "/users/me", component: MePage },
+];
+```
+
+`/users/me` へアクセスすると、静的セグメントの `/users/me` が先頭でマッチします。ただし後述のとおり、`/users/:id` も同時にマッチして親子として重なります。
+
+## `index` ルートは完全一致のときだけ使われる [#index-routes]
+
+`index: true` を付けると、そのパスに完全一致したときだけマッチします。付けないルートは、インデックスルートではなく、下位パスを含むレイアウトとして扱われます。これがネストの仕組みです。
+
+```tsx
+const routes = [
+  { path: "/contacts", index: true, component: ContactsPage },
+  { path: "/contacts", component: ContactsLayout },
+  { path: "/contacts/:id", component: ContactPage },
+];
+```
+
+`/contacts` では `ContactsPage`、`/contacts/42` では `ContactPage` が `ContactsLayout` の中に入ります。`ContactsLayout` は子を表示したい位置に `Outlet` を置きます。
+
+```tsx
+function ContactsLayout() {
+  return (
+    <section>
+      <h2>連絡先</h2>
+      <Outlet />
+    </section>
+  );
+}
+```
+
+:::warning[同じパスのレイアウトと index は index を先に書く]
+同じ `path` を持つルートは詳細度が等しいため、定義順がそのまま並び順になります。`index` ルートを先に定義すると、マッチ結果が「index、レイアウト、…」の順になり、反転後の描画でレイアウトが index を包みます。順序を逆にすると親子が入れ替わり、レイアウトの `Outlet` に index が表示されません。
+:::
+
+## パターンが重なると兄弟ではなく親子になる [#overlapping]
+
+pera1 はマッチしたルートをすべて集めます。同じ URL に 2 つのパターンがマッチした場合、優先度の高いほうがもう一方の子としてネストします。除外はされません。
+
+```tsx
+const routes = [
+  { path: "/contacts/new", component: NewContactPage },
+  { path: "/contacts/:id", component: ContactPage },
+];
+```
+
+`/contacts/new` へアクセスすると、`NewContactPage` と `ContactPage` (パラメーター `id: "new"`) の両方がマッチし、`ContactPage` の子として `NewContactPage` が描画されます。`ContactPage` が `Outlet` を描画しない場合、`NewContactPage` は画面に現れません。
+
+固定セグメントと動的セグメントを同じ階層に並べるときは、次のいずれかで回避してください。
+
+- 動的セグメント側のコンポーネントで `params` を見て分岐する。
+- 重ならないパス設計にする (`/contacts/:id` と `/contacts/new` を同じ階層に置かない)。
+- 動的セグメント側のコンポーネントに `Outlet` を置き、子として重なることを受け入れる。
+
+## マッチ結果は `MatchedRoute` の配列になる [#matched-route]
+
+`matchRoutes` を使うと、生のマッチ結果を直接確認できます。`MatchedRoute` は正規化済みの `Route` に、抽出済みの `params` と、パラメーターを埋め戻した `urlPath` を加えたものです。
+
+```ts
+import { matchRoutes } from "@pera1/core";
+
+const matched = matchRoutes(routes, new URL("https://example.com/contacts/42"));
+
+for (const route of matched ?? []) {
+  console.log(route.path, route.params, route.urlPath);
+}
+// /contacts/:id { id: "42" } /contacts/42
+// /contacts     {}           /contacts
+// /             {}           /
+```
+
+`urlPath` はパラメーターを実際の値で埋めたパスです。アクションの実行対象を選ぶときや、フォームの送信先に使えます。
+
+## マッチしなかったときの画面を用意する [#not-found]
+
+`Router` はマッチするルートが 1 つもない場合、何も描画しません。404 画面を表示したい場合は、詳細度が最も低いワイルドカードルートを定義します。
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts/:id", component: ContactPage },
+  { path: "/*", component: NotFoundPage },
+];
+```
+
+`/*` はどんな URL にもマッチし、他のルートがすべて優先されるため、フォールバックとして機能します。
+
+## パラメーターをコンポーネントで受け取る [#use-params]
+
+コンポーネントでは `useParams` でパラメーターを取得します。型引数にルートパターンを渡すと、キーの型が決まります。
+
+```tsx
+function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  return <p>ID: {params.id}</p>;
+}
+```
+
+ローダーとアクションにも、引数の `params` として同じ値が渡されます。ただし、ルート定義の `path` は `string` に広がるため、値の型は `string | undefined` です。使う前に存在を確かめてください。型付けの詳しい事情は [TypeScript](/guides/typescript#widening) で説明しています。
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("id が指定されていません。");
+  }
+  return findContact(id);
+}
+```
+
+## `RoutePatternUtils` を単体で使う [#route-pattern-utils]
+
+ルーティングエンジンの外でパターンを照合したい場合は、`RoutePatternUtils` を直接使えます。`parse` は不一致で例外を投げ、`parseSafe` は `null` を返す点が異なります。
+
+```ts
+import { RoutePatternUtils } from "@pera1/core";
+
+const utils = new RoutePatternUtils("/contacts/:id");
+
+utils.match("/contacts/42"); // true
+utils.parseSafe("/contacts/42"); // { id: "42" }
+utils.inject({ id: "42" }); // "/contacts/42"
+utils.replace("/contacts/42", { id: "7" }); // "/contacts/7"
+```
+
+| メソッド | 不一致のとき | 用途 |
+| --- | --- | --- |
+| `match` | `false` | 一致判定 |
+| `parse` / `parseSafe` | 例外 / `null` | パラメーター抽出 |
+| `inject` | 例外 | パラメーターの埋め込み |
+| `replace` / `replaceSafe` | 例外 / `null` | 一部のパラメーターの差し替え |
+
+`allowChild: true` を渡すと、`/contacts` が `/contacts/42` に前方一致するようになります。ルートの親子判定と同じ挙動です。
+
+## 次に読む [#next]
+
+URL の設計が決まったら、[データ取得](/guides/data-loading)で各ルートにローダーを割り当てていきます。

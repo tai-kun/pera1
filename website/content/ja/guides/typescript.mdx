@@ -1,0 +1,165 @@
+---
+title: TypeScript
+description: "パラメーター、ローダー、アクションの型の付け方と、型が広がる制約への対処を解説します。"
+---
+
+pera1 は TypeScript を前提に設計されています。このページでは、パラメーターの型を導出する `RouteParams`、ローダーとアクションの型の付け方、そしてルート定義の `path` が文字列に広がるために生じる制約と、その回避策を説明します。
+
+## パラメーターの型を導出する [#route-params]
+
+`RouteParams<TPath>` は、パス文字列のリテラル型からパラメーターの型を導出します。
+
+```ts
+import type { RouteParams } from "@pera1/core";
+
+type Params = RouteParams<"/contacts/:id">;
+// { readonly id: string }
+
+type Optional = RouteParams<"/archive/:year?">;
+// { readonly year?: string }
+
+type Wildcard = RouteParams<"/files/*">;
+// { readonly "*": string }
+```
+
+省略可能なパラメーター (`:year?`) は省略可能なプロパティーになり、URL 側で省略されると実行時のオブジェクトにもキーが存在しません。ワイルドカードの値には `params["*"]` でアクセスします。
+
+パターンがリテラル型として推論される場面では、この型が自動的に使われます。
+
+```ts
+import { RoutePatternUtils } from "@pera1/core";
+
+const utils = new RoutePatternUtils("/movies/:title.mp4");
+const params = utils.parse("/movies/hello.mp4");
+params.title; // string
+```
+
+## ルート定義の `path` は文字列に広がる [#widening]
+
+`Router` の `routes` プロパティーは `RouteDefinitionObject<string, ...>` を受け取るため、配列リテラルをそのまま渡すと `path` は `string` に広がります。その結果、ローダーとアクションに渡る `params` は `RouteParams<string>`、つまり値が `string | undefined` になります。
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("id が指定されていません。");
+  }
+  return findContact(id);
+}
+```
+
+これは制約であると同時に安全装置でもあります。URL に何が入るかは実行時まで確定しないため、使う前に存在を確かめるのが確実です。
+
+コンポーネント側では、`useParams` の型引数がそのまま効きます。
+
+```tsx
+function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  // params.id は string
+  return <p>{params.id}</p>;
+}
+```
+
+コアの型を直接使う場合も、型引数は同じように機能します。`RoutePatternUtils<"/contacts/:id">` や `LoaderFunction<"/contacts/:id">` のように、型引数と実装が同じ `TPath` を指すときだけ、パラメーターの型が確定します。
+
+## ローダーの戻り値の型 [#loader-data]
+
+`useLoaderData<typeof loader>()` は、ローダー関数の戻り値から解決後の型を導出します。`await` 後の型がそのまま `use` の戻り値の型になります。
+
+```tsx
+async function contactLoader({ params }: LoaderFunctionArgs) {
+  const response = await fetch(`/api/contacts/${params["id"]}`);
+  return (await response.json()) as { name: string; email: string };
+}
+
+function ContactPage() {
+  const contact = use(useLoaderData<typeof contactLoader>());
+  contact.name; // string
+  return <h2>{contact.name}</h2>;
+}
+```
+
+データ型だけを先に定義しておきたい場合は、`LoaderData<TData>` と `FulfilledLoaderData<TData>` を使えます。
+
+```tsx
+import type { LoaderData } from "@pera1/react";
+
+type Contact = { name: string; email: string };
+
+function ContactPage() {
+  const contact = use(useLoaderData<LoaderData<Contact>>());
+  // ...
+}
+```
+
+## アクションの戻り値の型 [#action-data]
+
+`useActionData<typeof action>()` は、アクションの戻り値から解決後のデータ型を導出します。
+
+```tsx
+async function saveAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "名前を入力してください。" };
+  }
+  const contact = await createContact(name);
+  return redirect(`/contacts/${contact.id}`);
+}
+```
+
+このアクションは `{ error: string }` と `RedirectResponse` のユニオンを返します。リダイレクト時の値は実行時に `undefined` へ置き換わりますが、型の上では `RedirectResponse` が残ります。表示側では `in` 演算子で絞り込んでください。
+
+```tsx
+function ActionError({ actionData }: { actionData: ActionData<typeof saveAction> }) {
+  const data = use(actionData);
+  if (data && "error" in data) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+リダイレクトを返さないアクションであれば、`data?.error` のように単純に扱えます。戻り値の型が複雑になる場合は、`ActionData<TData>` と `FulfilledActionData<TData>` を直接使って型を単純化してください。
+
+## ルート定義の型を再利用する [#route-definition]
+
+ルート定義を別ファイルに分けて共有する場合、`RouteDefinition` や `RouteDefinitionObject` を型として使えます。
+
+```tsx
+import type { RouteDefinitionObject } from "@pera1/core";
+
+const contactRoute: RouteDefinitionObject<"/contacts/:id"> = {
+  path: "/contacts/:id",
+  loader: contactLoader,
+  component: ContactPage,
+};
+```
+
+`Route<TComponent>` は正規化後のルート、`MatchedRoute<TComponent>` はマッチ後に `params` と `urlPath` が加わったルートを表します。`matchRoutes` の結果を自前で処理する場合に使います。
+
+## 履歴エントリーの型 [#history-entry]
+
+`HistoryEntryId` と `HistoryEntryUrl` は、バリデーションを通ったことを型で示すブランド型です。文字列を直接代入できないため、スキーマか `expectHistoryEntry` を経由して得ます。
+
+```ts
+import { HistoryEntryUrlSchema } from "@pera1/core";
+import { parse } from "valibot";
+
+const url = parse(HistoryEntryUrlSchema(), "https://example.com/contacts");
+// 正規化された URL オブジェクト
+```
+
+スキーマはシングルトンとしてキャッシュされ、2 回目以降は同じ参照を返します。バリデーションと正規化を繰り返す場面でもコストは増えません。
+
+## 型が合わないときの確認順 [#troubleshooting]
+
+1. ローダーやアクションの `params` を検証せずに使っていないか (値は `string | undefined`)。
+2. `useLoaderData` に渡す型引数が、コンポーネントが属するルートのローダーか (親のローダーを継承する場合、子の `typeof loader` は使えない)。
+3. `redirect` を返すアクションの `value` に `RedirectResponse` が残っていないか (`in` 演算子で絞り込む)。
+4. ルート定義の配列をレンダリングごとに作り直していないか (型ではなく実行時の問題)。
+
+## 次に読む [#next]
+
+各型の定義は [@pera1/core のリファレンス](/packages/core/reference/route-definitions) と [@pera1/react のリファレンス](/packages/react/reference/use-loader-data) を参照してください。

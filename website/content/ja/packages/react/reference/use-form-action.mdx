@@ -1,0 +1,44 @@
+---
+title: useFormAction
+description: "フォームの送信先になる、パラメーターを実値で埋めた URL パスを返します。"
+---
+
+`useFormAction` は、現在のルートに対応するフォームの送信先 URL を文字列で返します。パスパターンのパラメーターは実際の値で埋められているため、`action` にそのまま指定できます。
+
+```tsx
+import { useFormAction } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useFormAction(): string;
+```
+
+## 戻り値 [#returns]
+
+現在の `RouteContext` の `urlPath` を返します。たとえば `/contacts/:id` のルートで `id` が `42` なら `"/contacts/42"` です。クエリーとハッシュは含まれません。
+
+## 使い方 [#usage]
+
+```tsx
+import { useFormAction } from "@pera1/react";
+
+function ContactForm() {
+  const formAction = useFormAction();
+  return <form method="post" action={formAction}>...</form>;
+}
+```
+
+`useSubmit` は、`action` オプションを省略したときの送信先としてこの値を使います。
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` が供給されていない |
+
+## 関連 [#related]
+
+- [useSubmit](/packages/react/reference/use-submit) — プログラムからの送信
+- [データ更新](/guides/mutations#forms) — フォームとアクション

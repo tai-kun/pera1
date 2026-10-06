@@ -1,0 +1,92 @@
+---
+title: Router
+description: "エンジンとルート定義を受け取り、ライフサイクルと状態購読を司るコンポーネントです。"
+---
+
+`Router` は、宣言的なルート定義と命令的なエンジンを仲介するプロバイダーコンポーネントです。状態管理の実体は `@pera1/core` の [`createRouter`](/packages/core/reference/create-router) に委譲し、このコンポーネントは React へのバインディングだけを担当します。
+
+ブラウザーで使う場合は、通常 `BrowserRouter` で十分です。`Router` を直接使うのは、エンジンを自分で選びたい場合や、テストでモックのエンジンを渡したい場合です。
+
+```tsx
+import { Router } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function Router(props: RouterProps): React.ReactElement | null;
+```
+
+## 引数 [#arguments]
+
+| プロパティ | 型 | 必須 | 説明 |
+| --- | --- | --- | --- |
+| `engine` | `IEngine<React.ComponentType<{}>>` | はい | ルーティングを実行するエンジンです。 |
+| `routes` | `readonly RouterRouteDefinition[]` | はい | アプリケーションのルート定義です。 |
+
+## ルート定義の型 [#route-definition]
+
+`RouterRouteDefinition` は、オブジェクト形式とモジュール形式のユニオンです。
+
+```ts
+type RouterRouteDefinition = RouterRouteDefinitionObject | RouterRouteDefinitionModule;
+```
+
+指定できるプロパティーはどちらの形式でも同じです。
+
+| プロパティ | 型 | 説明 |
+| --- | --- | --- |
+| `path` | `string` | マッチ対象のパスパターンです。 |
+| `index` | `boolean \| undefined` | 完全一致のときだけ使うインデックスルートにするかどうかです。 |
+| `component` | `React.ComponentType<{}> \| undefined` | ルートに対応して描画するコンポーネントです。 |
+| `loader` | `{ (args: any): unknown } \| undefined` | 画面に必要なデータを取得する関数です。 |
+| `action` | `{ (args: any): unknown } \| undefined` | データを更新するアクション関数です。 |
+| `shouldReload` | `{ (args: any): boolean } \| undefined` | ローダーを再取得する条件を判定する関数です。 |
+
+モジュール形式では `component` を省略できます。その場合は `default` エクスポートが使われ、両方あるときは `component` が優先されます。
+
+```tsx
+import * as contactRoute from "./routes/contact.js";
+
+const routes = [{ path: "/contacts/:id", ...contactRoute }];
+```
+
+パスパターンと詳細度の規則は[ルーティング](/guides/routing)を参照してください。
+
+## 描画の流れ [#rendering]
+
+`Router` は `useMemo` で `createRouter` を生成します。マウント時には `useEffect` の中で `start()` を呼びます。アンマウント時には `start()` が返した停止関数が呼ばれ、エンジンの購読と進行中の処理が破棄されます。
+
+現在マッチしているルートは `useSyncExternalStore` で購読します。マッチ結果は詳細度の高い「子から親」の順で届くため、`Router` は反転して「親から子」の順に組み立てます。各ルートは固有の `RouteContext` で包まれ、`component` があればそれを、なければ子の `outlet` をそのまま描画します。
+
+マッチするルートが 1 つもないとき、`Router` は `null` を描画します。404 画面を出したい場合は、ワイルドカードルートを定義してください。詳細は[ルーティング](/guides/routing#not-found)を参照してください。
+
+## 親子の action と loader [#inheritance]
+
+子ルートに `action` や `loader` がない場合、親ルートのものが引き継がれます。子で定義した場合は子が優先され、親のものは子から見えません。この規則は `useActionData` と `useLoaderData` が参照する関数を決めます。
+
+## 使い方 [#usage]
+
+```tsx no-run
+import { NavigationApiEngine } from "@pera1/core";
+import { Router } from "@pera1/react";
+
+const engine = new NavigationApiEngine();
+
+createRoot(document.getElementById("root")!).render(
+  <Router engine={engine} routes={routes} />,
+);
+```
+
+`BrowserRouter` は、この例と同じことを内部で行います。
+
+## 注意 [#notes]
+
+- `engine` と `routes` は `useMemo` の依存関係です。どちらかの参照が変わるとルーターが作り直され、ローダーのキャッシュが失われます。`routes` はモジュールスコープに置いてください。
+- `Router` は子要素を受け取りません。画面の構成は `routes` だけで決まります。
+
+## 関連 [#related]
+
+- [BrowserRouter](/packages/react/reference/browser-router) — Navigation API を使う既定の入口
+- [Outlet](/packages/react/reference/outlet) — 子ルートの差し込み
+- [createRouter](/packages/core/reference/create-router) — 内部で使うコントローラー

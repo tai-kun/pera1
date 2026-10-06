@@ -1,0 +1,121 @@
+---
+title: 読み取り専用の型
+description: "URL とフォームデータを変更不可で扱う 3 つのインターフェースをまとめます。"
+---
+
+pera1 のローダーとアクションには、リクエストの一部が読み取り専用の型として渡されます。参照はできても変更はできません。処理の途中でデータが書き換わる心配はありません。ここでは 3 つのインターフェースを説明します。
+
+## `ReadonlyURL` [#readonly-url]
+
+`ReadonlyURL` は標準の `URL` から代入による変更を除いたインターフェースです。`RouteRequest` の `url` や `HistoryEntry` の `url` はこの型で渡されます。
+
+```ts
+interface ReadonlyURL {
+  readonly hash: string;
+  readonly host: string;
+  readonly hostname: string;
+  readonly href: string;
+  readonly origin: string;
+  readonly password: string;
+  readonly pathname: string;
+  readonly port: string;
+  readonly protocol: string;
+  readonly search: string;
+  readonly searchParams: ReadonlyURLSearchParams;
+  readonly username: string;
+  toString(): string;
+  toJSON(): string;
+}
+```
+
+実行時の実体は標準の `URL` オブジェクトです。プロパティーの意味は [MDN の `URL`](https://developer.mozilla.org/docs/Web/API/URL) と同じで、`toJSON()` は `href` と同じ文字列を返します。
+
+```tsx
+async function loader({ request }: LoaderFunctionArgs) {
+  const { pathname, searchParams } = request.url;
+  const page = searchParams.get("page") ?? "1";
+  return { pathname, page };
+}
+```
+
+## `ReadonlyURLSearchParams` [#readonly-url-search-params]
+
+`ReadonlyURLSearchParams` は `URLSearchParams` から `append`、`delete`、`set`、`sort` などの変更メソッドを除いたインターフェースです。
+
+```ts
+interface ReadonlyURLSearchParams {
+  readonly size: number;
+  get(name: string): string | null;
+  getAll(name: string): string[];
+  has(name: string, value?: string): boolean;
+  toString(): string;
+  forEach(
+    callbackfn: (value: string, key: string, parent: ReadonlyURLSearchParams) => void,
+    thisArg?: any,
+  ): void;
+}
+```
+
+クエリーを変更した新しい URL を作りたい場合は、`RoutePath` を使うか、`URLSearchParams` を新しく組み立ててください。
+
+```ts
+import { RoutePath } from "@pera1/core";
+
+const path = new RoutePath(request.url);
+path.searchParams.set("page", "2");
+path.toString(); // クエリーを更新したパス
+```
+
+## `ReadonlyFormData` [#readonly-form-data]
+
+`ReadonlyFormData` は `FormData` から変更メソッドを除いたインターフェースです。アクションの `request.formData` はこの型です。
+
+```ts
+interface ReadonlyFormData {
+  get(name: string): FormDataEntryValue | null;
+  getAll(name: string): FormDataEntryValue[];
+  has(name: string): boolean;
+  forEach(
+    callbackfn: (value: FormDataEntryValue, key: string, parent: ReadonlyFormData) => void,
+    thisArg?: any,
+  ): void;
+  entries(): IterableIterator<[string, FormDataEntryValue]>;
+  keys(): IterableIterator<string>;
+  values(): IterableIterator<FormDataEntryValue>;
+  [Symbol.iterator](): IterableIterator<[string, FormDataEntryValue]>;
+}
+```
+
+`get` は値がなければ `null` を返し、値の型は文字列または `File` です。数値に変換するときは、`null` を明示的に処理してください。
+
+```tsx
+async function action({ request }: ActionFunctionArgs) {
+  const age = Number(request.formData.get("age") ?? 0);
+  const avatar = request.formData.get("avatar");
+  const file = avatar instanceof File ? avatar : undefined;
+  return { age, fileName: file?.name };
+}
+```
+
+:::note
+`ReadonlyFormData` は読み取り専用ですが、`File` オブジェクト自体は不変ではありません。受け取ったファイルをストリームとして読む場合は、アクションの中で閉じてください。
+:::
+
+## フォームデータを Web 標準の `Request` に変換する [#to-request]
+
+`RouteRequest.toRequest()` を使うと、これらの読み取り専用オブジェクトを Web 標準の `Request` に変換できます。`fetch` にそのまま渡せるため、アクションの中から API を呼ぶときに便利です。
+
+```tsx
+async function action({ request }: ActionFunctionArgs) {
+  const response = await fetch("/api/contacts", request.toRequest());
+  return response.json();
+}
+```
+
+変換時に `RequestInit` を渡すと、`method`、`body`、`headers` などを上書きできます。詳しくは [RouteRequest](/packages/core/reference/route-request) を参照してください。
+
+## 関連 [#related]
+
+- [RouteRequest](/packages/core/reference/route-request) — GET / POST リクエストの抽象化
+- [schemas](/packages/core/reference/schemas) — URL の検証と正規化
+- [データ取得](/guides/data-loading) — ローダーでのリクエストの扱い

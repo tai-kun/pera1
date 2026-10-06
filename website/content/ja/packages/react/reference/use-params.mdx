@@ -1,0 +1,64 @@
+---
+title: useParams
+description: "現在のルートで一致したパスパラメーターを取得します。"
+---
+
+`useParams` は、現在のルートのパスパターンに埋め込まれたパラメーターを返します。値は文字列で、パーセントエンコードされたまま渡されます。
+
+```tsx
+import { useParams } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useParams<TPath extends string = string>(): RouteParams<TPath>;
+```
+
+## 型パラメーター [#type-parameters]
+
+| 名前 | 既定値 | 説明 |
+| --- | --- | --- |
+| `TPath` | `string` | ルートパターンの文字列リテラル型です。 |
+
+パターンを渡すと、キーと省略可否が型に反映されます。省略した場合は `string` のキーを持つ緩い型になります。
+
+```ts
+type Params = RouteParams<"/contacts/:id">;
+// { readonly id: string }
+
+type Optional = RouteParams<"/archive/:year?">;
+// { readonly year?: string }
+```
+
+## 戻り値 [#returns]
+
+戻り値は、現在の `RouteContext` が持つ `params` です。値は `useRouteContext` 経由で取得するため、階層ごとに異なります。子ルートのコンポーネントでは、親のパターンのパラメーターは自動的には含まれません。
+
+## 使い方 [#usage]
+
+```tsx
+import { useParams } from "@pera1/react";
+
+function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  return <p>ID: {params.id}</p>;
+}
+```
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` が供給されていない |
+
+## 注意 [#notes]
+
+- 省略可能なパラメーターが URL で省略された場合、実行時のオブジェクトにキーは存在しません。`in` や `undefined` チェックで判定してください。
+- ワイルドカードの値には `params["*"]` でアクセスします。
+
+## 関連 [#related]
+
+- [ルーティング](/guides/routing#use-params) — パスパターンの記法
+- [TypeScript](/guides/typescript#route-params) — 型の導出
+- [useRouteContext](/packages/react/reference/use-route-context) — ルート情報全体
