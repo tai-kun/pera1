@@ -9,7 +9,7 @@ import type { HistoryEntryId } from "./history-entry-id-schema.js";
 import type { MatchedRoute } from "./match-routes.js";
 import RedirectResponse from "./redirect-response.js";
 import RouteRequest from "./route-request.js";
-import type { LoaderFunction } from "./route.types.js";
+import type { LoaderFunction, RouteParams } from "./route.types.js";
 
 /**
  * `startLoaders` 関数を実行する際に必要となる引数オブジェクトの型定義です。
@@ -87,19 +87,19 @@ export interface StartedLoaders {
 /**
  * 2 つの params オブジェクトが浅い等価性で一致するかを判定します。
  *
- * キーの和集合に対して `!==` で比較するため、キーの有無の違い
- * (`{}` と `{ id: undefined }`) は等価とみなします。
+ * キーの和集合に対して `!==` で比較します。
+ *
+ * キーの有無の違いは等価とみなします。
  */
-function areParamsEqual(
-  a: Readonly<Record<string, string | undefined>>,
-  b: Readonly<Record<string, string | undefined>>,
-): boolean {
+function areParamsEqual(a: RouteParams, b: RouteParams): boolean {
   const keys = new Set([...Object.keys(a), ...Object.keys(b)]);
+
   for (const key of keys) {
     if (a[key] !== b[key]) {
       return false;
     }
   }
+
   return true;
 }
 
@@ -139,10 +139,10 @@ export default function startLoaders(
   );
 
   // 遷移前のルート群をパス文字列ごとに前回 params へ対応付けます。
-  // 同一パターン (`/posts/:postId`) 内の値変化 (`/posts/1` → `/posts/2`) を検出するため、
-  // 従来の「先頭子ルートの params を全階層へ一括適用」ではなく、階層ごとに対称的な比較を行います。
+  // 同一パターン内の値変化を検出するため、階層ごとに対称的な比較を行います。
   const prevRoutePathSet: ReadonlySet<string> = new Set(prevRoutes?.map((r) => r.path));
-  const prevParamsByPath = new Map<string, Readonly<Record<string, string | undefined>>>();
+  const prevParamsByPath = new Map<string, RouteParams>();
+
   for (const prevRoute of prevRoutes ?? []) {
     if (!prevParamsByPath.has(prevRoute.path)) {
       prevParamsByPath.set(prevRoute.path, prevRoute.params ?? {});
@@ -167,9 +167,8 @@ export default function startLoaders(
       params: currentParams = {},
       shouldReload,
     } = currentRoute;
-    // 同一パス文字列の前回 params を対称的に引き当てます。存在しなければ空オブジェクト扱いです。
-    const prevParams: Readonly<Record<string, string | undefined>> =
-      prevParamsByPath.get(currentRoute.path) ?? {};
+    // 同一パス文字列の前回 params を対称的に引き当てます。
+    const prevParams: RouteParams = prevParamsByPath.get(currentRoute.path) ?? {};
 
     // ローダー関数が定義されていないルートセグメントはスキップします。
     if (typeof currentLoader !== "function") {

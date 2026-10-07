@@ -3,6 +3,7 @@ import RoutePatternUtils from "./route-pattern-utils.js";
 import type {
   LoaderFunction,
   LoaderFunctionArgs,
+  RouteParams,
   ShouldReloadFunction,
   ShouldReloadFunctionArgs,
 } from "./route.types.js";
@@ -92,7 +93,7 @@ function splitDestination(template: string): {
  */
 export function resolveIndexRedirectDestination(
   template: string,
-  params: Readonly<Record<string, string | undefined>>,
+  params: RouteParams,
   basePathname: string,
 ): string {
   const { pathname, search, hash } = splitDestination(template);
@@ -164,7 +165,7 @@ export function createIndexRedirectLoader(
     return new RedirectResponse(
       resolveIndexRedirectDestination(
         destination,
-        loaderArgs.params as Readonly<Record<string, string | undefined>>,
+        loaderArgs.params,
         loaderArgs.request.url.pathname,
       ),
     );

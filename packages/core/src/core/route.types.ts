@@ -71,11 +71,11 @@ export type ShouldReloadFunctionArgs<TRoutePattern extends string = string> =
       prevUrl: ReadonlyURL;
 
       /**
-       * POST リクエストが発生する直前の URL から抽出されたパスパラメーターです。
+       * 遷移前の URL から抽出されたパスパラメーターです。
        *
-       * 同一パス文字列の前回 params が対称的に渡されます。
+       * 遷移前後でパスが異なる場合があるため、型引数を持たない `RouteParams` を使います。
        */
-      prevParams: RouteParams<TRoutePattern>;
+      prevParams: RouteParams;
 
       /**
        * システムが内部ロジックに基づいて判断した、再読み込み実行の既定の判定フラグです。
@@ -104,11 +104,11 @@ export type ShouldReloadFunctionArgs<TRoutePattern extends string = string> =
       prevUrl: ReadonlyURL;
 
       /**
-       * POST リクエストが発生する直前の URL から抽出されたパスパラメーターです。
+       * 遷移前の URL から抽出されたパスパラメーターです。
        *
-       * 同一パス文字列の前回 params が対称的に渡されます。
+       * 遷移前後でパスが異なる場合があるため、型引数を持たない `RouteParams` を使います。
        */
-      prevParams: RouteParams<TRoutePattern>;
+      prevParams: RouteParams;
 
       /**
        * POST リクエストと共に送信された標準のフォームデータオブジェクトです。
