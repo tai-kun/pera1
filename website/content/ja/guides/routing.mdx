@@ -7,7 +7,7 @@ description: "パスパターン、詳細度、index ルート、ネストの決
 
 ## ルート定義の形は 2 通りある [#definition-forms]
 
-基本はオブジェクト形式です。`path` が必須で、`index`、`redirect`、`component`、`loader`、`action`、`shouldReload` を任意で指定します。
+基本はオブジェクト形式です。`path` が必須で、`index`、`component`、`loader`、`action`、`shouldReload` を任意で指定します。
 
 ```tsx
 const routes = [
@@ -106,34 +106,23 @@ function ContactsLayout() {
 }
 ```
 
-## 裸パスは `redirect` で誘導する [#index-redirect]
+## 裸パスは子の index へ自動誘導する [#index-redirect]
 
-`/app` を開いたら `/app/dashboard` へ送るような、裸パス（子を持たない完全一致の URL）の正規化は、`redirect` に宣言します。描画側でパスを判定して遷移するコードは不要です。
+`/app` を開いたら `/app/dashboard` へ送るような、裸パス（`index: true` が完全一致しない URL）の正規化は宣言不要です。子の `index: true` へ自動誘導するため、描画側でパスを判定して遷移するコードは不要です。
 
 ```tsx
 const routes = [
-  {
-    path: "/app",
-    component: AppLayout,
-    loader: appLoader,
-    redirect: "/app/dashboard",
-  },
+  { path: "/app", component: AppLayout, loader: appLoader },
   { path: "/app/dashboard", index: true, component: DashboardPage },
 ];
 ```
 
-誘導は完全一致のときだけ発火し、子パス（`/app/dashboard` など）では発火しません。`children` と併用でき、親レイアウトの前方一致はそのまま保たれます。
-
-誘導先の書き方は 3 通りです。
-
-- 絶対パス（`"/settings/profile"`）
-- パラメーター付き絶対パス（`"/app/projects/:projectId/overview"`）。プレースホルダーはマッチ時の値で埋めます。
-- 相対パス（`"overview"`）。裸パスを基準に解決します。
+誘導先は追加セグメント最少の index で、同点時は定義順序が早いものです。プレースホルダーを含む場合はマッチ時の値で埋めます。誘導は完全一致のときだけ発火し、子パスでは発火しません。同一パスの index が存在する場合は通常描画で足りるため誘導しません。
 
 `loader` と併用した場合は、裸パスでも利用者のローダーを先に実行します。未ログイン時のログインページへの誘導のように、ローダーが `RedirectResponse` を返したときはそちらが優先されます。描画側では `null` の場合に `null` を返す分岐を残しておきます。
 
 :::note
-`loader` の中でパス名を分岐して `redirect()` を返す書き方は避けてください。結果が履歴エントリー単位でキャッシュされ、子への遷移時にも再利用されて画面が固まります。`redirect` は裸パスが絡む遷移で必ず再実行し、この再利用を起こしません。
+`loader` の中でパス名を分岐して `redirect()` を返す書き方は避けてください。結果が履歴エントリー単位でキャッシュされ、子への遷移時にも再利用されて画面が固まります。自動誘導は裸パスが絡む遷移で必ず再実行し、この再利用を起こしません。
 :::
 
 ## `children` で親子を明示する（推奨） [#children]

@@ -1,7 +1,8 @@
 import { describe, test, vi } from "vitest";
 
 import {
-  createRedirectLoader,
+  createBarePathLoader,
+  findIndexChildTarget,
   resolveRedirectDestination,
 } from "../../src/core/_redirect.js";
 import processRoutes from "../../src/core/_process-routes.js";
@@ -41,77 +42,56 @@ const reloadArgs = (
   defaultShouldReload,
 });
 
-describe("resolveRedirectDestination", () => {
-  test("絶対パスはそのまま返す", ({ expect }) => {
-    expect(resolveRedirectDestination("/app/dashboard", {}, "/app")).toBe("/app/dashboard");
+describe("findIndexChildTarget", () => {
+  test("同一パスの index があれば誘導しない", ({ expect }) => {
+    const entries = [
+      { fullPath: "/", index: false, order: 0 },
+      { fullPath: "/", index: true, order: 1 },
+    ];
+    expect(findIndexChildTarget(entries, "/")).toBeUndefined();
   });
 
-  test("絶対パスのプレースホルダーをパラメーターで埋める", ({ expect }) => {
-    expect(
-      resolveRedirectDestination(
-        "/app/projects/:projectId/overview",
-        { projectId: "42" },
-        "/app/projects/42",
-      ),
-    ).toBe("/app/projects/42/overview");
+  test("最も浅い index を選ぶ", ({ expect }) => {
+    const entries = [
+      { fullPath: "/travel", index: false, order: 0 },
+      { fullPath: "/travel/search/results", index: true, order: 1 },
+      { fullPath: "/travel/search", index: true, order: 2 },
+    ];
+    expect(findIndexChildTarget(entries, "/travel")).toBe("/travel/search");
   });
 
-  test("相対パスは裸パスに結合する", ({ expect }) => {
-    expect(resolveRedirectDestination("overview", {}, "/app/projects/42")).toBe(
-      "/app/projects/42/overview",
-    );
-    expect(resolveRedirectDestination("./overview", {}, "/app/projects/42")).toBe(
-      "/app/projects/42/overview",
-    );
+  test("同点時は定義順序が早いものを選ぶ", ({ expect }) => {
+    const entries = [
+      { fullPath: "/app", index: false, order: 0 },
+      { fullPath: "/app/settings", index: true, order: 1 },
+      { fullPath: "/app/dashboard", index: true, order: 2 },
+    ];
+    expect(findIndexChildTarget(entries, "/app")).toBe("/app/settings");
   });
 
-  test("末尾スラッシュ付きの基準パスでも重複スラッシュにならない", ({ expect }) => {
-    expect(resolveRedirectDestination("overview", {}, "/app/projects/42/")).toBe(
-      "/app/projects/42/overview",
-    );
+  test("該当なしは undefined を返す", ({ expect }) => {
+    const entries = [{ fullPath: "/users/:userId", index: false, order: 0 }];
+    expect(findIndexChildTarget(entries, "/users/123")).toBeUndefined();
   });
 
-  test("クエリーとハッシュを保持する", ({ expect }) => {
-    expect(resolveRedirectDestination("/app/dashboard?tab=1#main", {}, "/app")).toBe(
-      "/app/dashboard?tab=1#main",
-    );
-  });
-
-  test("親相対パスはエラーを投げる", ({ expect }) => {
-    expect(() => resolveRedirectDestination("../other", {}, "/app")).toThrow();
-    expect(() => resolveRedirectDestination("..", {}, "/app")).toThrow();
+  test("ワイルドカードは候補にしない", ({ expect }) => {
+    const entries = [
+      { fullPath: "/files", index: false, order: 0 },
+      { fullPath: "/*", index: true, order: 1 },
+    ];
+    expect(findIndexChildTarget(entries, "/files")).toBeUndefined();
   });
 });
 
-describe("createRedirectLoader の検証", () => {
-  test("空文字や非文字列の誘導先でエラーを投げる", ({ expect }) => {
-    expect(() =>
-      createRedirectLoader({
-        fullPath: "/app",
-        template: "",
-        loader: undefined,
-        shouldReload: undefined,
-      }),
-    ).toThrow();
-    expect(() =>
-      createRedirectLoader({
-        fullPath: "/app",
-        template: 42,
-        loader: undefined,
-        shouldReload: undefined,
-      }),
-    ).toThrow();
+describe("resolveRedirectDestination", () => {
+  test("絶対パスはそのまま返す", ({ expect }) => {
+    expect(resolveRedirectDestination("/app/dashboard", {})).toBe("/app/dashboard");
   });
 
-  test("親相対パスの宣言は正規化時にエラーを投げる", ({ expect }) => {
-    expect(() =>
-      createRedirectLoader({
-        fullPath: "/app",
-        template: "../other",
-        loader: undefined,
-        shouldReload: undefined,
-      }),
-    ).toThrow();
+  test("プレースホルダーをパラメーターで埋める", ({ expect }) => {
+    expect(
+      resolveRedirectDestination("/app/projects/:projectId/overview", { projectId: "42" }),
+    ).toBe("/app/projects/42/overview");
   });
 });
 
@@ -119,9 +99,9 @@ describe("合成ローダーの発火条件", () => {
   test("裸パスでは RedirectResponse を返す", async ({ expect }) => {
     // 準備
     const userLoader = vi.fn<LoaderFunction>().mockReturnValue({ authenticated: true });
-    const { loader } = createRedirectLoader({
+    const { loader } = createBarePathLoader({
       fullPath: "/app",
-      template: "/app/dashboard",
+      target: "/app/dashboard",
       loader: userLoader,
       shouldReload: undefined,
     });
@@ -138,9 +118,9 @@ describe("合成ローダーの発火条件", () => {
     // 準備
     const userData = { authenticated: true };
     const userLoader = vi.fn<LoaderFunction>().mockReturnValue(userData);
-    const { loader } = createRedirectLoader({
+    const { loader } = createBarePathLoader({
       fullPath: "/app",
-      template: "/app/dashboard",
+      target: "/app/dashboard",
       loader: userLoader,
       shouldReload: undefined,
     });
@@ -153,31 +133,13 @@ describe("合成ローダーの発火条件", () => {
     expect(userLoader).toHaveBeenCalledOnce();
   });
 
-  test("利用者のローダーがなくても裸パスでは誘導し子パスでは undefined を返す", async ({
-    expect,
-  }) => {
-    // 準備
-    const { loader } = createRedirectLoader({
-      fullPath: "/travel",
-      template: "/travel/search",
-      loader: undefined,
-      shouldReload: undefined,
-    });
-
-    // 実行と検証
-    const redirect = (await loader(loaderArgs("/travel"))) as RedirectResponse;
-    expect(redirect).toBeInstanceOf(RedirectResponse);
-    expect(redirect.pathname).toBe("/travel/search");
-    await expect(loader(loaderArgs("/travel/search"))).resolves.toBeUndefined();
-  });
-
-  test("利用者のリダイレクト (認証ガードなど) を優先する", async ({ expect }) => {
+  test("利用者のリダイレクトを優先する", async ({ expect }) => {
     // 準備
     const loginRedirect = new RedirectResponse("/login?redirectTo=/app");
     const userLoader = vi.fn<LoaderFunction>().mockReturnValue(loginRedirect);
-    const { loader } = createRedirectLoader({
+    const { loader } = createBarePathLoader({
       fullPath: "/app",
-      template: "/app/dashboard",
+      target: "/app/dashboard",
       loader: userLoader,
       shouldReload: undefined,
     });
@@ -191,9 +153,9 @@ describe("合成ローダーの発火条件", () => {
 
   test("動的パラメーターを含む裸パスで誘導先を組み立てる", async ({ expect }) => {
     // 準備
-    const { loader } = createRedirectLoader({
+    const { loader } = createBarePathLoader({
       fullPath: "/app/projects/:projectId",
-      template: "/app/projects/:projectId/overview",
+      target: "/app/projects/:projectId/overview",
       loader: undefined,
       shouldReload: undefined,
     });
@@ -206,60 +168,31 @@ describe("合成ローダーの発火条件", () => {
     // 検証
     expect(redirect.pathname).toBe("/app/projects/42/overview");
   });
-
-  test("動的パラメーターの子パスでは発火しない", async ({ expect }) => {
-    // 準備
-    const userLoader = vi.fn<LoaderFunction>().mockReturnValue({ project: {} });
-    const { loader } = createRedirectLoader({
-      fullPath: "/app/projects/:projectId",
-      template: "/app/projects/:projectId/overview",
-      loader: userLoader,
-      shouldReload: undefined,
-    });
-
-    // 実行
-    const data = await loader(loaderArgs("/app/projects/42/tasks", { projectId: "42" }));
-
-    // 検証
-    expect(data).toStrictEqual({ project: {} });
-  });
 });
 
 describe("合成 shouldReload の再利用防止", () => {
-  test("遷移先が裸パスなら無条件に再実行する", ({ expect }) => {
+  test("裸パスが絡む遷移では無条件に再実行する", ({ expect }) => {
     // 準備
     const userShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(false);
-    const { shouldReload } = createRedirectLoader({
+    const { shouldReload } = createBarePathLoader({
       fullPath: "/app",
-      template: "/app/dashboard",
+      target: "/app/dashboard",
       loader: undefined,
       shouldReload: userShouldReload,
     });
 
     // 実行と検証
     expect(shouldReload(reloadArgs("/app/dashboard", "/app"))).toBe(true);
-    expect(userShouldReload).not.toHaveBeenCalled();
-  });
-
-  test("遷移元が裸パスなら無条件に再実行する", ({ expect }) => {
-    // 準備
-    const { shouldReload } = createRedirectLoader({
-      fullPath: "/app",
-      template: "/app/dashboard",
-      loader: undefined,
-      shouldReload: undefined,
-    });
-
-    // 実行と検証
     expect(shouldReload(reloadArgs("/app", "/app/dashboard"))).toBe(true);
+    expect(userShouldReload).not.toHaveBeenCalled();
   });
 
   test("裸パスが絡まない遷移では利用者の判定に委ねる", ({ expect }) => {
     // 準備
     const userShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(false);
-    const { shouldReload } = createRedirectLoader({
+    const { shouldReload } = createBarePathLoader({
       fullPath: "/app",
-      template: "/app/dashboard",
+      target: "/app/dashboard",
       loader: undefined,
       shouldReload: userShouldReload,
     });
@@ -268,96 +201,69 @@ describe("合成 shouldReload の再利用防止", () => {
     expect(shouldReload(reloadArgs("/app/dashboard", "/app/projects"))).toBe(false);
     expect(userShouldReload).toHaveBeenCalledOnce();
   });
-
-  test("利用者の判定がなければ既定値を返す", ({ expect }) => {
-    // 準備
-    const { shouldReload } = createRedirectLoader({
-      fullPath: "/app",
-      template: "/app/dashboard",
-      loader: undefined,
-      shouldReload: undefined,
-    });
-
-    // 実行と検証
-    expect(shouldReload(reloadArgs("/app/dashboard", "/app/projects", true))).toBe(true);
-    expect(shouldReload(reloadArgs("/app/dashboard", "/app/projects", false))).toBe(false);
-  });
 });
 
 describe("processRoutes との統合", () => {
-  test("redirect が Route に保持され loader が合成される", ({ expect }) => {
+  test("子の index がある裸パス親に loader が合成される", ({ expect }) => {
     // 準備
     const userLoader = (() => ({ ok: true })) as LoaderFunction;
 
     // 実行
     const routes = processRoutes([
-      { path: "/app", loader: userLoader, redirect: "/app/dashboard" },
+      { path: "/app", loader: userLoader },
+      { path: "/app/dashboard", index: true },
     ]);
 
     // 検証
-    expect(routes[0]?.redirect).toBe("/app/dashboard");
-    expect(routes[0]?.loader).not.toBe(userLoader);
-    expect(typeof routes[0]?.loader).toBe("function");
+    expect(routes.find((r) => r.path === "/app")?.loader).not.toBe(userLoader);
   });
 
-  test("宣言がなければ redirect は undefined で loader はそのまま", ({ expect }) => {
+  test("同一パスの index がある親には合成しない", ({ expect }) => {
     // 準備
     const userLoader = (() => ({ ok: true })) as LoaderFunction;
 
     // 実行
-    const routes = processRoutes([{ path: "/plain", loader: userLoader }]);
-
-    // 検証
-    expect(routes[0]?.redirect).toBeUndefined();
-    expect(routes[0]?.loader).toBe(userLoader);
-  });
-
-  test("不正な宣言は正規化時にエラーを投げる", ({ expect }) => {
-    expect(() => processRoutes([{ path: "/app", redirect: "" }])).toThrow();
-  });
-
-  test("children と併用できる", ({ expect }) => {
-    // 実行
     const routes = processRoutes([
-      {
-        path: "/settings",
-        redirect: "/settings/profile",
-        children: [
-          { path: "profile", index: true },
-          { path: "security", index: true },
-        ],
-      },
+      { path: "/", loader: userLoader },
+      { path: "/", index: true },
     ]);
-    const paths = routes.map((r) => r.path);
 
     // 検証
-    expect(paths).toContain("/settings");
-    expect(paths).toContain("/settings/profile");
-    expect(paths).toContain("/settings/security");
-    expect(routes.find((r) => r.path === "/settings")?.redirect).toBe("/settings/profile");
+    expect(routes.find((r) => r.path === "/" && !r.index)?.loader).toBe(userLoader);
   });
 
-  test("matchRoutes の結果に redirect が引き継がれる", ({ expect }) => {
+  test("子の index がない親には合成しない", ({ expect }) => {
     // 準備
-    const routes = processRoutes([
-      { path: "/settings", redirect: "/settings/profile" },
-      { path: "/settings/profile", index: true },
-    ]);
+    const userLoader = (() => ({ ok: true })) as LoaderFunction;
 
     // 実行
-    const matched = matchRoutes(routes, url("/settings/profile"));
+    const routes = processRoutes([
+      { path: "/users/:userId", loader: userLoader },
+      { path: "/users", index: true },
+    ]);
 
     // 検証
-    expect(matched?.find((r) => r.path === "/settings")?.redirect).toBe("/settings/profile");
+    expect(routes.find((r) => r.path === "/users/:userId")?.loader).toBe(userLoader);
+  });
+
+  test("廃止された redirect 指定は無視して自動決定が働く", ({ expect }) => {
+    // 準備: 旧オプション付きの定義を any 経由で渡す
+    const legacy = { path: "/app", redirect: "/app/dashboard" } as any;
+
+    // 実行
+    const routes = processRoutes([legacy, { path: "/app/dashboard", index: true }]);
+
+    // 検証: 不明なプロパティーに影響されず誘導が成立する
+    expect(routes.find((r) => r.path === "/app")?.loader).toBeDefined();
   });
 });
 
-describe("startLoaders との統合 (キャッシュ再利用の防止)", () => {
-  test("裸パスで得たリダイレクトが子遷移時に再利用されない", async ({ expect, signal }) => {
-    // 準備: 利用者の loader は子では通常データを返す
+describe("startLoaders との統合", () => {
+  test("裸パスで自動誘導し子遷移時に再利用しない", async ({ expect, signal }) => {
+    // 準備
     const userLoader = vi.fn<LoaderFunction>().mockReturnValue({ authenticated: true });
     const routes = processRoutes([
-      { path: "/app", loader: userLoader, redirect: "/app/dashboard" },
+      { path: "/app", loader: userLoader },
       { path: "/app/dashboard", index: true },
     ]);
     const loaderDataStore = new Map();
@@ -376,7 +282,7 @@ describe("startLoaders との統合 (キャッシュ再利用の防止)", () => 
     const { redirectTo: firstRedirect } = await first.idle();
     expect(firstRedirect).toBeInstanceOf(RedirectResponse);
 
-    // 実行2: 子への遷移ではキャッシュを使わず再実行しリダイレクトしない
+    // 実行2: 子への遷移では再実行しリダイレクトしない
     const second = startLoaders({
       prevRoutes: matchRoutes(routes, prevEntry.url)! as any,
       currentRoutes: matchRoutes(routes, currentEntry.url)! as any,
@@ -390,44 +296,5 @@ describe("startLoaders との統合 (キャッシュ再利用の防止)", () => 
     // 検証
     expect(secondRedirect).toBeUndefined();
     expect(userLoader.mock.calls.length).toBeGreaterThanOrEqual(2);
-  });
-
-  test("子から裸パスへの遷移では再実行してリダイレクトする", async ({ expect, signal }) => {
-    // 準備
-    const userLoader = vi.fn<LoaderFunction>().mockReturnValue({ ok: true });
-    const routes = processRoutes([
-      { path: "/app", loader: userLoader, redirect: "/app/dashboard" },
-      { path: "/app/dashboard", index: true },
-    ]);
-    const loaderDataStore = new Map();
-    const childEntry = entry("entry-1", "/app/dashboard");
-    const bareEntry = entry("entry-2", "/app");
-
-    // 実行1: 子への遷移 (キャッシュを作る)
-    const first = startLoaders({
-      prevRoutes: [],
-      currentRoutes: matchRoutes(routes, childEntry.url)! as any,
-      prevEntry: entry("entry-0", "/"),
-      currentEntry: childEntry,
-      loaderDataStore,
-      signal,
-    });
-    const { redirectTo: firstRedirect } = await first.idle();
-    expect(firstRedirect).toBeUndefined();
-
-    // 実行2: 裸パスへの遷移では再実行してリダイレクトする
-    const second = startLoaders({
-      prevRoutes: matchRoutes(routes, childEntry.url)! as any,
-      currentRoutes: matchRoutes(routes, bareEntry.url)! as any,
-      prevEntry: childEntry,
-      currentEntry: bareEntry,
-      loaderDataStore,
-      signal,
-    });
-    const { redirectTo: secondRedirect } = await second.idle();
-
-    // 検証
-    expect(secondRedirect).toBeInstanceOf(RedirectResponse);
-    expect((secondRedirect as RedirectResponse).pathname).toBe("/app/dashboard");
   });
 });

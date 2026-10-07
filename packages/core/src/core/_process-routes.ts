@@ -1,6 +1,6 @@
 import log from "../_logger.js";
 import compareRoutePaths from "./_compare-route-paths.js";
-import { createRedirectLoader } from "./_redirect.js";
+import { createBarePathLoader, findIndexChildTarget } from "./_redirect.js";
 import RoutePatternUtils from "./route-pattern-utils.js";
 import type { Route, RouteDefinition } from "./route.types.js";
 
@@ -124,72 +124,66 @@ function flattenRouteDefinitions<TComponent>(
 /**
  * 定義したルーティング設定の配列を、内部のルーティングエンジンが直接利用可能な正規化済みのルートオブジェクトの配列へ変換します。
  *
- * 実行内容:
- * - `children` による明示的ネストのフラット化（相対パス結合: 子 `path` が `"/"` 始まりなら絶対、それ以外は親に結合。`index: true` の子やパス省略時は親パスを継承）
- * - 各ルートのパス正規化
- * - `redirect` による裸パス誘導の loader 合成（完全一致時のみ `RedirectResponse` を返し、子マッチ時には発火しない）
- * - 動的解析用の正規表現コンパイル
- * - 詳細度に基づく優先順位ソート
+ * 実行内容はフラット化・パス正規化・裸パス誘導の合成・正規表現コンパイル・詳細度ソートです。
  *
- * `children` なしの既存 flat 配列は従来通り動作します（100% 後方互換）。
+ * `children` なしの既存 flat 配列は従来通り動作します。
  *
- * `redirect` を持つルートには合成ローダーが付与されます。裸パスでは利用者のローダーを先に実行し、その `RedirectResponse` を優先したうえで誘導先へ遷移させます。子パスでは利用者のローダー結果をそのまま通します。合成 `shouldReload` は裸パスが絡む遷移で必ず再実行し、リダイレクト結果が子遷移時にキャッシュ再利用されるのを防ぎます。
+ * 裸パス（`index: true` が完全一致しない URL）は子の index へ自動誘導します。
  *
- * @template TComponent 描画対象となるコンポーネントの型です。React / Solid.js などフレームワークごとの型を指定できます。
+ * 対象は追加セグメント最少の index で、同点時は定義順序が早いものです。
+ *
+ * 同一パスの index が存在する場合は通常描画で足りるため合成しません。
+ *
+ * @template TComponent 描画対象となるコンポーネントの型です。
  * @param routes ルーティング定義を格納した読み取り専用の配列です。
  * @returns 読み取り専用の正規化済みルートオブジェクトの配列です。
  */
 export default function processRoutes<TComponent = any>(
   routes: readonly RouteDefinition<string, TComponent>[],
 ): readonly Route<TComponent>[] {
-  return (
-    flattenRouteDefinitions(routes)
-      .map(({ definition: route, fullPath }) => {
-        const index = route.index === true;
-        const utils = new RoutePatternUtils(fullPath, {
-          // インデックスルートでないとき allowChild オプションを `true` にして子ルートに対してもマッチするようにします。
-          // これにより、前方一致による階層的なマッチングが有効になります。
-          allowChild: !index,
-        });
-
-        // `redirect` の宣言があれば、裸パスのみで発火する合成ローダーと再読み込み判定関数を組み立てます。
-        // `children` との併用も可能で、親レイアウトの前方一致そのものは変えず、実行時に完全一致だけを誘導します。
-        let redirect: string | undefined;
-        let loader = route.loader;
-        let shouldReload = route.shouldReload;
-        if (route.redirect !== undefined) {
-          const composed = createRedirectLoader({
-            fullPath,
-            template: route.redirect,
-            loader,
-            shouldReload,
-          });
-          redirect = composed.template;
+  const flattened = flattenRouteDefinitions(routes);
+  const entries = flattened.map(({ definition, fullPath }, order) => ({
+    definition,
+    fullPath,
+    index: definition.index === true,
+    order,
+  }));
+  return entries
+    .map(({ definition: route, fullPath, index }) => {
+      const utils = new RoutePatternUtils(fullPath, {
+        // インデックスルートでないときは子ルートへの前方一致を有効にします。
+        allowChild: !index,
+      });
+      // 裸パス誘導の対象を子の index から自動決定します。
+      // 前方一致そのものは変えず、実行時に完全一致だけを誘導します。
+      let loader = route.loader;
+      let shouldReload = route.shouldReload;
+      if (!index) {
+        const target = findIndexChildTarget(entries, fullPath);
+        if (target !== undefined) {
+          const composed = createBarePathLoader({ fullPath, target, loader, shouldReload });
           loader = composed.loader;
           shouldReload = composed.shouldReload;
         }
-
-        return {
-          path: utils.route,
-          index,
-          redirect,
-          utils,
-          action: route.action,
-          loader,
-          // オブジェクト形式またはモジュール形式の双方を安全に評価し、描画対象となるコンポーネントを確定します。
-          component:
-            typeof route.component === "function"
-              ? route.component
-              : Symbol.toStringTag in route &&
-                  route[Symbol.toStringTag] === "Module" &&
-                  typeof route.default === "function"
-                ? route.default
-                : undefined,
-          shouldReload: shouldReload || ((args) => args.defaultShouldReload),
-        };
-      })
-      // すべてのルートを正規化した後、compareRoutePaths 関数を用いて詳細度が高い順にソートします。
-      // マッチング漏れや誤ったルートへの誤認を防ぐため、制限の厳しいパスパターンを持つルートオブジェクトが配列のより前方に配置されます。
-      .sort((a, b) => compareRoutePaths(a.path, b.path))
-  );
+      }
+      return {
+        path: utils.route,
+        index,
+        utils,
+        action: route.action,
+        loader,
+        // オブジェクト形式またはモジュール形式の双方を評価して描画対象を確定します。
+        component:
+          typeof route.component === "function"
+            ? route.component
+            : Symbol.toStringTag in route &&
+                route[Symbol.toStringTag] === "Module" &&
+                typeof route.default === "function"
+              ? route.default
+              : undefined,
+        shouldReload: shouldReload || ((args) => args.defaultShouldReload),
+      };
+    })
+    // 詳細度が高い順にソートします。
+    .sort((a, b) => compareRoutePaths(a.path, b.path));
 }

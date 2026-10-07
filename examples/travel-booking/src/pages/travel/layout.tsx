@@ -5,7 +5,7 @@ export async function loader() {
 }
 
 export default function TravelLayout() {
-  // `/travel` → `/travel/search` の誘導は `redirect` (routes.tsx) に宣言しています。
+  // `/travel` 単体への遷移は子の index へ自動誘導されます。
   return (
     <section>
       <h2>旅行</h2>

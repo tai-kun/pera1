@@ -8,7 +8,6 @@ import {
 import * as React from "react";
 
 import { isCartEmptySync } from "../../api/cart.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader(_args: LoaderFunctionArgs) {
   if (isCartEmptySync()) {
@@ -18,14 +17,11 @@ export async function loader(_args: LoaderFunctionArgs) {
 }
 
 export default function CheckoutLayout() {
+  // `/checkout` 単体への遷移は子の index へ自動誘導されます。
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
   if (data === null) {
     return null;
-  }
-
-  if (pathname === "/checkout") {
-    return <RedirectTo response={redirect("/checkout/shipping")} />;
   }
 
   return (

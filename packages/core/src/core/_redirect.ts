@@ -9,18 +9,40 @@ import type {
 } from "./route.types.js";
 
 /**
- * `redirect` の作成時に必要となる引数オブジェクトの型定義です。
+ * 裸パス誘導の対象探索に必要な最小情報です。
  */
-export type CreateRedirectLoaderArgs = {
+export type BarePathEntry = {
+  /**
+   * 解決済みの完全パスです。
+   */
+  readonly fullPath: string;
+
+  /**
+   * インデックスルートかどうかです。
+   */
+  readonly index: boolean;
+
+  /**
+   * 定義順序です。
+   *
+   * フラット化前の並びを表し、同点時の決定に使います。
+   */
+  readonly order: number;
+};
+
+/**
+ * 裸パス誘導の合成に必要となる引数オブジェクトの型定義です。
+ */
+export type CreateBarePathLoaderArgs = {
   /**
    * 誘導元となるルートの解決済み完全パスです。
    */
   readonly fullPath: string;
 
   /**
-   * 誘導先のパス文字列です。
+   * 自動決定された誘導先のパスパターンです。
    */
-  readonly template: unknown;
+  readonly target: string;
 
   /**
    * 利用者が定義した本来のローダー関数です。
@@ -34,14 +56,9 @@ export type CreateRedirectLoaderArgs = {
 };
 
 /**
- * `redirect` の解決結果として生成されるローダーと再読み込み判定関数の組です。
+ * 裸パス誘導の解決結果として生成されるローダーと再読み込み判定関数の組です。
  */
-export type CreatedRedirectLoader = {
-  /**
-   * 検証済みの誘導先パス文字列です。
-   */
-  readonly template: string;
-
+export type CreatedBarePathLoader = {
   /**
    * 裸パスでのみ `RedirectResponse` を返す合成ローダー関数です。
    */
@@ -54,93 +71,73 @@ export type CreatedRedirectLoader = {
 };
 
 /**
- * 誘導先文字列をパス・クエリー・ハッシュに分解します。
+ * パスパターンを `/` 区切りのセグメント配列に分解します。
  *
- * @param template 分解対象の誘導先文字列です。
- * @returns パス・クエリー・ハッシュに分解した結果です。
+ * @param path 分解対象のパスパターン文字列です。
+ * @returns 空文字を除いたセグメント配列です。
  */
-function splitDestination(template: string): {
-  readonly pathname: string;
-  readonly search: string;
-  readonly hash: string;
-} {
-  let rest = template;
-  let hash = "";
-
-  const hashIndex = rest.indexOf("#");
-
-  if (hashIndex !== -1) {
-    hash = rest.slice(hashIndex);
-    rest = rest.slice(0, hashIndex);
-  }
-
-  let search = "";
-  const searchIndex = rest.indexOf("?");
-  let pathname = rest;
-
-  if (searchIndex !== -1) {
-    search = rest.slice(searchIndex);
-    pathname = rest.slice(0, searchIndex);
-  }
-
-  return { pathname, search, hash };
+function splitSegments(path: string): string[] {
+  return path.split("/").filter(Boolean);
 }
 
 /**
- * 誘導先パス文字列を解決し、遷移可能な絶対パス文字列を構築します。
+ * 裸パスの誘導先を子の `index: true` から自動決定します。
  *
- * 先頭が `/` なら絶対パスとして扱います。
+ * 同一パスの index が存在する場合は通常描画で足りるため `undefined` を返します。
  *
- * 含まれる `:param` プレースホルダーはマッチ時のパラメーターで埋めます。
+ * 候補はワイルドカードを含まないものに限り、追加セグメント最少のものを選びます。
  *
- * それ以外なら裸パスに対する相対パスとして解決します。
+ * 同点時は定義順序が早いものを選びます。
  *
- * @param template 誘導先のパス文字列です。
+ * @param entries 順序付きのフラット化済みエントリー配列です。
+ * @param parentPath 誘導元となる裸パスの完全パスです。
+ * @returns 誘導先のパスパターン、該当なしの場合は `undefined` です。
+ */
+export function findIndexChildTarget(
+  entries: readonly BarePathEntry[],
+  parentPath: string,
+): string | undefined {
+  if (entries.some((entry) => entry.index && entry.fullPath === parentPath)) {
+    return undefined;
+  }
+  const prefix = parentPath === "/" ? "//" : parentPath + "/";
+  let best: BarePathEntry | undefined;
+  let bestExtra = Number.POSITIVE_INFINITY;
+  for (const entry of entries) {
+    if (!entry.index || entry.fullPath === parentPath) {
+      continue;
+    }
+    if (entry.fullPath.includes("*") || parentPath.includes("*")) {
+      continue;
+    }
+    if (!entry.fullPath.startsWith(prefix)) {
+      continue;
+    }
+    const extra = splitSegments(entry.fullPath).length - splitSegments(parentPath).length;
+    if (extra <= 0) {
+      continue;
+    }
+    if (best === undefined || extra < bestExtra) {
+      best = entry;
+      bestExtra = extra;
+    }
+  }
+  return best?.fullPath;
+}
+
+/**
+ * 誘導先パターンにマッチ時のパラメーターを埋めて絶対パス文字列を構築します。
+ *
+ * @param template 誘導先のパスパターンです。
  * @param params 現在の URL から抽出されたパスパラメーターです。
- * @param basePathname 相対解決の基準となる裸パスのパス名です。
  * @returns 解決済みの絶対パス文字列です。
  */
-export function resolveRedirectDestination(
-  template: string,
-  params: RouteParams,
-  basePathname: string,
-): string {
-  const { pathname, search, hash } = splitDestination(template);
-
-  let resolved = pathname === "" ? "/" : pathname;
-
-  if (!resolved.startsWith("/")) {
-    const segments = resolved.split("/");
-
-    if (resolved === "." || resolved === ".." || segments.includes("..")) {
-      throw new Error(
-        `[pera1] redirect "${template}" uses an unsupported parent path (".."). Use an absolute path instead.`,
-      );
-    }
-
-    const relative = resolved.replace(/^(?:\.\/)+/, "");
-
-    if (relative === "" || relative === ".") {
-      throw new Error(`[pera1] redirect "${template}" must point to a different path.`);
-    }
-
-    const base =
-      basePathname.length > 1 && basePathname.endsWith("/")
-        ? basePathname.slice(0, -1)
-        : basePathname;
-
-    resolved = (base === "/" ? "" : base) + "/" + relative;
-  }
-
-  if (resolved.includes(":")) {
-    resolved = RoutePatternUtils.inject(resolved, params);
-  }
-
-  return resolved + search + hash;
+export function resolveRedirectDestination(template: string, params: RouteParams): string {
+  return template.includes(":") ? RoutePatternUtils.inject(template, params) : template;
 }
 
 /**
- * `redirect` の宣言を検証し、裸パスのみで発火する合成ローダーを生成します。
+ * 裸パスのみで発火する合成ローダーと再読み込み判定関数を生成します。
  *
  * 合成ローダーは loader redirect 自動遷移と連携します。
  *
@@ -159,67 +156,31 @@ export function resolveRedirectDestination(
  * それ以外の遷移では利用者の判定関数または既定値に委ねます。
  *
  * @param args 解決済み完全パス・誘導先・利用者のローダーと判定関数です。
- * @returns 検証済み誘導先と合成ローダー・合成判定関数の組です。
+ * @returns 合成ローダー・合成判定関数の組です。
  */
-export function createRedirectLoader(args: CreateRedirectLoaderArgs): CreatedRedirectLoader {
-  const { fullPath, template, loader: userLoader, shouldReload: userShouldReload } = args;
-
-  if (typeof template !== "string" || template.length === 0) {
-    throw new Error(`[pera1] redirect of "${fullPath}" must be a non-empty string.`);
-  }
-
-  const destination: string = template;
-  const { pathname } = splitDestination(destination);
-  const source = pathname === "" ? "/" : pathname;
-
-  if (
-    !source.startsWith("/") &&
-    (source === "." || source === ".." || source.split("/").includes(".."))
-  ) {
-    throw new Error(
-      `[pera1] redirect of "${fullPath}" uses an unsupported path ("${destination}"). Use an absolute path or a child-relative path instead.`,
-    );
-  }
-
+export function createBarePathLoader(args: CreateBarePathLoaderArgs): CreatedBarePathLoader {
+  const { fullPath, target, loader: userLoader, shouldReload: userShouldReload } = args;
   const exact = new RoutePatternUtils(fullPath);
-
   async function loader(loaderArgs: LoaderFunctionArgs): Promise<unknown> {
     if (!exact.match(loaderArgs.request.url)) {
       return typeof userLoader === "function" ? await userLoader(loaderArgs) : undefined;
     }
-
     if (typeof userLoader === "function") {
       const userData = await userLoader(loaderArgs);
-
       if (userData instanceof RedirectResponse) {
         return userData;
       }
     }
-
-    return new RedirectResponse(
-      resolveRedirectDestination(
-        destination,
-        loaderArgs.params,
-        loaderArgs.request.url.pathname,
-      ),
-    );
+    return new RedirectResponse(resolveRedirectDestination(target, loaderArgs.params));
   }
-
   function shouldReload(reloadArgs: ShouldReloadFunctionArgs): boolean {
     if (exact.match(reloadArgs.prevUrl) || exact.match(reloadArgs.currentUrl)) {
       return true;
     }
-
     if (typeof userShouldReload === "function") {
       return userShouldReload(reloadArgs);
     }
-
     return reloadArgs.defaultShouldReload;
   }
-
-  return {
-    template: destination,
-    loader,
-    shouldReload,
-  };
+  return { loader, shouldReload };
 }
