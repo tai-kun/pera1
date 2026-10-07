@@ -11,7 +11,6 @@ import * as React from "react";
 
 import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
 import { findProject } from "../../api/projects.js";
-import RedirectTo from "../../components/redirect-to.js";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
@@ -47,10 +46,7 @@ export default function ProjectLayout() {
     );
   }
   const base = `/app/projects/${data.project.id}`;
-  // `/app/projects/:projectId` 単体は overview へ誘導します (描画側誘導)。
-  if (pathname === base) {
-    return <RedirectTo response={redirect(`${base}/overview`)} />;
-  }
+  // `/app/projects/:projectId` 単体への誘導は `indexRedirect` (routes.tsx) に宣言しています。
   const displayName = data.project.name ?? params.projectId;
 
   return (

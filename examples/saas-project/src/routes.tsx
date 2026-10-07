@@ -37,6 +37,7 @@ export const routes: readonly RouterRouteDefinition[] = [
     path: "/app",
     component: AppLayout,
     loader: appLoader,
+    indexRedirect: "/app/dashboard",
   },
   {
     path: "/app/dashboard",
@@ -60,6 +61,7 @@ export const routes: readonly RouterRouteDefinition[] = [
     path: "/app/projects/:projectId",
     component: ProjectLayout,
     loader: projectLoader,
+    indexRedirect: "/app/projects/:projectId/overview",
   },
   {
     path: "/app/projects/:projectId/overview",

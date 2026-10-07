@@ -50,6 +50,7 @@ export const routes: readonly RouterRouteDefinition[] = [
     path: "/settings",
     component: SettingsLayout,
     loader: settingsLoader,
+    indexRedirect: "/settings/profile",
   },
   {
     path: "/settings/profile",

@@ -39,6 +39,7 @@ export const routes: readonly RouterRouteDefinition[] = [
     path: "/travel",
     component: TravelLayout,
     loader: travelLoader,
+    indexRedirect: "/travel/search",
   },
   {
     path: "/travel/search",

@@ -9,16 +9,14 @@ import {
 import * as React from "react";
 
 import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
-import RedirectTo from "../../components/redirect-to.js";
 import AppLayout from "../app-layout.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirect(loginUrlFor(request.url.pathname, request.url.search));
   }
-  // `/settings` -> `/settings/profile` の誘導は描画側で行います。
-  // loader でパス名に応じて `redirect()` を返すと、その結果がキャッシュされ、
-  // 子ルートへの遷移時にも再利用されてしまうためです。
+  // `/settings` → `/settings/profile` の誘導は `indexRedirect` (routes.tsx) に宣言しています。
+  // 完全一致のときだけ合成ローダーが `redirect()` を返し、子への遷移では再実行で通常データを返すため、キャッシュの再利用で固まりません。
   return { authenticated: true as const };
 }
 
@@ -28,9 +26,6 @@ export default function SettingsLayout() {
   if (data instanceof RedirectResponse) {
     // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
     return null;
-  }
-  if (pathname === "/settings") {
-    return <RedirectTo response={redirect("/settings/profile")} />;
   }
 
   return (

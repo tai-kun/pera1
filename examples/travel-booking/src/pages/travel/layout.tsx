@@ -1,17 +1,11 @@
-import { Outlet, redirect, useRoutePath } from "@pera1/react";
-
-import RedirectTo from "../../components/redirect-to.js";
+import { Outlet } from "@pera1/react";
 
 export async function loader() {
   return { ready: true as const };
 }
 
 export default function TravelLayout() {
-  const { pathname } = useRoutePath();
-  if (pathname === "/travel") {
-    return <RedirectTo response={redirect("/travel/search")} />;
-  }
-
+  // `/travel` → `/travel/search` の誘導は `indexRedirect` (routes.tsx) に宣言しています。
   return (
     <section>
       <h2>旅行</h2>

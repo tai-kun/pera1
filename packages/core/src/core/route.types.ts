@@ -190,6 +190,13 @@ export type RouteDefinitionObject<TPath extends string = string, TComponent = an
   readonly index?: boolean | undefined;
 
   /**
+   * 裸パスへの遷移を宣言的に誘導するリダイレクト先です。
+   *
+   * 完全一致のときにだけ発火し、子パスでは発火しません。先頭が `/` なら絶対パスとして扱い、`:projectId` のようなプレースホルダーはマッチ時のパラメーターで埋めます。`/` 始まりでなければ裸パスに対する相対パスとして解決します。`loader` と併用でき、`loader` が返す `RedirectResponse` が優先されます。
+   */
+  readonly indexRedirect?: string | undefined;
+
+  /**
    * このルートで実行されるデータ更新用のアクション関数です。
    */
   readonly action?: ActionFunction<TPath> | undefined;
@@ -238,6 +245,13 @@ export type RouteDefinitionModule<TPath extends string = string, TComponent = an
    * 親ルートのパスにおいて、インデックスルートとして機能させるかどうかのフラグです。
    */
   readonly index?: boolean | undefined;
+
+  /**
+   * 裸パスへの遷移を宣言的に誘導するリダイレクト先です。
+   *
+   * 完全一致のときにだけ発火し、子パスでは発火しません。先頭が `/` なら絶対パスとして扱い、`:projectId` のようなプレースホルダーはマッチ時のパラメーターで埋めます。`/` 始まりでなければ裸パスに対する相対パスとして解決します。`loader` と併用でき、`loader` が返す `RedirectResponse` が優先されます。
+   */
+  readonly indexRedirect?: string | undefined;
 
   /**
    * このルートで実行されるデータ更新用のアクション関数です。
@@ -311,6 +325,13 @@ export type Route<TComponent = any> = {
    * インデックスルートであるかどうかの確定的なフラグです。
    */
   readonly index: boolean;
+
+  /**
+   * 裸パスへの宣言的誘導の遷移先です。
+   *
+   * `RouteDefinition` の `indexRedirect` を正規化した値で、宣言がなければ `undefined` になります。
+   */
+  readonly indexRedirect: string | undefined;
 
   /**
    * ルートパターンの解析などを行うユーティリティーです。
