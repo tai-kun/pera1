@@ -74,7 +74,7 @@ describe("E-commerce", () => {
     await expect.poll(() => ordered.first().isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("Shippingなしで Payment を直接開くと Shipping へリダイレクトされる", async ({
+  test("Shipping なしで Payment を直接開くと Shipping へリダイレクトされる", async ({
     expect,
     page,
   }) => {
@@ -115,7 +115,7 @@ describe("E-commerce", () => {
     await expect.poll(() => page.url(), { timeout: 10_000 }).toBe(`${BASE_URL}/cart`);
   });
 
-  test("Paymentなしで Confirm を直接開くと Payment へリダイレクトされる", async ({
+  test("Payment なしで Confirm を直接開くと Payment へリダイレクトされる", async ({
     expect,
     page,
   }) => {

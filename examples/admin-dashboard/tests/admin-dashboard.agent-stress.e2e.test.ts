@@ -23,7 +23,7 @@ async function loginAs(page: Page, email: string, password: string = PASSWORD): 
 /**
  * AI エージェントの高速操作 (認証連打・ガード回避ラッシュ・履歴スパム) でも壊れないことを検証します。
  */
-describe("管理画面 / AIエージェント高速操作ストレス", () => {
+describe("管理画面 / AI エージェント高速操作ストレス", () => {
   test("ログインボタンを高速連打してもダッシュボードに到達する", async ({
     expect,
     page,
@@ -48,7 +48,7 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => dashboard.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("0ms間隔タイピングでログインできる", async ({ expect, page }) => {
+  test("0ms 間隔タイピングでログインできる", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/login`);
     const main = page.getByRole("main");
@@ -67,11 +67,11 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => dashboard.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("未認証で保護URLを高速連打しても全てloginに誘導される", async ({
+  test("未認証で保護 URL を高速連打しても全て login に誘導される", async ({
     expect,
     page,
   }) => {
-    // 実行: 複数の保護URLを描画待ちなしで叩く
+    // 実行: 複数の保護 URL を描画待ちなしで叩く
     const guards = ["/dashboard", "/users", "/admin", "/settings/profile"];
     for (const target of guards) {
       await page.goto(`${BASE_URL}${target}`, { waitUntil: "commit" });
@@ -105,7 +105,7 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("設定タブを高速切替してもURLと選択状態が一致する", async ({ expect, page }) => {
+  test("設定タブを高速切替しても URL と選択状態が一致する", async ({ expect, page }) => {
     // 準備
     await loginAs(page, ADMIN_EMAIL);
     await page.goto(`${BASE_URL}/settings/profile`);
@@ -132,7 +132,7 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     expect([current, profileCurrent]).toContain("page");
   });
 
-  test("一般ユーザーで管理ページを高速で叩いてもdashboardに戻される", async ({
+  test("一般ユーザーで管理ページを高速で叩いても dashboard に戻される", async ({
     expect,
     page,
   }) => {
@@ -150,7 +150,7 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => dashboard.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("ログアウト直後に保護ページへ高速アクセスしてもloginに戻る", async ({
+  test("ログアウト直後に保護ページへ高速アクセスしても login に戻る", async ({
     expect,
     page,
   }) => {
@@ -160,14 +160,14 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     await menu.getByRole("button", { name: "Logout", exact: true }).click();
     await expect.poll(() => page.url(), { timeout: 10_000 }).toBe(`${BASE_URL}/login`);
 
-    // 実行: ログアウト直後に保護URLへ即アクセスする
+    // 実行: ログアウト直後に保護 URL へ即アクセスする
     await page.goto(`${BASE_URL}/dashboard`, { waitUntil: "commit" });
 
     // 検証: 再度 login に誘導されること
     await expect.poll(() => page.url(), { timeout: 10_000 }).toContain("/login");
   });
 
-  test("不正URLラッシュでもクラッシュしない", async ({ expect, page }) => {
+  test("不正 URL ラッシュでもクラッシュしない", async ({ expect, page }) => {
     // 準備
     await loginAs(page, ADMIN_EMAIL);
     const pageErrors: string[] = [];
@@ -196,7 +196,7 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     expect(pageErrors).toStrictEqual([]);
   });
 
-  test("認証済み2タブで別画面を同時展開しても混線しない", async ({ expect, page }) => {
+  test("認証済み 2 タブで別画面を同時展開しても混線しない", async ({ expect, page }) => {
     // 準備: 2 枚目のタブにも認証状態を引き継ぐ (同一コンテキスト = localStorage 共有)
     await loginAs(page, ADMIN_EMAIL);
     const secondPage = await page.context().newPage();
@@ -217,7 +217,7 @@ describe("管理画面 / AIエージェント高速操作ストレス", () => {
     }
   });
 
-  test("高速操作ラッシュ中にpageerrorとconsole errorが出ない", async ({
+  test("高速操作ラッシュ中に pageerror と console error が出ない", async ({
     expect,
     page,
   }) => {

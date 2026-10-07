@@ -4,10 +4,9 @@ import { test } from "./_fixtures.js";
 import { BASE_URL } from "./_server.js";
 
 /**
- * AI エージェントの高速操作 (連打・ノーウェイト遷移・二重送信) でも
- * 購買フローが壊れないことを検証します。
+ * AI エージェントの高速操作 (連打・ノーウェイト遷移・二重送信) でも購買フローが壊れないことを検証します。
  */
-describe("E-commerce / AIエージェント高速操作ストレス", () => {
+describe("E-commerce / AI エージェント高速操作ストレス", () => {
   test("商品詳細をノーウェイト連続遷移しても最終表示が一致する", async ({ expect, page }) => {
     // 準備と実行
     for (const id of ["p1", "p4", "p7", "p2", "p9"]) {
@@ -23,7 +22,7 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => stale.count(), { timeout: 10_000 }).toBe(0);
   });
 
-  test("Add to Cartを高速連打してもカートに正しく反映される", async ({ expect, page }) => {
+  test("Add to Cart を高速連打してもカートに正しく反映される", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/products/p4`);
     const main = page.getByRole("main");
@@ -46,7 +45,7 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => item.first().isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("カテゴリとソートを高速切替してもURLと一覧が一致する", async ({ expect, page }) => {
+  test("カテゴリとソートを高速切替しても URL と一覧が一致する", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/products`);
     const main = page.getByRole("main");
@@ -54,8 +53,8 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
 
     // 実行: 人間の思考時間なしで条件を切り替える (各操作の反映だけは待つ)
-    // NOTE: 絞り込みURLは描画時の state から組み立てるため、反映待ちなしの連打では
-    // 最終条件が欠落し得る。AI でも直列操作では反映確認が必須という前提に立つ。
+    // NOTE: 絞り込み URL は描画時の state から組み立てるため、反映待ちなしの連打では最終条件が欠落し得る。
+    // AI でも直列操作では反映確認が必須という前提に立つ。
     await main.getByLabel("カテゴリ").selectOption("books");
     await expect.poll(() => page.url(), { timeout: 10_000 }).toContain("category=books");
     await main.getByLabel("ソート").selectOption("price");
@@ -91,14 +90,14 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     await next.click({ timeout: 3_000 }).catch(() => undefined);
     await next.click({ timeout: 3_000 }).catch(() => undefined);
 
-    // 検証: 有効なページのいずれかに落ち着き内容とURLが一致すること
+    // 検証: 有効なページのいずれかに落ち着き内容と URL が一致すること
     await expect.poll(() => page.url(), { timeout: 10_000 }).toMatch(/page=[123]/);
     const bodyText = await main.textContent();
     expect(bodyText).toContain("ページ");
     expect(bodyText?.length ?? 0).toBeGreaterThan(0);
   });
 
-  test("Confirm Orderを二重送信しても注文詳細に到達する", async ({ expect, page }) => {
+  test("Confirm Order を二重送信しても注文詳細に到達する", async ({ expect, page }) => {
     // 準備: カート追加 → Shipping → Payment まで正規に進める
     await page.goto(`${BASE_URL}/products/p1`);
     const main = page.getByRole("main");
@@ -128,7 +127,7 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => orderHeading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("ガード付きURLへ高速直アクセスしても正規へ誘導される", async ({ expect, page }) => {
+  test("ガード付き URL へ高速直アクセスしても正規へ誘導される", async ({ expect, page }) => {
     // 実行: 空カート相当の可能性があるため各ガードを高速で叩き最終整合だけ見る
     await page.goto(`${BASE_URL}/checkout/payment`, { waitUntil: "commit" });
     await page.goto(`${BASE_URL}/checkout/confirm`, { waitUntil: "commit" });
@@ -170,7 +169,7 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     expect(pageErrors).toStrictEqual([]);
   });
 
-  test("2タブで別商品を同時展開しても混線しない", async ({ expect, page }) => {
+  test("2 タブで別商品を同時展開しても混線しない", async ({ expect, page }) => {
     // 準備
     const secondPage = await page.context().newPage();
     try {
@@ -190,7 +189,7 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     }
   });
 
-  test("Back/Forwardとリロードの複合ラッシュでも一覧に復帰できる", async ({
+  test("Back/Forward とリロードの複合ラッシュでも一覧に復帰できる", async ({
     expect,
     page,
   }) => {
@@ -212,7 +211,7 @@ describe("E-commerce / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("高速操作ラッシュ中にpageerrorとconsole errorが出ない", async ({
+  test("高速操作ラッシュ中に pageerror と console error が出ない", async ({
     expect,
     page,
   }) => {

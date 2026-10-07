@@ -5,16 +5,16 @@ import log from "../_logger.js";
 import RouteContext, { type RouteContextValue } from "../contexts/route-context.js";
 
 /**
- * React のコンポーネントツリーから、現在の階層に紐づいているルートの文脈情報を取得するためのカスタムフックです。
+ * React のコンポーネントツリーから、現在の階層に紐づくルートの文脈情報を取得するためのカスタムフックです。
  *
  * コンテキストが供給されていない状況を検知した場合はエラーを投げます。
  *
- * @returns 現在の階層で確定している型 `RouteContextValue` のルートコンテキストデータを返します。
+ * @returns 現在の階層で確定している `RouteContextValue` のルートコンテキストデータを返します。
  */
 export default function useRouteContext(): RouteContextValue {
   const routeContext = React.use(RouteContext);
   if (!routeContext) {
-    log.debug("RouteContextが見つかりません");
+    log.debug("RouteContext が見つかりません");
     throw new RouteContextMissingError();
   }
 

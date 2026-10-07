@@ -7,7 +7,7 @@ import useRouteContext from "./use-route-context.js";
 import useRouterContext from "./use-router-context.js";
 
 /**
- * ローダー関数またはデータ型から、最終的に解決されるデータの型を抽出するユーティリティー型です。
+ * ローダー関数またはデータ型から、最終的に解決されるデータを抽出するユーティリティー型です。
  *
  * ローダーが `redirect()` を返した場合はエンジンが自動遷移させます。
  *
@@ -15,18 +15,18 @@ import useRouterContext from "./use-router-context.js";
  *
  * 描画側の分岐は不要です。
  *
- * @template TData ローダー関数、または解決されるデータの型です。
+ * @template TData ローダー関数、または解決されるデータです。
  */
 export type FulfilledLoaderData<TData = unknown> = Exclude<
   Awaited<TData extends (...args: any) => infer TReturn ? TReturn : TData>,
   RedirectResponse
 >;
 /**
- * {@link useLoaderData|`useLoaderData`} カスタムフックが返すオブジェクトの型定義です。
+ * {@link useLoaderData|`useLoaderData`} カスタムフックが返すオブジェクトです。
  *
- * 非同期処理の進行状況を管理する `NinjaPromise` でラップされた、解決済みのデータ型を表します。
+ * 非同期処理の進行状況を管理する `NinjaPromise` でラップされた、解決済みのデータを表します。
  *
- * @template TData ローダー関数、またはローダーが返すデータの型定義です。
+ * @template TData ローダー関数、またはローダーが返すデータです。
  */
 export type LoaderData<TData = unknown> = NinjaPromise<FulfilledLoaderData<TData>>;
 
@@ -39,7 +39,7 @@ export type LoaderData<TData = unknown> = NinjaPromise<FulfilledLoaderData<TData
  *
  * 遷移完了までサスペンスを維持するため、描画側の分岐は不要です。
  *
- * @template TData ローダー関数そのものの型、またはローダーが返すことが期待されるデータ構造の型定義です。
+ * @template TData ローダー関数そのもの、またはローダーが返すことが期待されるデータ構造です。
  * @returns ローダーの実行状態を管理している `NinjaPromise` を返します。
  */
 export default function useLoaderData<TData = unknown>(): LoaderData<TData> {

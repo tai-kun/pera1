@@ -12,7 +12,7 @@ import RouteRequest from "./route-request.js";
 import type { LoaderFunction, RouteParams } from "./route.types.js";
 
 /**
- * `startLoaders` 関数を実行する際に必要となる引数オブジェクトの型定義です。
+ * `startLoaders` 関数を実行する際に必要となる引数オブジェクトです。
  */
 export type StartLoadersArgs = {
   /**
@@ -43,12 +43,14 @@ export type StartLoadersArgs = {
    */
   readonly loaderDataStore: Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>;
 
-  /** 進行中のローダーの非同期処理を外部から中断するためのシグナルオブジェクトです。 */
+  /**
+   * 進行中のローダーの非同期処理を外部から中断するためのシグナルオブジェクトです。
+   */
   readonly signal: AbortSignal;
 };
 
 /**
- * 直前にアクションが実行されていた場合に、追加の文脈として渡されるオプションオブジェクトの型定義です。
+ * 直前にアクションが実行されていた場合に、追加の文脈として渡されるオプションオブジェクトです。
  */
 export type StartLoadersOptions = {
   /**

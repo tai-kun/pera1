@@ -11,7 +11,8 @@ declare module "blume:data" {
  */
 interface ImportMetaEnv {
   /**
-   * デプロイ先のベースパスです。Astro の `deployment.base` に対応します。
+   * デプロイ先のベースパスです。
+   * Astro の `deployment.base` に対応します。
    *
    * 未定義の可能性があるため、参照するときは `import.meta.env?.BASE_URL` のように存在を確認してください。
    */

@@ -37,7 +37,7 @@ interface IEngine<TComponent = any> {
 
 ## InitArgs [#init-args]
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `routes` | `readonly Route<TComponent>[]` | 正規化と詳細度の並べ替えが済んだルートです。 |
 | `loaderDataStore` | `Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>` | 履歴エントリー単位のローダー結果です。 |
@@ -47,7 +47,7 @@ interface IEngine<TComponent = any> {
 
 ## StartArgs [#start-args]
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `routes` | `readonly Route<TComponent>[]` | 正規化済みのルートです。 |
 | `actionDataStore` | `Map<HistoryEntryId, Map<ActionFunction, NinjaPromise<unknown>>>` | 履歴エントリー単位のアクション結果です。 |
@@ -87,7 +87,7 @@ type SubmitArgs =
     };
 ```
 
-| プロパティ | `FORM_DATA` | `URL_SEARCH_PARAMS` | 内容 |
+| プロパティー | `FORM_DATA` | `URL_SEARCH_PARAMS` | 内容 |
 | --- | --- | --- | --- |
 | `target` | `ReadonlyFormData` | `ReadonlyURLSearchParams` | 送信するデータです。 |
 | `action` | あり | あり | 送信先の URL パスです。 |
@@ -97,7 +97,7 @@ type SubmitArgs =
 
 `NavigateArgs` も判別可能ユニオンです。`type` によって `LINK` と `MOVE` に分かれます。`LINK` は明示的なアドレス指定、`MOVE` は履歴スタック内の相対移動です。
 
-| プロパティ | `LINK` | `MOVE` | 内容 |
+| プロパティー | `LINK` | `MOVE` | 内容 |
 | --- | --- | --- | --- |
 | `to` | `STATIC` または `DYNAMIC` | なし | 遷移先の指定です。 |
 | `history` | あり | なし | `"push"` で追加、`"replace"` で上書きします。 |
@@ -127,7 +127,7 @@ interface IStopEngine {
 
 ## RouterState [#routerstate]
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `entry` | `HistoryEntry` | 現在アクティブな履歴エントリーです。 |
 | `routes` | `readonly [MatchedRoute<TComponent>, ...MatchedRoute<TComponent>[]]` | マッチしたルートです。1 件以上を保証したタプルです。 |

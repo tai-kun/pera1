@@ -31,7 +31,7 @@ export type BarePathEntry = {
 };
 
 /**
- * 裸パス誘導の合成に必要となる引数オブジェクトの型定義です。
+ * 裸パス誘導の合成に必要となる引数オブジェクトです。
  */
 export type CreateBarePathLoaderArgs = {
   /**

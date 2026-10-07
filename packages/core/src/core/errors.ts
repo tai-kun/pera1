@@ -12,7 +12,7 @@ export { setErrorMessage };
 /**************************************************************************************************/
 
 /**
- * データ検証の過程で検出された具体的な問題点を表す型定義です。
+ * データ検証の過程で検出された具体的な問題点です。
  *
  * 外部のスキーマ検証ライブラリーである `valibot` の `BaseIssue` を基盤としています。
  */
@@ -23,7 +23,7 @@ export type Issue = BaseIssue<unknown>;
 /**
  * pera1 ルーティングライブラリーにおける、すべてのカスタムエラーの頂点に位置する基底クラスです。
  *
- * @template TMeta エラーの発生コンテキストを保持するために紐付けるメタデータオブジェクトの型定義です。
+ * @template TMeta エラーの発生コンテキストを保持するために紐付けるメタデータオブジェクトです。
  */
 export class ErrorBase<
   TMeta extends ErrorMeta | undefined = undefined,
@@ -32,7 +32,7 @@ export class ErrorBase<
 /**************************************************************************************************/
 
 /**
- * プログラムの制御フローにおいて、理論上到達しないはずのコード領域へ侵入した際に付与されるメタデータの型定義です。
+ * プログラムの制御フローにおいて、理論上到達しないはずのコード領域へ侵入した際に付与されるメタデータです。
  */
 export type UnreachableErrorMeta = {
   /**
@@ -42,7 +42,7 @@ export type UnreachableErrorMeta = {
 };
 
 /**
- * `UnreachableError` のインスタンスを初期化する際に渡される引数オブジェクトの型定義です。
+ * `UnreachableError` のインスタンスを初期化する際に渡される引数オブジェクトです。
  */
 export type UnreachableErrorArgs = ErrorOptions & {
   /**
@@ -91,7 +91,7 @@ export class UnreachableError extends ErrorBase<UnreachableErrorMeta> {
 /**
  * データ検証の失敗に関連するエラーを集約するための共通基底クラスです。
  *
- * @template TMeta エラーに紐づく、検証結果の問題点などのメタデータ型定義です。
+ * @template TMeta エラーに紐づく、検証結果の問題点などのメタデータです。
  */
 export class ValidationErrorBase<
   TMeta extends ErrorMeta | undefined = ErrorMeta | undefined,
@@ -100,11 +100,12 @@ export class ValidationErrorBase<
 /**************************************************************************************************/
 
 /**
- * 予期しないデータ構造や型に遭遇した際に付与される、検証エラー情報のメタデータ型定義です。
+ * 予期しないデータ構造や型に遭遇した際に付与される、検証エラー情報のメタデータです。
  */
 export type UnexpectedValidationErrorMeta = {
   /**
-   * スキーマ検証によって不適合と判定された問題点のリストです。最低 1 つ以上の要素を持つことが保証された読み取り専用の配列です。
+   * スキーマ検証によって不適合と判定された問題点のリストです。
+   * 最低 1 つ以上の要素を持つことが保証された読み取り専用の配列です。
    */
   readonly issues: readonly [Issue, ...Issue[]];
 
@@ -115,7 +116,7 @@ export type UnexpectedValidationErrorMeta = {
 };
 
 /**
- * `UnexpectedValidationError` のインスタンスを初期化する際に渡される引数オブジェクトの型定義です。
+ * `UnexpectedValidationError` のインスタンスを初期化する際に渡される引数オブジェクトです。
  */
 export type UnexpectedValidationErrorArgs = ErrorOptions & UnexpectedValidationErrorMeta;
 
@@ -171,7 +172,7 @@ export class NavigationApiNotSupportedError extends ErrorBase<undefined> {
 /**************************************************************************************************/
 
 /**
- * データの再読み込み判定において、不正なデータ型が検出された際に付与されるメタデータの型定義です。
+ * データの再読み込み判定において、不正なデータ型が検出された際に付与されるメタデータです。
  */
 export type LoaderConditionErrorMeta = {
   /**
@@ -191,7 +192,7 @@ export type LoaderConditionErrorMeta = {
 };
 
 /**
- * `LoaderConditionError` のインスタンスを初期化する際に渡される引数オブジェクトの型定義です。
+ * `LoaderConditionError` のインスタンスを初期化する際に渡される引数オブジェクトです。
  */
 export type LoaderConditionErrorArgs = ErrorOptions & LoaderConditionErrorMeta;
 
@@ -285,17 +286,18 @@ export class RouteContextMissingError extends ErrorBase<undefined> {
 /**************************************************************************************************/
 
 /**
- * ローダーデータの紛失を通知する際に付与されるメタデータの型定義です。
+ * ローダーデータの紛失を通知する際に付与されるメタデータです。
  */
 export type LoaderDataNotFoundErrorMeta = {
   /**
-   * データの取得を試みた対象のローダー関数の参照です。未定義の場合は `undefined` となることがあります。
+   * データの取得を試みた対象のローダー関数の参照です。
+   * 未定義の場合は `undefined` となることがあります。
    */
   readonly loader: Function | undefined;
 };
 
 /**
- * `LoaderDataNotFoundError` のインスタンスを初期化する際に渡される引数オブジェクトの型定義です。
+ * `LoaderDataNotFoundError` のインスタンスを初期化する際に渡される引数オブジェクトです。
  */
 export type LoaderDataNotFoundErrorArgs = ErrorOptions & LoaderDataNotFoundErrorMeta;
 
@@ -337,7 +339,7 @@ export class LoaderDataNotFoundError extends ErrorBase<LoaderDataNotFoundErrorMe
 /**************************************************************************************************/
 
 /**
- * ローダーデータの紛失を通知する際に付与されるメタデータの型定義です。
+ * ルートパターンの不一致を通知する際に付与されるメタデータです。
  */
 export type RoutePatternMismatchErrorMeta = {
   /**
@@ -352,7 +354,7 @@ export type RoutePatternMismatchErrorMeta = {
 };
 
 /**
- * `RoutePatternMismatchError` のインスタンスを初期化する際に渡される引数オブジェクトの型定義です。
+ * `RoutePatternMismatchError` のインスタンスを初期化する際に渡される引数オブジェクトです。
  */
 export type RoutePatternMismatchErrorArgs = ErrorOptions & RoutePatternMismatchErrorMeta;
 

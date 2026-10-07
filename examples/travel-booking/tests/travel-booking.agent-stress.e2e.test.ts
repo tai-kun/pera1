@@ -6,7 +6,7 @@ import { BASE_URL } from "./_server.js";
 /**
  * 検索から予約確定までの各ステップを AI 速度で連打しても壊れないことを検証します。
  */
-describe("Travel Booking / AIエージェント高速操作ストレス", () => {
+describe("Travel Booking / AI エージェント高速操作ストレス", () => {
   test("検索フォームを高速連打しても結果に到達する", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/travel/search`);
@@ -54,7 +54,7 @@ describe("Travel Booking / AIエージェント高速操作ストレス", () => 
     await expect.poll(() => bookingHeading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("予約ステップをノーウェイト往復しても表示とURLが一致する", async ({
+  test("予約ステップをノーウェイト往復しても表示と URL が一致する", async ({
     expect,
     page,
   }) => {
@@ -83,7 +83,7 @@ describe("Travel Booking / AIエージェント高速操作ストレス", () => 
     await expect.poll(() => passengers.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("搭乗者入力からConfirmまで高速突破して確定連打できる", async ({ expect, page }) => {
+  test("搭乗者入力から Confirm まで高速突破して確定連打できる", async ({ expect, page }) => {
     // 準備: 予約を作成する
     await page.goto(`${BASE_URL}/travel/search`);
     const main = page.getByRole("main");
@@ -119,7 +119,7 @@ describe("Travel Booking / AIエージェント高速操作ストレス", () => 
     await expect.poll(() => complete.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("存在しない予約IDを高速で叩いてもNot Foundから復帰できる", async ({
+  test("存在しない予約 ID を高速で叩いても Not Found から復帰できる", async ({
     expect,
     page,
   }) => {
@@ -135,7 +135,7 @@ describe("Travel Booking / AIエージェント高速操作ストレス", () => 
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("0ms間隔タイピングで検索条件が欠落しない", async ({ expect, page }) => {
+  test("0ms 間隔タイピングで検索条件が欠落しない", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/travel/search`);
     const main = page.getByRole("main");
@@ -186,7 +186,7 @@ describe("Travel Booking / AIエージェント高速操作ストレス", () => 
     expect(pageErrors).toStrictEqual([]);
   });
 
-  test("2タブで別検索を同時実行しても混線しない", async ({ expect, page }) => {
+  test("2 タブで別検索を同時実行しても混線しない", async ({ expect, page }) => {
     // 準備
     const secondPage = await page.context().newPage();
     try {
@@ -206,7 +206,7 @@ describe("Travel Booking / AIエージェント高速操作ストレス", () => 
     }
   });
 
-  test("Back/Forwardとリロードの複合ラッシュでも検索に復帰できる", async ({
+  test("Back/Forward とリロードの複合ラッシュでも検索に復帰できる", async ({
     expect,
     page,
   }) => {
@@ -228,7 +228,7 @@ describe("Travel Booking / AIエージェント高速操作ストレス", () => 
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("高速操作ラッシュ中にpageerrorとconsole errorが出ない", async ({
+  test("高速操作ラッシュ中に pageerror と console error が出ない", async ({
     expect,
     page,
   }) => {

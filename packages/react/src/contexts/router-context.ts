@@ -2,14 +2,14 @@ import type { RouterSnapshot } from "@pera1/core";
 import * as React from "react";
 
 /**
- * ルーターの実体へのアクセスを提供する、読み取り専用の Ref オブジェクト型です。
+ * ルーターの実体へのアクセスを提供する、読み取り専用の Ref オブジェクトです。
  *
  * 実体（`RouterSnapshot`）は `@pera1/core` の `createRouter` が生成するフレームワーク共通のスナップショットです。
  */
 export type RouterRef = Readonly<React.RefObject<RouterSnapshot>>;
 
 /**
- * `RouterContext` がコンポーネントツリーの配下に供給するオブジェクトの型定義です。
+ * `RouterContext` がコンポーネントツリーの配下に供給するオブジェクトです。
  */
 export type RouterContextValue = {
   /**

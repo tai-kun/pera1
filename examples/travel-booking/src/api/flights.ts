@@ -111,7 +111,8 @@ export async function searchFlights(query: FlightSearchQuery): Promise<Flight[]>
     }
     return true;
   });
-  // 日付は表示用にリクエスト値で上書きします。条件に合わない区間は空配列になります。
+  // 日付は表示用にリクエスト値で上書きします。
+  // 条件に合わない区間は空配列になります。
   if (date !== "") {
     return matched.map((flight) => ({ ...flight, date }));
   }

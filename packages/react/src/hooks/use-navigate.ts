@@ -8,7 +8,7 @@ import useRouterContext from "./use-router-context.js";
 export type { NavigateOptions, NavigateTo };
 
 /**
- * プログラムから命令的に画面遷移を実行する、`NavigateFunction` 関数のオーバーロードインターフェース定義です。
+ * プログラムから命令的に画面遷移を実行する、`NavigateFunction` 関数のオーバーロードインターフェースです。
  */
 export interface NavigateFunction {
   /**

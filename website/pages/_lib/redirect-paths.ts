@@ -36,7 +36,8 @@ export interface RedirectPathProps {
   basePath: string;
 
   /**
-   * 転送先の候補です。設定順に並びます。
+   * 転送先の候補です。
+   * 設定順に並びます。
    */
   targets: RedirectTarget[];
 }
@@ -47,7 +48,8 @@ export interface RedirectPathProps {
 export interface RedirectPath {
   params: {
     /**
-     * ベースパスを含むルートパラメーターです。未定義の場合はサイトのルートを表します。
+     * ベースパスを含むルートパラメーターです。
+     * 未定義の場合はサイトのルートを表します。
      */
     slug: string | undefined;
   };
@@ -62,15 +64,18 @@ const isPlaceholderLocale = (code: string): boolean => code.trim() === "";
 /**
  * Blume が生成するロケールなしの URL (`/rest`、`/version/rest`) を、ロケール付きの URL (`/locale/rest`、`/locale/version/rest`) へ転送するリダイレクトページの一覧を作成します。
  *
- * 各ページの `targets` には、その URL に対応するページを配信しているロケールだけを設定順で渡します。これにより、クライアント側は訪問者の言語に合うロケールを選んでから転送できます。
+ * 各ページの `targets` には、その URL に対応するページを配信しているロケールだけを設定順で渡します。
+ * これにより、クライアント側は訪問者の言語に合うロケールを選んでから転送できます。
  *
  * - サイドバー非表示のページと、どのロケールも配信していない URL は対象外です。
  * - 実在するページと同じ URL にはリダイレクトページを作成しません。
  * - JavaScript が動かない場合に備えて、転送先はページ上に一覧でも表示します。
  *
  * @param data Blume がビルド時に生成する、サイト全体のデータです。
- * @param deployBase デプロイ先のベースパスです。Astro の `BASE_URL` (`deployment.base`) に対応し、URL の組み立てでは `data.config.basePath` の前に付きます。
- * @returns ロケールなしの URL ごとのリダイレクトページの定義です。i18n が設定されていない場合は空の配列です。
+ * @param deployBase デプロイ先のベースパスです。
+ * Astro の `BASE_URL` (`deployment.base`) に対応し、URL の組み立てでは `data.config.basePath` の前に付きます。
+ * @returns ロケールなしの URL ごとのリダイレクトページの定義です。
+ * i18n が設定されていない場合は空の配列です。
  */
 export const getRedirectPaths = (data: BlumeData, deployBase: string = ""): RedirectPath[] => {
   const { basePath, i18n, versions } = data.config;
@@ -102,7 +107,8 @@ export const getRedirectPaths = (data: BlumeData, deployBase: string = ""): Redi
       continue;
     }
 
-    // バージョンはロケールの直後に付きます。設定済みの ID と完全一致した場合だけをバージョンとして扱い、`videos` のようなページ名と取り違えないようにします。
+    // バージョンはロケールの直後に付きます。
+    // 設定済みの ID と完全一致した場合だけをバージョンとして扱い、`videos` のようなページ名と取り違えないようにします。
     let version = "";
     if (segments[0] !== undefined && versionIds.has(segments[0])) {
       version = segments.shift() ?? "";

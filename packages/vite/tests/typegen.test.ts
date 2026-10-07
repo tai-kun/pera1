@@ -10,7 +10,8 @@ import { defaultExclude, defaultInclude } from "../src/_options.js";
 import { createTempProject } from "./_temp-project.js";
 
 /**
- * ビルド済みのパッケージエントリーです。vite.config の読み込みテストで使います。
+ * ビルド済みのパッケージエントリーです。
+ * `vite.config` の読み込みテストで使います。
  */
 const builtEntry = fileURLToPath(new URL("../dist/src/index.js", import.meta.url));
 

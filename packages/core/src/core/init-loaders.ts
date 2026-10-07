@@ -9,7 +9,7 @@ import RouteRequest from "./route-request.js";
 import type { LoaderFunction } from "./route.types.js";
 
 /**
- * 各ローダー関数を初期化する際に必要となるリクエスト情報の型定義です。
+ * 各ローダー関数を初期化する際に必要となるリクエスト情報です。
  */
 export type LoaderInitRequest = {
   /**

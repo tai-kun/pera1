@@ -46,9 +46,9 @@ async function appLoader({ request }: LoaderFunctionArgs) {
 
 未認証時の誘導からログイン完了までの受け渡しは、次の 3 点の規約で統一します。
 
-1. クエリー名と hidden input 名は `REDIRECT_TO_PARAM`（値は `"redirectTo"`）を使う。
-2. ログイン画面のローダーではクエリーの値を `sanitizeRedirectTo` で検証する。
-3. ログイン画面のアクションではフォームの値をもう一度 `sanitizeRedirectTo` で検証する。
+1. クエリー名と hidden input 名は `REDIRECT_TO_PARAM`（値は `"redirectTo"`）を使います。
+2. ログイン画面のローダーではクエリーの値を `sanitizeRedirectTo` で検証します。
+3. ログイン画面のアクションではフォームの値をもう一度 `sanitizeRedirectTo` で検証します。
 
 ```tsx
 import { REDIRECT_TO_PARAM, redirect, sanitizeRedirectTo } from "@pera1/core";

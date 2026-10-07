@@ -7,7 +7,8 @@ export type DashboardUser = {
   readonly role: UserRole;
 };
 
-// 管理対象のインメモリのユーザー一覧です。永続化はしません。
+// 管理対象のインメモリーのユーザー一覧です。
+// 永続化はしません。
 const users = new Map<string, DashboardUser>([
   ["1", { id: "1", name: "Admin", email: "admin@example.com", role: "admin" }],
   ["2", { id: "2", name: "Alice", email: "alice@example.com", role: "user" }],

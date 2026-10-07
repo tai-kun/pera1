@@ -155,10 +155,10 @@ const url = parse(HistoryEntryUrlSchema(), "https://example.com/contacts");
 
 ## 型が合わないときの確認順 [#troubleshooting]
 
-1. ローダーやアクションの `params` を検証せずに使っていないか (値は `string | undefined`)。
-2. `useLoaderData` に渡す型引数が、コンポーネントが属するルートのローダーか (親のローダーを継承する場合、子の `typeof loader` は使えない)。
-3. `redirect` を返すアクションの `value` に `RedirectResponse` が残っていないか (`in` 演算子で絞り込む)。
-4. ルート定義の配列をレンダリングごとに作り直していないか (型ではなく実行時の問題)。
+1. ローダーやアクションの `params` を検証せずに使っていませんか (値は `string | undefined`)。
+2. `useLoaderData` に渡す型引数が、コンポーネントが属するルートのローダーですか (親のローダーを継承する場合、子の `typeof loader` は使えません)。
+3. `redirect` を返すアクションの `value` に `RedirectResponse` が残っていませんか (`in` 演算子で絞り込みます)。
+4. ルート定義の配列をレンダリングごとに作り直していませんか (型ではなく実行時の問題です)。
 
 ## 次に読む [#next]
 

@@ -2,10 +2,10 @@ import type { IEngine } from "../engines/engine.types.js";
 import type RoutePath from "./route-path.js";
 
 /**
- * 遷移先のアドレスを指定するための表現型です。
+ * 遷移先のアドレスを指定するための表現です。
  *
  * 完全な URL パス文字列か、またはパスの各コンポーネントを部分的にパッチするためのオブジェクトのいずれかを受け入れます。
- * React の `useNavigate` でも Solid.js でも同じ入力形状を使えるよう、core に切り出した共通型です。
+ * React の `useNavigate` でも Solid.js でも同じ入力形状を使えるよう、core に切り出した共通の定義です。
  */
 export type NavigateTo =
   | string
@@ -35,11 +35,12 @@ export type NavigateTo =
     };
 
 /**
- * 画面遷移の挙動をカスタマイズするためのオプション型です。
+ * 画面遷移の挙動をカスタマイズするためのオプションです。
  */
 export type NavigateOptions = {
   /**
-   * 履歴スタックへの追加方法を制御します。`true` の場合は現在の履歴を上書きし、`false` または省略時は新規追加します。
+   * 履歴スタックへの追加方法を制御します。
+   * `true` の場合は現在の履歴を上書きし、`false` または省略時は新規追加します。
    */
   readonly replace?: boolean | undefined;
 };

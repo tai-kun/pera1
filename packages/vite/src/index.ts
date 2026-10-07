@@ -35,8 +35,8 @@ export type Pera1VitePluginOptions = {
   /**
    * ルートとして扱うファイルの glob パターンです。
    *
-   * ページディレクトリーからの相対パスで指定します。パターンは追加順に評価されるわけではなく、
-   * いずれかに一致すれば対象になります。
+   * ページディレクトリーからの相対パスで指定します。
+   * パターンは追加順に評価されるわけではなく、いずれかに一致すれば対象になります。
    *
    * @default 拡張子が `.tsx`、`.ts`、`.jsx`、`.js` のすべてのファイル
    */
@@ -45,7 +45,8 @@ export type Pera1VitePluginOptions = {
   /**
    * ルートから除外するファイルの glob パターンです。
    *
-   * ページディレクトリーからの相対パスで指定します。`include` より優先されます。
+   * ページディレクトリーからの相対パスで指定します。
+   * `include` より優先されます。
    *
    * @default []
    */
@@ -123,7 +124,8 @@ export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
   let command: "build" | "serve" = "serve";
 
   /**
-   * ルート型を生成し、警告を通知関数へ流します。生成に失敗しても開発サーバーは止めません。
+   * ルート型を生成し、警告を通知関数へ流します。
+   * 生成に失敗しても開発サーバーは止めません。
    */
   function generateRouteTypes(warn: (message: string) => void): void {
     try {

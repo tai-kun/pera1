@@ -17,10 +17,8 @@ export default function SearchPage() {
   const { q, page, total, totalPages, posts } = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
 
-  // 遷移後のフォーカス管理: 見出しに `tabIndex={-1}` を付けてプログラムから
-  // フォーカス可能にし、検索条件 (`q` / `page`) が変わるたびに見出しへ移動します。
-  // タブ遷移やページネーションではフォーカスが body に残ると
-  // キーボード利用者が迷子になるため、この移動で現在位置を知らせます。
+  // 遷移後のフォーカス管理: 見出しに `tabIndex={-1}` を付けてプログラムからフォーカス可能にし、検索条件 (`q` / `page`) が変わるたびに見出しへ移動します。
+  // タブ遷移やページネーションではフォーカスが body に残るとキーボード利用者が迷子になるため、この移動で現在位置を知らせます。
   // 初回表示ではフォーカスを奪わないよう何もしません。
   const headingRef = React.useRef<HTMLHeadingElement>(null);
   const isFirstRender = React.useRef(true);

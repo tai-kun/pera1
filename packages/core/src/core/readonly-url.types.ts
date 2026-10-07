@@ -23,7 +23,8 @@ export interface ReadonlyURL {
   readonly host: string;
 
   /**
-   * URL のホスト名を表します。ポート番号は含みません。
+   * URL のホスト名を表します。
+   * ポート番号は含みません。
    *
    * [MDN リファレンス](https://developer.mozilla.org/docs/Web/API/URL/hostname)
    */
@@ -58,7 +59,8 @@ export interface ReadonlyURL {
   readonly pathname: string;
 
   /**
-   * URL のポート番号を表します。デフォルトのポート番号である場合は空文字列を返します。
+   * URL のポート番号を表します。
+   * デフォルトのポート番号である場合は空文字列を返します。
    *
    * [MDN リファレンス](https://developer.mozilla.org/docs/Web/API/URL/port)
    */

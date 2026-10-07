@@ -7,8 +7,8 @@ import { BASE_URL } from "./_server.js";
  * AI エージェントのような待機なし高速操作でも表示と URL が一致することを検証します。
  * 人間ではありえない間隔 (ポーリング待機なしの連続 goto / 連打) を再現します。
  */
-describe("ブログ / AIエージェント高速操作ストレス", () => {
-  test("ノーウェイト連続遷移でも最終URLと表示が一致する", async ({ expect, page }) => {
+describe("ブログ / AI エージェント高速操作ストレス", () => {
+  test("ノーウェイト連続遷移でも最終 URL と表示が一致する", async ({ expect, page }) => {
     // 準備と実行: 読み込み完了を待たずに commit 時点で次へ進む (AI の高速発行を再現)
     const targets = ["/posts/1", "/posts/2", "/posts/3", "/posts/4", "/posts/5"];
     for (const target of targets) {
@@ -23,7 +23,7 @@ describe("ブログ / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => body.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("遷移割り込みで古いloaderの内容が混ざらない", async ({ expect, page }) => {
+  test("遷移割り込みで古い loader の内容が混ざらない", async ({ expect, page }) => {
     // 準備: 一覧を開く
     await page.goto(`${BASE_URL}/posts`, { waitUntil: "commit" });
 
@@ -65,7 +65,7 @@ describe("ブログ / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => back.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("Back/Forwardを高速往復してもURLと見出しが一致する", async ({ expect, page }) => {
+  test("Back/Forward を高速往復しても URL と見出しが一致する", async ({ expect, page }) => {
     // 準備: 履歴を 3 件積む
     await page.goto(`${BASE_URL}/`);
     await page.goto(`${BASE_URL}/posts`);
@@ -125,7 +125,7 @@ describe("ブログ / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => result.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("0ms間隔タイピングで即送信してもクエリが欠落しない", async ({ expect, page }) => {
+  test("0ms 間隔タイピングで即送信してもクエリが欠落しない", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/search`);
     const input = page.getByLabel("キーワード");
@@ -180,7 +180,7 @@ describe("ブログ / AIエージェント高速操作ストレス", () => {
     expect(consoleErrors).toStrictEqual([]);
   });
 
-  test("2タブで別記事を同時展開しても混線しない", async ({ expect, page }) => {
+  test("2 タブで別記事を同時展開しても混線しない", async ({ expect, page }) => {
     // 準備: 同一コンテキストで 2 枚目のタブを開く
     const secondPage = await page.context().newPage();
     try {
@@ -202,7 +202,7 @@ describe("ブログ / AIエージェント高速操作ストレス", () => {
     }
   });
 
-  test("高速操作ラッシュ中にpageerrorとconsole errorが出ない", async ({
+  test("高速操作ラッシュ中に pageerror と console error が出ない", async ({
     expect,
     page,
   }) => {

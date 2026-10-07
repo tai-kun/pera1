@@ -3,11 +3,11 @@ import type { Route, RouteParams } from "./route.types.js";
 import RoutePatternUtils from "./route-pattern-utils.js";
 
 /**
- * URL とのマッチングが確認されたルート情報を表す型定義です。
+ * URL とのマッチングが確認されたルート情報です。
  *
  * 基本となる `Route` オブジェクトの構造を引き継ぎつつ、抽出された動的パラメーターと、それらを埋め戻して構築された具体的な URL パス文字列が追加されています。
  *
- * @template TComponent 表示対象となるコンポーネントの型です。
+ * @template TComponent 表示対象となるコンポーネントです。
  */
 export type MatchedRoute<TComponent = any> = Route<TComponent> & {
   /**
@@ -28,7 +28,8 @@ export type MatchedRoute<TComponent = any> = Route<TComponent> & {
  *
  * @param routes あらかじめ正規化およびソートが完了しているルートオブジェクトの読み取り専用配列です。
  * @param url マッチングの判定元となる、読み取り専用の URL オブジェクトです。
- * @returns マッチしたルートが 1 つ以上存在する場合は、最低 1 つの要素を持つことが保証された `MatchedRoute` の読み取り専用タプル配列を返します。1 つもマッチしなかった場合は `null` を返します。
+ * @returns マッチしたルートが 1 つ以上存在する場合は、最低 1 つの要素を持つことが保証された `MatchedRoute` の読み取り専用タプル配列を返します。
+ * 1 つもマッチしなかった場合は `null` を返します。
  */
 export default function matchRoutes<TComponent = any>(
   routes: readonly Route<TComponent>[],
@@ -62,7 +63,8 @@ export default function matchRoutes<TComponent = any>(
  * パスパターンを `/` 区切りのセグメント配列に分解します。
  *
  * @param path 分解対象のパスパターン文字列です。
- * @returns 空文字を除いたセグメント配列です。`"/"` は空配列になります。
+ * @returns 空文字を除いたセグメント配列です。
+ * `"/"` は空配列になります。
  */
 function splitPatternSegments(path: string): string[] {
   return path.split("/").filter(Boolean);
@@ -71,8 +73,7 @@ function splitPatternSegments(path: string): string[] {
 /**
  * ワイルドカード (`*` を含む) セグメントかどうかを判定します。
  *
- * `/*` (006 スコープ) を誤って除外しないため、ワイルドカードを含むルートは
- * 優先除外の勝者にも敗者にもしません。
+ * `/*` (006 スコープ) を誤って除外しないため、ワイルドカードを含むルートは優先除外の勝者にも敗者にもしません。
  *
  * @param segment 判定対象の単一セグメント文字列です。
  * @returns ワイルドカードを含む場合は `true` です。
@@ -104,19 +105,16 @@ function isStaticSegment(segment: string): boolean {
 /**
  * マッチ鎖から、静的ルートに敗北したパラメータールートを取り除きます (issue 005)。
  *
- * 背景: `/app/projects/new` (static・完全一致) と `/app/projects/:projectId`
- * (param・`allowChild` による前方一致) は兄弟競合ですが、`matchRoutes` は従来
- * マッチ全件を返していたため、子の static の下に親の param layout が混ざり、
- * 利用者側で `projectId === "new"` の分散ガードが必要になっていました。
+ * 背景: `/app/projects/new` (static・完全一致) と `/app/projects/:projectId` (param・`allowChild` による前方一致) は兄弟競合ですが、`matchRoutes` は従来マッチ全件を返していたため、子の static の下に親の param layout が混ざり、利用者側で `projectId === "new"` の分散ガードが必要になっていました。
  *
  * 除外条件 (いずれも満たす場合のみ除外):
  * - 敗者候補・勝者候補のいずれもワイルドカード (`*` を含む) を含まない。
- * - 勝者は URL に完全一致する (strict 照合=`allowChild: false` でマッチ)。
+ * - 勝者は URL に完全一致する (strict 照合 = `allowChild: false` でマッチ)。
  * - 同一セグメント位置 `k` で、勝者が静的・敗者がパラメーターである。
  *
- * 正当な親レイアウト (例: `/app` → `/app/dashboard` の親) は、全セグメントが
- * 静的同士で等しいため除外されません。`/` (空セグメント) も除外の対象にも
- * 理由にもなりません。`/*` はワイルドカードとして常に保持されます。
+ * 正当な親レイアウト (例: `/app` → `/app/dashboard` の親) は、全セグメントが静的同士で等しいため除外されません。
+ * `/` (空セグメント) も除外の対象にも理由にもなりません。
+ * `/*` はワイルドカードとして常に保持されます。
  *
  * モック等で `path` を持たないルートは判定不能のため常に保持します。
  *

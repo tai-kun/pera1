@@ -85,7 +85,7 @@ describe("createRouter", () => {
     expect(a).toBe(b);
   });
 
-  test("update の3値分岐を区別する (006): 確定・未マッチ・再描画", ({ expect }) => {
+  test("update の 3 値分岐を区別する (006): 確定・未マッチ・再描画", ({ expect }) => {
     // 準備: update 関数を回収できるスタブエンジン
     let update!: IEngine.StartArgs["update"];
     const engine = createStubEngine();
@@ -102,15 +102,15 @@ describe("createRouter", () => {
     const stop = controller.start();
 
     try {
-      // 実行1: マッチありの確定状態
+      // 実行 1: マッチありの確定状態
       update({ entry: entryA, routes: [routeA] } as never);
       const matched = controller.getRoutes();
 
-      // 実行2: 未マッチ (404 相当) へのリセット
+      // 実行 2: 未マッチ (404 相当) へのリセット
       update(null);
       const unmatched = controller.getRoutes();
 
-      // 実行3: 引数なしの再描画 (状態維持)
+      // 実行 3: 引数なしの再描画 (状態維持)
       update({ entry: entryB, routes: [routeA] } as never);
       const beforeRerender = controller.getRoutes();
       update();

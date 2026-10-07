@@ -63,7 +63,7 @@ export default function ConfirmPage() {
   return (
     <section>
       <h3>予約確認</h3>
-      <p>予約ID: {booking.id}</p>
+      <p>予約 ID: {booking.id}</p>
       <p>
         便: {booking.flight.airline} {booking.flight.id} ({booking.flight.depart} →{" "}
         {booking.flight.arrive}) - ¥{booking.flight.price}

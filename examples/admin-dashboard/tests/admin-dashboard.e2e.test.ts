@@ -25,7 +25,7 @@ describe("管理画面", () => {
     expect,
     page,
   }) => {
-    // 準備と実行: 未認証で保護URLを直接開く
+    // 準備と実行: 未認証で保護 URL を直接開く
     await page.goto(`${BASE_URL}/dashboard`);
 
     // 検証: ログインへ redirect され redirectTo が受け渡されること
@@ -40,7 +40,7 @@ describe("管理画面", () => {
     await main.getByLabel("パスワード").fill(PASSWORD);
     await main.getByRole("button", { name: "ログイン", exact: true }).click();
 
-    // 検証: 元のURLに戻ること
+    // 検証: 元の URL に戻ること
     await expect.poll(() => page.url(), { timeout: 10_000 }).toBe(`${BASE_URL}/dashboard`);
     const dashboard = page.getByRole("main").getByRole("heading", { name: "ダッシュボード" });
     await expect.poll(() => dashboard.isVisible(), { timeout: 10_000 }).toBe(true);

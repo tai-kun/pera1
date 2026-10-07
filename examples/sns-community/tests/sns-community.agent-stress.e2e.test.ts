@@ -6,7 +6,7 @@ import { BASE_URL } from "./_server.js";
 /**
  * AI エージェントの高速操作 (タブ連打・会話切替ラッシュ・履歴スパム) でも壊れないことを検証します。
  */
-describe("SNS / Community / AIエージェント高速操作ストレス", () => {
+describe("SNS / Community / AI エージェント高速操作ストレス", () => {
   test("プロフィール間をノーウェイト連続遷移しても最終表示が一致する", async ({
     expect,
     page,
@@ -103,7 +103,7 @@ describe("SNS / Community / AIエージェント高速操作ストレス", () =>
     await expect.poll(() => feed.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("フィードのaタグを待機なしで辿ってもプロフィールに到達する", async ({
+  test("フィードの a タグを待機なしで辿ってもプロフィールに到達する", async ({
     expect,
     page,
   }) => {
@@ -122,7 +122,7 @@ describe("SNS / Community / AIエージェント高速操作ストレス", () =>
     await expect.poll(() => profile.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("Back/Forwardとリロードの複合ラッシュでもフィードに復帰できる", async ({
+  test("Back/Forward とリロードの複合ラッシュでもフィードに復帰できる", async ({
     expect,
     page,
   }) => {
@@ -144,7 +144,7 @@ describe("SNS / Community / AIエージェント高速操作ストレス", () =>
     await expect.poll(() => feed.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("不正URLラッシュでもクラッシュしない", async ({ expect, page }) => {
+  test("不正 URL ラッシュでもクラッシュしない", async ({ expect, page }) => {
     // 準備
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => {
@@ -172,7 +172,7 @@ describe("SNS / Community / AIエージェント高速操作ストレス", () =>
     expect(pageErrors).toStrictEqual([]);
   });
 
-  test("2タブで別プロフィールを同時展開しても混線しない", async ({ expect, page }) => {
+  test("2 タブで別プロフィールを同時展開しても混線しない", async ({ expect, page }) => {
     // 準備
     const secondPage = await page.context().newPage();
     try {
@@ -192,7 +192,7 @@ describe("SNS / Community / AIエージェント高速操作ストレス", () =>
     }
   });
 
-  test("高速操作ラッシュ中にpageerrorとconsole errorが出ない", async ({
+  test("高速操作ラッシュ中に pageerror と console error が出ない", async ({
     expect,
     page,
   }) => {

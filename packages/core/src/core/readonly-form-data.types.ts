@@ -10,7 +10,9 @@ export interface ReadonlyFormData {
    * 指定された名前に一致する最初のフォームデータの値を取得します。
    *
    * @param name 検索するフォームコントロールのキー名です。
-   * @returns 一致したデータを返します。データは文字列または `File` オブジェクトのいずれかです。指定された名前のキーが存在しない場合は `null` を返します。
+   * @returns 一致したデータを返します。
+   * データは文字列または `File` オブジェクトのいずれかです。
+   * 指定された名前のキーが存在しない場合は `null` を返します。
    *
    * [MDN リファレンス](https://developer.mozilla.org/docs/Web/API/FormData/get)
    */
@@ -20,7 +22,8 @@ export interface ReadonlyFormData {
    * 指定された名前に一致するすべてのフォームデータの値を配列として取得します。
    *
    * @param name 検索するフォームコントロールのキー名です。
-   * @returns 一致したすべてのデータを含む配列です。キーが存在しない場合は空の配列を返します。
+   * @returns 一致したすべてのデータを含む配列です。
+   * キーが存在しない場合は空の配列を返します。
    *
    * [MDN リファレンス](https://developer.mozilla.org/docs/Web/API/FormData/getAll)
    */
@@ -75,7 +78,8 @@ export interface ReadonlyFormData {
   values(): IterableIterator<FormDataEntryValue>;
 
   /**
-   * オブジェクトの既定の反復子を定義します。 `for...of` 構文などで直接オブジェクトを走査することを可能にします。
+   * オブジェクトの既定の反復子を定義します。
+   * `for...of` 構文などで直接オブジェクトを走査することを可能にします。
    *
    * @returns `entries` メソッドと同様に、キーと値のペアを要素とする `IterableIterator` オブジェクトです。
    */

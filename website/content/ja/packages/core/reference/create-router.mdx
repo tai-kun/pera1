@@ -19,7 +19,7 @@ function createRouter<TComponent = any>(
 
 ## 引数 [#arguments]
 
-| プロパティ | 型 | 必須 | 説明 |
+| プロパティー | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `engine` | `IEngine<TComponent>` | はい | ルーティングを実行するエンジンです。`NavigationApiEngine` または自作のエンジンを渡します。 |
 | `routes` | `readonly RouteDefinition<string, TComponent>[]` | はい | アプリケーションのルート定義です。オブジェクト形式とモジュール形式の両方を受け付けます。 |
@@ -28,7 +28,7 @@ function createRouter<TComponent = any>(
 
 戻り値は `RouterController<TComponent>` です。
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `start` | `() => () => void` | エンジンのイベント購読を開始し、停止関数を返します。 |
 | `subscribe` | `(cb: () => void) => () => void` | 状態変更の購読を登録し、解除関数を返します。 |
@@ -39,7 +39,7 @@ function createRouter<TComponent = any>(
 
 `getSnapshot()` が返すオブジェクトです。参照は生成時に固定され、遷移のたびに更新されるのは `currentEntry` だけです。
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `submit` | `(args: IEngine.SubmitArgs) => void` | 送信をエンジンへ委譲します。 |
 | `navigate` | `(args: IEngine.NavigateArgs) => void` | 遷移をエンジンへ委譲します。 |

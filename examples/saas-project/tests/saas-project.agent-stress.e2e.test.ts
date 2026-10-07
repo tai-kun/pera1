@@ -22,7 +22,7 @@ async function loginAs(page: Page, email: string = ADMIN_EMAIL): Promise<void> {
 /**
  * AI エージェントの高速操作でもプロジェクト横断の表示が壊れないことを検証します。
  */
-describe("SaaS Project Management / AIエージェント高速操作ストレス", () => {
+describe("SaaS Project Management / AI エージェント高速操作ストレス", () => {
   test("ログインボタンを高速連打してもダッシュボードに到達する", async ({
     expect,
     page,
@@ -97,7 +97,7 @@ describe("SaaS Project Management / AIエージェント高速操作ストレス
     expect(bodyText).toContain("Project: Apollo");
   });
 
-  test("New Project作成ボタンを高速連打しても詳細のいずれかに到達する", async ({
+  test("New Project 作成ボタンを高速連打しても詳細のいずれかに到達する", async ({
     expect,
     page,
   }) => {
@@ -120,7 +120,7 @@ describe("SaaS Project Management / AIエージェント高速操作ストレス
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("存在しないプロジェクトを高速で叩いてもNot Foundから復帰できる", async ({
+  test("存在しないプロジェクトを高速で叩いても Not Found から復帰できる", async ({
     expect,
     page,
   }) => {
@@ -139,7 +139,7 @@ describe("SaaS Project Management / AIエージェント高速操作ストレス
     await expect.poll(() => apollo.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("未認証で保護URLを高速連打しても全てloginに誘導される", async ({
+  test("未認証で保護 URL を高速連打しても全て login に誘導される", async ({
     expect,
     page,
   }) => {
@@ -150,7 +150,7 @@ describe("SaaS Project Management / AIエージェント高速操作ストレス
     }
   });
 
-  test("Sidebarを待機なしで連続切替しても表示が一致する", async ({ expect, page }) => {
+  test("Sidebar を待機なしで連続切替しても表示が一致する", async ({ expect, page }) => {
     // 準備
     await loginAs(page);
     const main = page.getByRole("main");
@@ -166,7 +166,7 @@ describe("SaaS Project Management / AIエージェント高速操作ストレス
     expect(bodyText?.length ?? 0).toBeGreaterThan(0);
   });
 
-  test("不正URLラッシュでもクラッシュしない", async ({ expect, page }) => {
+  test("不正 URL ラッシュでもクラッシュしない", async ({ expect, page }) => {
     // 準備
     await loginAs(page);
     const pageErrors: string[] = [];
@@ -192,7 +192,7 @@ describe("SaaS Project Management / AIエージェント高速操作ストレス
     expect(pageErrors).toStrictEqual([]);
   });
 
-  test("認証済み2タブで別プロジェクトを同時展開しても混線しない", async ({
+  test("認証済み 2 タブで別プロジェクトを同時展開しても混線しない", async ({
     expect,
     page,
   }) => {
@@ -216,7 +216,7 @@ describe("SaaS Project Management / AIエージェント高速操作ストレス
     }
   });
 
-  test("高速操作ラッシュ中にpageerrorとconsole errorが出ない", async ({
+  test("高速操作ラッシュ中に pageerror と console error が出ない", async ({
     expect,
     page,
   }) => {

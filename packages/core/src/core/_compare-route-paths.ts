@@ -66,8 +66,8 @@ const enCollator = new Intl.Collator("en");
  *
  * より具体的で制限の厳しいパスが、ソート結果においてより前方に配置されるように負の値を返します。
  *
- * @param pathA 比較対象となる1 つ目のパス文字列です。
- * @param pathB 比較対象となる2 つ目のパス文字列です。
+ * @param pathA 比較対象となる 1 つ目のパス文字列です。
+ * @param pathB 比較対象となる 2 つ目のパス文字列です。
  * @returns `pathA` を優先する場合は負の数、`pathB` を優先する場合は正の数、等価である場合は `0` を返します。
  */
 export default function compareRoutePaths(pathA: string, pathB: string): number {

@@ -30,7 +30,7 @@ export default function OrderDetailPage() {
   return (
     <article>
       <h2>注文詳細</h2>
-      <p>注文ID: {order.id}</p>
+      <p>注文 ID: {order.id}</p>
       <ul>
         {order.items.map((item) => (
           <li key={item.productId}>

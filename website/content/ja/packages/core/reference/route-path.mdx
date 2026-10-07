@@ -35,13 +35,13 @@ class RoutePath implements ReadonlyRoutePath {
 
 ## 引数 [#arguments]
 
-| プロパティ | 型 | 必須 | 説明 |
+| プロパティー | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `path` | `string \| Pick<ReadonlyURL, "pathname" \| "search" \| "hash">` | いいえ | 解析するパスです。省略時は空文字として扱われ、ルート (`/`) になります。 |
 
-## プロパティ [#properties]
+## プロパティー [#properties]
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `pathname` | `string` | 正規化されたパス名です。代入時にも正規化が走ります。 |
 | `search` | `string` | 先頭に `?` を含むクエリーです。取得のたびにソートされます。 |

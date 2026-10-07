@@ -30,12 +30,12 @@ const HistoryEntrySchema = () =>
   );
 
 /**
- * `HistoryEntrySchema` による検証と構造変換を行う前の、生の入力オブジェクトに対応する型定義です。
+ * `HistoryEntrySchema` による検証と構造変換を行う前の、生の入力オブジェクトです。
  */
 export type HistoryEntryLike = v.InferInput<ReturnType<typeof HistoryEntrySchema>>;
 
 /**
- * `expectHistoryEntry` 関数による検証を通過した、ランタイムで確定的に使用可能な履歴エントリーの型定義です。
+ * `expectHistoryEntry` 関数による検証を通過した、ランタイムで確定的に使用可能な履歴エントリーです。
  */
 export type HistoryEntry = {
   /**

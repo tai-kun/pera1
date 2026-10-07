@@ -8,12 +8,14 @@ export type ResolvedPluginOptions = {
   readonly dir: string;
 
   /**
-   * ルートとして扱うファイルの glob パターンです。ページディレクトリーからの相対パスで指定します。
+   * ルートとして扱うファイルの glob パターンです。
+   * ページディレクトリーからの相対パスで指定します。
    */
   readonly include: readonly string[];
 
   /**
-   * ルートから除外するファイルの glob パターンです。ページディレクトリーからの相対パスで指定します。
+   * ルートから除外するファイルの glob パターンです。
+   * ページディレクトリーからの相対パスで指定します。
    */
   readonly exclude: readonly string[];
 

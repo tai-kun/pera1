@@ -8,7 +8,7 @@ import RouterContext from "../contexts/router-context.js";
 export type { NavigationState };
 
 /**
- * {@link useNavigation|`useNavigation`} カスタムフックが返すオブジェクトの型定義です。
+ * {@link useNavigation|`useNavigation`} カスタムフックが返すオブジェクトです。
  */
 export type Navigation = {
   /**
@@ -22,16 +22,13 @@ export type Navigation = {
 };
 
 /**
- * 現在の履歴エントリーに紐づくアクションとローダーの `NinjaPromise` の状態から、
- * 遷移状態 (`"idle"`、`"loading"`、`"submitting"`) を宣言的に取得するためのカスタムフックです。
+ * 現在の履歴エントリーに紐づくアクションとローダーの `NinjaPromise` の状態から、遷移状態 (`"idle"`、`"loading"`、`"submitting"`) を宣言的に取得するためのカスタムフックです。
  *
- * 判定ロジック自体は `@pera1/core` の `selectNavigationState` に委譲しており、
- * エンジンがアクション開始時に `update()` 素通しで再描画を通知する仕組みを利用します。
- * ローダーの完了はエンジンからの再通知がないため、本フックが pending の確定を待って
- * 自発的に再描画し、`"loading"` から `"idle"` へ戻します。
+ * 判定ロジック自体は `@pera1/core` の `selectNavigationState` に委譲しており、エンジンがアクション開始のときに `update()` 素通しで再描画を通知する仕組みを利用します。
+ * ローダーの完了はエンジンからの再通知がないため、本フックが pending の確定を待って自発的に再描画し、`"loading"` から `"idle"` へ戻します。
  *
- * `Suspense` のフォールバックと併用できます。粒度の指針は
- * `examples/blog/src/pages/root.tsx` のコメントとガイドを参照してください。
+ * `Suspense` のフォールバックと併用できます。
+ * 粒度の指針は `examples/blog/src/pages/root.tsx` のコメントとガイドを参照してください。
  *
  * ```tsx
  * function PendingBar() {
@@ -48,7 +45,7 @@ export type Navigation = {
 export default function useNavigation(): Navigation {
   const routerContext = React.use(RouterContext);
   if (!routerContext) {
-    log.debug("RouterContextが見つかりません");
+    log.debug("RouterContext が見つかりません");
     throw new RouterContextMissingError();
   }
 
@@ -60,7 +57,7 @@ export default function useNavigation(): Navigation {
     selectNavigationState(routerRef.current as never),
   );
 
-  // ローダーの完了時にエンジンからの再通知はないため、pending の確定を待って自発的に再描画します。
+  // ローダーの完了のときにエンジンからの再通知はないため、pending の確定を待って自発的に再描画します。
   const [, bump] = React.useReducer((count: number) => count + 1, 0);
   const entryId = (routerRef.current as { currentEntry?: { id?: string } } | null)?.currentEntry
     ?.id;

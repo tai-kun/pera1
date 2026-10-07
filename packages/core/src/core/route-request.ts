@@ -2,13 +2,14 @@ import type { ReadonlyFormData } from "./readonly-form-data.types.js";
 import type { ReadonlyURL } from "./readonly-url.types.js";
 
 /**
- * HTTP の GET メソッドによるルーティングリクエストを表すインターフェースです。
+ * HTTP の GET メソッドによるルーティングリクエストです。
  *
  * GET リクエストの特性上、`formData` は常に `null` となります。
  */
 interface RouteGetRequest {
   /**
-   * HTTP メソッドを表します。常に `"GET"` です。
+   * HTTP メソッドを表します。
+   * 常に `"GET"` です。
    */
   readonly method: "GET";
 
@@ -23,7 +24,8 @@ interface RouteGetRequest {
   readonly signal: AbortSignal;
 
   /**
-   * フォームデータです。GET リクエストではデータを本文に含めないため、常に `null` です。
+   * フォームデータです。
+   * GET リクエストではデータを本文に含めないため、常に `null` です。
    */
   readonly formData: null;
 
@@ -37,13 +39,14 @@ interface RouteGetRequest {
 }
 
 /**
- * HTTP の POST メソッドによるルーティングリクエストを表すインターフェースです。
+ * HTTP の POST メソッドによるルーティングリクエストです。
  *
  * POST リクエストに伴う読み取り専用の `formData` を保持します。
  */
 interface RoutePostRequest {
   /**
-   * HTTP メソッドを表します。常に `"POST"` です。
+   * HTTP メソッドを表します。
+   * 常に `"POST"` です。
    */
   readonly method: "POST";
 
@@ -72,7 +75,7 @@ interface RoutePostRequest {
 }
 
 /**
- * GET または POST のルーティングリクエストを表す識別子付きユニオン型です。
+ * GET または POST のルーティングリクエストです。
  */
 type RouteRequest = RouteGetRequest | RoutePostRequest;
 
@@ -137,7 +140,8 @@ const RouteRequest = class RouteRequest implements RouteRequestImpl {
   public readonly signal: AbortSignal;
 
   /**
-   * 保持されている読み取り専用のフォームデータです。GET リクエストの場合は `null` となります。
+   * 保持されている読み取り専用のフォームデータです。
+   * GET リクエストの場合は `null` となります。
    */
   public readonly formData: ReadonlyFormData | null;
 
@@ -178,12 +182,13 @@ const RouteRequest = class RouteRequest implements RouteRequestImpl {
    *
    * 外部から任意の `RequestInit` オプションが指定された場合は、インスタンス固有の既定値を上書きします。
    *
-   * @param init リクエストの生成オプションを上書きするための初期化オブジェクトです。既定値は空のオブジェクトです。
+   * @param init リクエストの生成オプションを上書きするための初期化オブジェクトです。
+   * 既定値は空のオブジェクトです。
    * @returns Fetch API でそのまま利用可能な `Request` インスタンスです。
    */
   public toRequest(init: RequestInit = {}): Request {
     const {
-      // 内部の型定義の整合性を維持するため、読み取り専用のインターフェースである formData を、標準の Request の body に適合する FormData 型にキャストしています。
+      // 内部の型の整合性を維持するため、読み取り専用のインターフェースである `formData` を、標準の `Request` の `body` に適合する `FormData` 型にキャストしています。
       body = this.formData as FormData | null,
       method = this.method,
       signal = this.signal,

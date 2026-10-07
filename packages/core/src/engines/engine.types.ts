@@ -9,9 +9,9 @@ import type RoutePath from "../core/route-path.js";
 import type { Route, ActionFunction, LoaderFunction } from "../core/route.types.js";
 
 /**
- * ルーターが管理する現在の画面の状態を表す型定義です。
+ * ルーターが管理する現在の画面の状態です。
  *
- * @template TComponent 描画対象となるコンポーネントの型です。
+ * @template TComponent 描画対象となるコンポーネントです。
  */
 export type RouterState<TComponent = any> = {
   /**
@@ -26,7 +26,7 @@ export type RouterState<TComponent = any> = {
 };
 
 /**
- * 実行中のルーティングエンジンを安全に停止させ、各種イベントリスナーや非同期処理をクリーンアップするための関数インターフェースです。
+ * 実行中のルーティングエンジンを安全に停止させ、各種イベントリスナーや非同期処理をクリーンアップするための関数です。
  */
 export interface IStopEngine {
   (): void;
@@ -37,7 +37,7 @@ export interface IStopEngine {
  */
 export namespace IEngine {
   /**
-   * ルーター初期化メソッド `init` に渡される引数の型定義です。
+   * ルーター初期化メソッド `init` に渡される引数です。
    */
   export type InitArgs<TComponent = any> = {
     /**
@@ -57,14 +57,14 @@ export namespace IEngine {
   };
 
   /**
-   * ルーター初期化メソッド `init` が返す初期状態の型定義です。
+   * ルーター初期化メソッド `init` が返す初期状態です。
    *
    * マッチするルートがあればその状態を返し、なければ `null` となります。
    */
   export type InitReturn<TComponent = any> = RouterState<TComponent> | null;
 
   /**
-   * エンジンの稼働開始メソッド `start` に渡される引数の型定義です。
+   * エンジンの稼働開始メソッド `start` に渡される引数です。
    *
    * ナビゲーションイベントの監視や状態同期に必要な依存関係を集約します。
    */
@@ -91,7 +91,8 @@ export namespace IEngine {
      *
      * - 引数なし: 現在の状態を維持したままの強制再レンダリング (例: アクション開始時のローディング反映)。
      * - `RouterState`: マッチありの確定状態への更新。
-     * - `null`: 未マッチ (404 相当) へのリセット。購読者側は `getRoutes() === undefined` で検出できます。
+     * - `null` の場合は未マッチ (404 相当) へのリセットです。
+     *   購読者側は `getRoutes() === undefined` で検出できます。
      */
     update: {
       /**
@@ -102,7 +103,8 @@ export namespace IEngine {
       /**
        * ルーターの状態を更新します。
        *
-       * @param newRouterState 新しいルーターの状態です。`null` は未マッチ (404 相当) へのリセットを意味します。
+       * @param newRouterState 新しいルーターの状態です。
+       * `null` は未マッチ (404 相当) へのリセットを意味します。
        */
       (newRouterState: RouterState<TComponent> | null): void;
     };
@@ -121,7 +123,7 @@ export namespace IEngine {
   export type StartReturn = IStopEngine | void;
 
   /**
-   * プログラムからのフォーム送信やクエリー更新を行う `submit` メソッドの引数の型定義です。
+   * プログラムからのフォーム送信やクエリー更新を行う `submit` メソッドの引数です。
    */
   export type SubmitArgs =
     | {
@@ -159,14 +161,14 @@ export namespace IEngine {
         /**
          * 履歴スタックへの追加方法を指定します。
          *
-         * - `"push"`: 履歴エントリーの新規追加
-         * - `"replace"`: 履歴エントリーの上書き
+         * - `"push"`: 履歴エントリーの新規追加です。
+         * - `"replace"`: 履歴エントリーの上書きです。
          */
         history: "replace" | "push";
       };
 
   /**
-   * 命令的な画面遷移を行う `navigate` メソッドの引数の型定義です。
+   * 命令的な画面遷移を行う `navigate` メソッドの引数です。
    *
    * リンクをクリックした際のアドレス遷移か、ブラウザーの「戻る、進む」に相当する相対移動かで分岐します。
    */
@@ -178,7 +180,8 @@ export namespace IEngine {
         type: "LINK";
 
         /**
-         * 遷移先のアドレス表現の指定です。完全なパス文字列か、部分的なパーツの組み合わせかを選択します。
+         * 遷移先のアドレス表現の指定です。
+         * 完全なパス文字列か、部分的なパーツの組み合わせかを選択します。
          */
         to:
           | {
@@ -209,8 +212,8 @@ export namespace IEngine {
         /**
          * 履歴スタックへの追加方法を指定します。
          *
-         * - `"push"`: 履歴エントリーの新規追加
-         * - `"replace"`: 履歴エントリーの上書き
+         * - `"push"`: 履歴エントリーの新規追加です。
+         * - `"replace"`: 履歴エントリーの上書きです。
          */
         history: "replace" | "push";
       }
@@ -228,9 +231,9 @@ export namespace IEngine {
 }
 
 /**
- * ルーティングエンジンのインターフェース定義です。
+ * ルーティングエンジンです。
  *
- * @template TComponent 描画対象となるコンポーネントの型です。
+ * @template TComponent 描画対象となるコンポーネントです。
  */
 export interface IEngine<TComponent = any> {
   /**

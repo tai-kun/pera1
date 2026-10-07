@@ -18,7 +18,7 @@ function startAction(
 
 ## 引数 [#arguments]
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `routes` | `readonly Pick<MatchedRoute, "params" \| "action" \| "urlPath">[]` | 送信先の URL にマッチしたルートです。 |
 | `request.url` | `HistoryEntryUrl` | アクションの送信先の URL です。 |
@@ -31,7 +31,7 @@ function startAction(
 
 実行対象のアクションが見つかれば `StartedAction` を、1 つも見つからなければ `null` を返します。
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `data` | `NinjaPromise<unknown>` | アクションの結果、または進行中の状態です。 |
 | `func` | `ActionFunction` | 実際に選出されたアクション関数です。 |
@@ -41,8 +41,8 @@ function startAction(
 
 `routes` を先頭から走査し、次の条件をすべて満たす最初のルートを選びます。
 
-1. `action` が関数として定義されていること。
-2. リクエストのパスが、そのルートの `urlPath` と一致するか、`urlPath` の子パスであること。
+1. `action` が関数として定義されていることです。
+2. リクエストのパスが、そのルートの `urlPath` と一致するか、`urlPath` の子パスであることです。
 
 子パスの判定はセグメント単位です。`urlPath` が `/users` のとき、`/users/42` はマッチしますが、`/usersettings` はマッチしません。文字列の前方一致だけではセグメントの境界をまたぐので、`/users` の直後が `/` であることも条件に含まれます。`/foo` と `/foo-bar` の関係も同じです。
 

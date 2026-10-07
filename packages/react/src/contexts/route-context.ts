@@ -2,7 +2,7 @@ import type { MatchedRoute } from "@pera1/core";
 import * as React from "react";
 
 /**
- * 現在のコンポーネント階層に紐づいている個別ルートのコンテキスト形状定義です。
+ * 現在のコンポーネント階層に紐づく個別ルートのコンテキストです。
  */
 export type RouteContextValue = MatchedRoute<React.ComponentType<{}>> & {
   /**

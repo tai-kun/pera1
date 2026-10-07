@@ -16,7 +16,7 @@ function initLoaders(
 ): Map<LoaderFunction, NinjaPromise<unknown>>;
 ```
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `routes` | `readonly Pick<MatchedRoute, "loader" \| "params">[]` | マッチしたルートです。`loader` と `params` だけを使います。 |
 | `request.url` | `HistoryEntryUrl` | 対象の履歴エントリーの URL です。 |
@@ -37,7 +37,7 @@ function startLoaders(
 
 ### StartLoadersArgs [#start-loaders-args]
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `prevRoutes` | `readonly Pick<MatchedRoute, "path" \| "params">[] \| null` | 遷移前にマッチしていたルートです。 |
 | `currentRoutes` | `readonly Pick<MatchedRoute, "path" \| "params" \| "action" \| "loader" \| "shouldReload">[]` | 遷移先にマッチしているルートです。 |
@@ -50,14 +50,14 @@ function startLoaders(
 
 `options` を渡すと POST 後の再取得として扱われます。省略すると GET 遷移として扱われます。
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `formData` | `FormData` | 送信されたフォームデータです。 |
 | `actionData` | `unknown` | 直前のアクションの結果です。 |
 
 ### StartedLoaders [#started-loaders]
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `idle` | `() => Promise<void>` | 今回のフェーズで確定したすべてのローダーの完了を待ちます。 |
 
@@ -92,8 +92,8 @@ function startLoaders(
 
 `shouldReload` だけは例外です。同期的に真偽値を返す必要があり、次の場合は `LoaderConditionError` で拒否された `NinjaPromise` が保存されます。
 
-- `Promise` などの thenable を返したとき。
-- 真偽値以外の値を返したとき。
+- `Promise` などの thenable を返したときです。
+- 真偽値以外の値を返したときです。
 
 `shouldReload` の実行中に投げられた例外は、その例外を理由とする `rejected` になります。
 

@@ -5,7 +5,7 @@ import type { HistoryEntryId } from "./history-entry-id-schema.js";
 import type { ActionFunction, LoaderFunction } from "./route.types.js";
 
 /**
- * `useNavigation` が返す遷移状態の型定義です。
+ * `useNavigation` が返す遷移状態です。
  *
  * - `"idle"`: 進行中の遷移がありません。
  * - `"loading"`: GET 遷移によりいずれかのローダーが実行中です。
@@ -17,11 +17,9 @@ export type NavigationState = "idle" | "loading" | "submitting";
  * ルーターのスナップショットから、現在の履歴エントリーに紐づく遷移状態を導出します。
  *
  * `useNavigation` や将来の Solid.js 版で共有するための純粋なセレクター関数です。
- * エンジンがアクション開始時に `update()` 素通しで再描画を通知する仕組みを利用し、
- * ストア上の `NinjaPromise` の `status` を走査して判定します。
+ * エンジンがアクション開始時に `update()` 素通しで再描画を通知する仕組みを利用し、ストア上の `NinjaPromise` の `status` を走査して判定します。
  *
- * 優先順位はアクション (`"submitting"`) がローダー (`"loading"`) より高く、
- * いずれにも pending がなければ `"idle"` を返します。
+ * 優先順位はアクション (`"submitting"`) がローダー (`"loading"`) より高く、いずれにも `pending` がなければ `"idle"` を返します。
  * スナップショットが未初期化の場合も `"idle"` を返します。
  *
  * @param snapshot `createRouter` が返すコントローラーのスナップショットです。
@@ -72,8 +70,10 @@ export function selectNavigationState(
  * `useActionData` や将来の Solid.js 版で共有するための純粋なセレクター関数です。
  *
  * @param snapshot `createRouter` が返すコントローラーのスナップショットです。
- * @param action 対象のアクション関数です。未定義の場合は `undefined` を返します。
- * @returns アクションが実行済みまたは実行中であれば結果を内包した `NinjaPromise` を返し、未実行の場合は `undefined` を返します。
+ * @param action 対象のアクション関数です。
+ * 未定義の場合は `undefined` を返します。
+ * @returns アクションが実行済みまたは実行中であれば結果を内包した `NinjaPromise` を返します。
+ * 未実行の場合は `undefined` を返します。
  */
 export function selectActionData(
   snapshot: Pick<RouterSnapshot, "currentEntry" | "actionDataStore">,
@@ -91,8 +91,10 @@ export function selectActionData(
  * `useLoaderData` や将来の Solid.js 版で共有するための純粋なセレクター関数です。
  *
  * @param snapshot `createRouter` が返すコントローラーのスナップショットです。
- * @param loader 対象のローダー関数です。未定義の場合は `undefined` を返します。
- * @returns ローダーの実行状態を管理している `NinjaPromise`、または未実行の場合は `undefined` を返します。
+ * @param loader 対象のローダー関数です。
+ * 未定義の場合は `undefined` を返します。
+ * @returns ローダーの実行状態を管理している `NinjaPromise` を返します。
+ * 未実行の場合は `undefined` を返します。
  */
 export function selectLoaderData(
   snapshot: Pick<RouterSnapshot, "currentEntry" | "loaderDataStore">,

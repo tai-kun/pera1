@@ -10,10 +10,9 @@ import type { MatchedRoute } from "./match-routes.js";
 import type { ActionFunction, LoaderFunction, RouteDefinition } from "./route.types.js";
 
 /**
- * ルーターのスナップショット（`routerRef.current` 相当）の形状定義です。
+ * ルーターのスナップショット (`routerRef.current` 相当) の形状です。
  *
- * React の `RefObject` や Solid.js のシグナルなど、特定フレームワークのリアクティブプリミティブに依存せず、
- * すべての UI バインディング（`@pera1/react`、将来の `@pera1/solid` など）で共有できる純粋なデータ形状です。
+ * React の `RefObject` や Solid.js のシグナルなど、特定フレームワークのリアクティブプリミティブに依存せず、すべての UI バインディング (`@pera1/react`、将来の `@pera1/solid` など) で共有できる純粋なデータ形状です。
  */
 export type RouterSnapshot = {
   /**
@@ -49,9 +48,9 @@ export type RouterSnapshot = {
 };
 
 /**
- * `createRouter` に渡す引数の型定義です。
+ * `createRouter` に渡す引数です。
  *
- * @template TComponent 描画対象となるコンポーネントの型です。
+ * @template TComponent 描画対象となるコンポーネントです。
  */
 export type CreateRouterArgs<TComponent = any> = {
   /**
@@ -66,12 +65,11 @@ export type CreateRouterArgs<TComponent = any> = {
 };
 
 /**
- * フレームワークに依存しないルーターコントローラーのインターフェースです。
+ * フレームワークに依存しないルーターコントローラーです。
  *
- * `Router` コンポーネントや将来の Solid.js バインディングは、このコントローラーを
- * `useMemo` / `createMemo` などで保持し、`subscribe` + スナップショット取得関数と組み合わせて購読します。
+ * `Router` コンポーネントや将来の Solid.js バインディングは、このコントローラーを `useMemo` / `createMemo` などで保持し、`subscribe` とスナップショット取得関数と組み合わせて購読します。
  *
- * @template TComponent 描画対象となるコンポーネントの型です。
+ * @template TComponent 描画対象となるコンポーネントです。
  */
 export interface RouterController<TComponent = any> {
   /**
@@ -105,13 +103,11 @@ export interface RouterController<TComponent = any> {
 }
 
 /**
- * 宣言的なルート定義と命令的なルーティング実行エンジンを仲介し、統合し、
- * フレームワークに依存しないルーターのライフサイクルと状態管理を司るコントローラーを作成します。
+ * 宣言的なルート定義と命令的なルーティング実行エンジンを仲介し、統合し、フレームワークに依存しないルーターのライフサイクルと状態管理を司るコントローラーを作成します。
  *
- * 元々 `Router` コンポーネントの内部に閉じていたロジックを抽出したもので、
- * React（`useSyncExternalStore`）でも Solid.js（`createEffect` + `on`）でも同じ振る舞いを再利用できます。
+ * 元々 `Router` コンポーネントの内部に閉じていたロジックを抽出したもので、React (`useSyncExternalStore`) でも Solid.js (`createEffect` と `on`) でも同じ振る舞いを再利用できます。
  *
- * @template TComponent 描画対象となるコンポーネントの型です。
+ * @template TComponent 描画対象となるコンポーネントです。
  * @param args エンジンとルート定義を含む引数オブジェクトです。
  * @returns ライフサイクル管理、購読、スナップショット取得のためのコントローラーです。
  */
@@ -173,12 +169,12 @@ export default function createRouter<TComponent = any>(
   /**
    * エンジン内部での遷移確定時に、状態を各 UI バインディングへ通知し、マージするための状態更新関数です。
    *
-   * 3 値分岐 (006。`IEngine.StartArgs["update"]` のオーバーロードに対応):
+   * 3 値分岐 (006、`IEngine.StartArgs["update"]` のオーバーロードに対応) です。
    *
-   * - `RouterState`: マッチあり。`currentRoutes` と `currentEntry` を更新します。
-   * - `null`: 未マッチ (404 相当)。`currentRoutes` を `undefined` にリセットします
-   *   (`getRoutes() === undefined` で購読者が検出可能)。`currentEntry` は最後の確定値のままです。
-   * - 引数なし (`undefined`): 現在の状態を維持したまま購読者へ再描画だけを通知します。
+   * - `RouterState` の場合はマッチありとして、`currentRoutes` と `currentEntry` を更新します。
+   * - `null` の場合は未マッチ (404 相当) として、`currentRoutes` を `undefined` にリセットします。
+   *   `currentEntry` は最後の確定値のままです。
+   * - 引数なし (`undefined`) の場合は現在の状態を維持したまま購読者へ再描画だけを通知します。
    */
   function updateRouter(newState?: RouterState<TComponent> | null): void {
     if (newState !== undefined) {

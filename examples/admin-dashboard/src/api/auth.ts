@@ -11,7 +11,8 @@ type StoredUser = User & {
   readonly password: string;
 };
 
-// 簡易認証のためのインメモリのユーザーDBです。永続化はしません。
+// 簡易認証のためのインメモリーのユーザー DB です。
+// 永続化はしません。
 const users: readonly StoredUser[] = [
   { id: "1", name: "Admin", email: "admin@example.com", password: "password", role: "admin" },
   { id: "2", name: "Alice", email: "alice@example.com", password: "password", role: "user" },
@@ -54,7 +55,8 @@ export async function login(email: string, password: string): Promise<User | und
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user));
   } catch {
-    // 保存に失敗してもメモリー上のログインは継続しません。未ログインとして扱います。
+    // 保存に失敗してもメモリー上のログインは継続しません。
+    // 未ログインとして扱います。
     return undefined;
   }
   return user;

@@ -30,12 +30,12 @@ const HistoryEntryUrlSchema = () =>
   );
 
 /**
- * `HistoryEntryUrlSchema` による検証と変換を行う前の、入力値に対応する型定義です。
+ * `HistoryEntryUrlSchema` による検証と変換を行う前の入力値です。
  */
 export type HistoryEntryUrlLike = v.InferInput<ReturnType<typeof HistoryEntryUrlSchema>>;
 
 /**
- * `HistoryEntryUrlSchema` による検証、並び替え、および変換が正常に完了した、安全な出力値の型定義です。
+ * `HistoryEntryUrlSchema` による検証、並び替え、および変換が正常に完了した、安全な出力値です。
  */
 export type HistoryEntryUrl = v.InferOutput<ReturnType<typeof HistoryEntryUrlSchema>>;
 

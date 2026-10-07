@@ -123,7 +123,8 @@ export default class NavigationApiEngine implements IEngine {
    * 現在のページ URL に基づき、ルーターの初期状態を構築し、登録します。
    *
    * @param args ルート定義配列、共通データストア、初期化用のアボートシグナルを含むオブジェクトです。
-   * @returns 構築された初期の `RouterState` です。適合するルートがないか、履歴がない場合は `null` を返します。
+   * @returns 構築された初期の `RouterState` です。
+   * 適合するルートがないか、履歴がない場合は `null` を返します。
    */
   init(args: IEngine.InitArgs): IEngine.InitReturn {
     const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
@@ -397,7 +398,8 @@ export default class NavigationApiEngine implements IEngine {
             },
           );
 
-          // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
+          // 最新の確定状態を UI に通知して画面を再描画します。
+          // ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
           log.debug("アクション後の画面を確定しました（url: {url}, 一致数: {matchedCount}）", {
             url: currentEntry.url.href,
             matchedCount: currentRoutes.length,
@@ -407,7 +409,8 @@ export default class NavigationApiEngine implements IEngine {
             routes: currentRoutes,
           });
 
-          // 全ローダーの完了を待機します。ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
+          // 全ローダーの完了を待機します。
+          // ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
           const { redirectTo } = (await startedLoaders?.idle()) ?? {
             redirectTo: undefined,
           };
@@ -463,7 +466,8 @@ export default class NavigationApiEngine implements IEngine {
             loaderDataStore,
           });
 
-          // 最新の確定状態を UI に通知して画面を再描画します。ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
+          // 最新の確定状態を UI に通知して画面を再描画します。
+          // ローダーの結果の中には実行中のものもありますが、それらの待機や描画は各コンポーネントに任せます。
           log.debug("画面遷移を確定しました（from: {from} -> to: {to}, 一致数: {matchedCount}）", {
             from: prevEntry.url.href,
             to: currentEntry.url.href,
@@ -474,7 +478,8 @@ export default class NavigationApiEngine implements IEngine {
             routes: currentRoutes,
           });
 
-          // 全ローダーの完了を待機します。ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
+          // 全ローダーの完了を待機します。
+          // ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
           const { redirectTo } = (await startedLoaders?.idle()) ?? {
             redirectTo: undefined,
           };

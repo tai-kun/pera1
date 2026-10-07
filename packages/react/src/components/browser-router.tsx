@@ -6,7 +6,7 @@ import type { ScrollRestorationOption } from "../hooks/use-scroll-restoration.js
 import Router, { type RouterRouteDefinition } from "./router.jsx";
 
 /**
- * `BrowserRouter` コンポーネントに引き渡すプロパティーの型定義です。
+ * `BrowserRouter` コンポーネントに渡すプロパティーです。
  */
 export type BrowserRouterProps = {
   /**
@@ -17,8 +17,7 @@ export type BrowserRouterProps = {
   /**
    * どのルートにもマッチしなかったときに描画されるフォールバックコンポーネントです (006)。
    *
-   * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、
-   * 本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
+   * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
    * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
    */
   notFoundComponent?: React.ComponentType<{}> | undefined;

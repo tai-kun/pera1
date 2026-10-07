@@ -1,5 +1,5 @@
 /**
- * 個別のパスパラメーターを解析し、適切なプロパティーの型オブジェクトへ変換する内部ユーティリティー型です。
+ * 個別のパスパラメーターを解析し、適切なプロパティーのオブジェクトへ変換する内部ユーティリティーです。
  *
  * パラメーターの末尾の形状を条件付き型により詳細に選別します。
  *
@@ -7,7 +7,7 @@
  */
 // oxfmt-ignore
 type ParamRecord<Param extends string> =
-  // パラメーター末尾に「?」がある場合、オプショナルなプロパティー型に変換します
+  // パラメーター末尾に「?」がある場合、オプショナルなプロパティー型に変換します。
     Param extends `${infer Name}?`
     ? { [K in Name]?: string }
 
@@ -19,13 +19,13 @@ type ParamRecord<Param extends string> =
   : { [K in Param]: string };
 
 /**
- * パス文字列のセグメントから動的なパラメーターやワイルドカードを再帰的に抽出し、型安全なオブジェクト構造を構築するユーティリティー型です。
+ * パス文字列のセグメントから動的なパラメーターやワイルドカードを再帰的に抽出し、型安全なオブジェクト構造を構築するユーティリティーです。
  *
- * 開発者が指定した文字列リテラル型の形状に基づいて、ルーティングに必要なパラメーターの型を静的に決定します。
+ * 開発者が指定した文字列リテラルの形状に基づいて、ルーティングに必要なパラメーターを静的に決定します。
  *
- * このユーティリティー型は、ライブラリー `regexparam` の改良版です。
+ * このユーティリティーは、ライブラリー `regexparam` の改良版です。
  *
- * @template T 解析対象となる URL パス全体の文字列リテラル型です。
+ * @template T 解析対象となる URL パス全体の文字列リテラルです。
  * @see https://github.com/lukeed/regexparam
  * @see https://github.com/lukeed/regexparam/issues/31
  * @see https://github.com/lukeed/regexparam/pull/33
@@ -42,7 +42,7 @@ export type RouteParams<T extends string> =
       & { wild: string }
       & RouteParams<`/${Rest}`>
 
-  // パスの先頭がコロンで開始されている場合、先頭にスラッシュ（/）を補正して再帰的に再評価します。
+  // パスの先頭がコロンで開始されている場合、先頭にスラッシュ (`/`) を補正して再帰的に再評価します。
   : T extends `:${infer Rest}`
     ? RouteParams<`/:${Rest}`>
 

@@ -35,8 +35,7 @@ describe("コンストラクタの分岐", () => {
   test("window アクセスで例外が出てもエラーを投げる", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
-    // bare `navigation` の評価で例外が出るようグローバルを削除し、
-    // window.navigation の取得でも例外が出るよう getter を仕掛ける
+    // bare `navigation` の評価で例外が出るようグローバルを削除し、`window.navigation` の取得でも例外が出るよう getter を仕掛けます。
     const origWindowDesc = Object.getOwnPropertyDescriptor(window, "navigation");
     const origGlobalDesc = Object.getOwnPropertyDescriptor(globalThis, "navigation");
     try {
@@ -527,15 +526,14 @@ describe("start の GET 遷移（formData なし）", () => {
         captured = args;
       },
     });
-    // currentEntry は "/" のままなので destUrl（/other）と不一致 -> ガードで return
-    // 実際は currentEntry.url が destUrl と一致しないケースを作るため、
-    // navigation.currentEntry を書き換えず destination だけ /other にしているが、
-    // handleNavigate 内の prevEntry は "/"、dest は "/other" で一致チェックは handler 内で
-    // currentEntry.url.href !== destUrl.href となる。currentEntry は "/" のままなので不一致になる。
-    // そのため update は呼ばれないはず。ただし destRoutes は /other で存在する。
-    // ここでは currentEntry を "/" に保つことで不一致を再現するが、
-    // 実装は handler 内で this.navigation.currentEntry を再取得するため、
-    // currentEntry が "/" のままなら destUrl（/other）と不一致で return する。
+    // `currentEntry` は `"/"` のままなので `destUrl`（`/other`）と不一致であり、ガードで `return` します。
+    // 実際は `currentEntry.url` が `destUrl` と一致しないケースを作るため、`navigation.currentEntry` を書き換えず `destination` だけ `/other` にしています。
+    // `handleNavigate` 内の `prevEntry` は `"/"`、`dest` は `"/other"` であり、一致チェックは `handler` 内で `currentEntry.url.href !== destUrl.href` となります。
+    // `currentEntry` は `"/"` のままなので不一致になります。
+    // そのため `update` は呼ばれないはずです。
+    // ただし `destRoutes` は `/other` で存在します。
+    // ここでは `currentEntry` を `"/"` に保つことで不一致を再現します。
+    // 実装は `handler` 内で `this.navigation.currentEntry` を再取得するため、`currentEntry` が `"/"` のままなら `destUrl`（`/other`）と不一致で `return` します。
     await captured.handler();
 
     // 検証

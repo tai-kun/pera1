@@ -104,9 +104,8 @@ function serializeNodes(
 /**
  * ルートノードを、コード上のオブジェクトリテラルへ変換します。
  *
- * ページモジュールの名前空間を展開したうえで、ファイル構成から決まる `path`、`index`、`children` で
- * 上書きします。名前空間の展開では `Symbol.toStringTag` が失われるため、`default` エクスポートの
- * 解決は `processRoutes` 側の判定に委ねます。
+ * ページモジュールの名前空間を展開したうえで、ファイル構成から決まる `path`、`index`、`children` で上書きします。
+ * 名前空間の展開では `Symbol.toStringTag` が失われるため、`default` エクスポートの解決は `processRoutes` 側の判定に委ねます。
  *
  * @param node 変換する対象のルートノードです。
  * @param context 生成中の状態です。

@@ -14,20 +14,20 @@ import useRouterContext from "./use-router-context.js";
 type ActionResult<TResult> = Awaited<TResult extends RedirectResponse ? undefined : TResult>;
 
 /**
- * アクション関数またはデータ型から、最終的に解決されるデータの型を抽出するユーティリティー型です。
+ * アクション関数またはデータ型から、最終的に解決されるデータを抽出するユーティリティー型です。
  *
- * @template TData アクション関数、または解決されるデータの型です。
+ * @template TData アクション関数、または解決されるデータです。
  */
 export type FulfilledActionData<TData = unknown> = ActionResult<
   TData extends (...args: any) => infer TReturn ? TReturn : TData
 >;
 
 /**
- * {@link useActionData|`useActionData`} カスタムフックが返すオブジェクトの型定義です。
+ * {@link useActionData|`useActionData`} カスタムフックが返すオブジェクトです。
  *
- * 非同期処理の進行状況を管理する `NinjaPromise` でラップされた、解決済みのデータ型を表します。
+ * 非同期処理の進行状況を管理する `NinjaPromise` でラップされた、解決済みのデータを表します。
  *
- * @template TData アクション関数、またはアクションが返すデータの型定義です。
+ * @template TData アクション関数、またはアクションが返すデータです。
  */
 export type ActionData<TData = unknown> = NinjaPromise<FulfilledActionData<TData>>;
 
@@ -36,7 +36,8 @@ export type ActionData<TData = unknown> = NinjaPromise<FulfilledActionData<TData
  *
  * データの選択ロジック自体は `@pera1/core` の `selectActionData` に委譲しており、Solid.js 版とも共有されます。
  *
- * @template TData アクション関数そのものの型、またはアクションが返すことが期待されるデータ構造の型定義です。関数型が渡された場合は、自動的にその非同期戻り値の型が推論されます。
+ * @template TData アクション関数そのもの、またはアクションが返すことが期待されるデータ構造です。
+ * 関数型が渡された場合は、自動的にその非同期戻り値が推論されます。
  * @returns アクションが実行済み、または実行中であれば結果を内包した `NinjaPromise` を返し、一度も実行されていないか対象のアクションが存在しない場合は `undefined` を返します。
  */
 export default function useActionData<TData = unknown>(): ActionData<TData> | undefined {

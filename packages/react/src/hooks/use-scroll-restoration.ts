@@ -3,8 +3,7 @@ import * as React from "react";
 import useRouterContext from "./use-router-context.js";
 
 /**
- * `Router` / `BrowserRouter` の `scrollRestoration` プロパティーと
- * {@link useScrollRestoration|`useScrollRestoration`} フックで受け付ける値の型定義です。
+ * `Router` / `BrowserRouter` の `scrollRestoration` プロパティーと {@link useScrollRestoration|`useScrollRestoration`} フックで受け付ける値です。
  *
  * - `false` / `undefined`: 何もしません (既定のブラウザー任せ)。
  * - `true`: 遷移後に先頭へスクロールします (`behavior: "auto"`)。
@@ -15,16 +14,14 @@ export type ScrollRestorationOption = boolean | ScrollBehavior;
 /**
  * 遷移後のスクロールをオプトインで先頭へ戻すためのカスタムフックです。
  *
- * 既定はブラウザー任せ (何もしない) です。有効化すると、履歴エントリー ID の変化
- * (実質的なページ遷移) のたびに `window.scrollTo({ top: 0, left: 0 })` を実行します。
- * `NavigationApiEngine` は `intercept()` に `scroll` / `focusReset` 指定を渡さず、
- * ハッシュ変化・ダウンロード・リロードをスルーするため、有効化しない限り
- * スクロールとフォーカスはブラウザーの標準動作のままです。
+ * 既定はブラウザー任せ (何もしない) です。
+ * 有効化すると、履歴エントリー ID の変化 (実質的なページ遷移) のたびに `window.scrollTo({ top: 0, left: 0 })` を実行します。
+ * `NavigationApiEngine` は `intercept()` に `scroll` / `focusReset` 指定を渡さず、ハッシュ変化・ダウンロード・リロードをスルーするため、有効化しない限りスクロールとフォーカスはブラウザーの標準動作のままです。
  *
  * ハッシュ付き URL (`#section`) の遷移ではブラウザーに任せて何もしません。
- * 初回マウント時もディープリンクを壊さないよう何もしません。
- * 戻る・進むでの位置復元までは行いません。必要な場合は履歴ごとに位置を保存する
- * 自前の実装を検討してください。
+ * 初回マウントのときもディープリンクを壊さないよう何もしません。
+ * 戻る・進むでの位置復元までは行いません。
+ * 必要な場合は履歴ごとに位置を保存する自前の実装を検討してください。
  *
  * ```tsx
  * function App() {
@@ -33,13 +30,13 @@ export type ScrollRestorationOption = boolean | ScrollBehavior;
  * }
  * ```
  *
- * @param scrollRestoration 有効化フラグまたは `ScrollBehavior` です。省略・`false` では何もしません。
+ * @param scrollRestoration 有効化フラグまたは `ScrollBehavior` です。
+ * 省略・`false` では何もしません。
  */
 export default function useScrollRestoration(
   scrollRestoration?: ScrollRestorationOption | undefined,
 ): void {
-  // `useSyncExternalStore` の `getSnapshot` はキャッシュされた値を返す必要があるため、
-  // プリミティブな ID と href を別々に購読します (オブジェクト生成は無限ループの原因になります)。
+  // `useSyncExternalStore` の `getSnapshot` はキャッシュされた値を返す必要があるため、プリミティブな ID と href を別々に購読します (オブジェクト生成は無限ループの原因になります)。
   const entryId = useRouterContext(
     (router) =>
       (router as unknown as { currentEntry?: { id?: string } }).currentEntry?.id as
@@ -52,7 +49,7 @@ export default function useScrollRestoration(
         ?.href as string | undefined,
   );
 
-  // 初回マウント時はディープリンク (`#...` 付きでの直接表示) を壊さないよう何もしません。
+  // 初回マウントのときはディープリンク (`#...` 付きでの直接表示) を壊さないよう何もしません。
   const isFirstRender = React.useRef(true);
 
   React.useEffect(() => {

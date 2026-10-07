@@ -32,9 +32,9 @@ export default function BookingPage() {
   return (
     <section>
       <h3>予約概要</h3>
-      <p>予約ID: {booking.id}</p>
+      <p>予約 ID: {booking.id}</p>
       <p>
-        区間: {booking.from} → {booking.to} / {booking.date} / {booking.adults}名
+        区間: {booking.from} → {booking.to} / {booking.date} / {booking.adults} 名
       </p>
       <p>
         便: {booking.flight.airline} {booking.flight.id} ({booking.flight.depart} →{" "}

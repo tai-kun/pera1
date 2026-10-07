@@ -4,20 +4,20 @@ import type RoutePatternUtils from "./route-pattern-utils.js";
 import type { RouteGetRequest, RoutePostRequest } from "./route-request.js";
 
 /**
- * 文字列リテラルとして定義されたパスの形状から、含まれるパスパラメーターを解析し、静的に型付けされたオブジェクトとして抽出する型定義です。
+ * 文字列リテラルとして定義されたパスの形状から含まれるパスパラメーターを抽出したオブジェクトです。
  *
- * @template TRoutePattern パラメーター抽出の対象となるパス文字列リテラル型です。
+ * @template TRoutePattern パラメーター抽出の対象となるパス文字列リテラルです。
  */
 export type RouteParams<TRoutePattern extends string = string> = Readonly<
   $RouteParams<TRoutePattern>
 >;
 
 /**
- * データ更新などのアクション処理を実行する際に、該当する関数へ渡される引数の型定義です。
+ * データ更新などのアクション処理を実行する際に、該当する関数へ渡される引数です。
  *
  * 解析済みのパスパラメーターと、HTTP の POST メソッドを抽象化したリクエストオブジェクトを含みます。
  *
- * @template TRoutePattern 対象となるルートのパス文字列リテラル型です。
+ * @template TRoutePattern 対象となるルートのパス文字列リテラルです。
  */
 export type ActionFunctionArgs<TRoutePattern extends string = string> = {
   /**
@@ -32,21 +32,22 @@ export type ActionFunctionArgs<TRoutePattern extends string = string> = {
 };
 
 /**
- * データの登録、更新、削除といった副作用を伴うアクション処理を定義するための関数インターフェースです。
+ * データの登録、更新、削除といった副作用を伴うアクション処理を定義するための関数です。
  *
- * @template TRoutePattern 対象となるルートのパス文字列リテラル型です。
- * @template TData アクション関数が返す戻り値の型定義です。既定値は `unknown` です。
+ * @template TRoutePattern 対象となるルートのパス文字列リテラルです。
+ * @template TData アクション関数が返す戻り値です。
+ * 既定値は `unknown` です。
  */
 export interface ActionFunction<TRoutePattern extends string = string, TData = unknown> {
   (args: ActionFunctionArgs<TRoutePattern>): TData;
 }
 
 /**
- * ページ遷移やデータ更新が発生した際、現在の画面データを再読み込みすべきかどうかを判定する関数へ渡される引数の型定義です。
+ * ページ遷移やデータ更新が発生した際、現在の画面データを再読み込みすべきかどうかを判定する関数へ渡される引数です。
  *
  * アクションを実行した契機となる HTTP メソッドの種類（GET / POST）に応じて、含まれるコンテキスト情報が分岐します。
  *
- * @template TRoutePattern 対象となるルートのパス文字列リテラル型です。
+ * @template TRoutePattern 対象となるルートのパス文字列リテラルです。
  */
 export type ShouldReloadFunctionArgs<TRoutePattern extends string = string> =
   | {
@@ -127,9 +128,9 @@ export type ShouldReloadFunctionArgs<TRoutePattern extends string = string> =
     };
 
 /**
- * ルートデータの再読み込みが不必要な場合に、余分な通信や再取得処理を抑制するための判定関数インターフェースです。
+ * ルートデータの再読み込みが不必要な場合に、余分な通信や再取得処理を抑制するための判定関数です。
  *
- * @template TRoutePattern 対象となるルートのパス文字列リテラル型です。
+ * @template TRoutePattern 対象となるルートのパス文字列リテラルです。
  * @returns データを再読み込みする場合は `true`、スキップする場合は `false` を返します。
  */
 export interface ShouldReloadFunction<TRoutePattern extends string = string> {
@@ -137,11 +138,11 @@ export interface ShouldReloadFunction<TRoutePattern extends string = string> {
 }
 
 /**
- * 画面の描画に必要なデータを取得する際に、該当する関数へ渡される引数の型定義です。
+ * 画面の描画に必要なデータを取得する際に、該当する関数へ渡される引数です。
  *
  * 解析済みのパスパラメーターと、HTTP の GET メソッドを抽象化したリクエストオブジェクトを含みます。
  *
- * @template TRoutePattern 対象となるルートのパス文字列リテラル型です。
+ * @template TRoutePattern 対象となるルートのパス文字列リテラルです。
  */
 export type LoaderFunctionArgs<TRoutePattern extends string = string> = {
   /**
@@ -156,37 +157,39 @@ export type LoaderFunctionArgs<TRoutePattern extends string = string> = {
 };
 
 /**
- * 画面の初期描画時や遷移時にデータをオンデマンドで取得するための関数インターフェースです。
+ * 画面の初期描画時や遷移時にデータをオンデマンドで取得するための関数です。
  *
- * @template TRoutePattern 対象となるルートのパス文字列リテラル型です。
- * @template TData ローダー関数が返す戻り値の型定義です。既定値は `unknown` です。
+ * @template TRoutePattern 対象となるルートのパス文字列リテラルです。
+ * @template TData ローダー関数が返す戻り値です。
+ * 既定値は `unknown` です。
  */
 export interface LoaderFunction<TRoutePattern extends string = string, TData = unknown> {
   (args: LoaderFunctionArgs<TRoutePattern>): TData;
 }
 
 /**
- * アプリケーションのルーティング設定を定義するためのオブジェクトの型定義です。
+ * アプリケーションのルーティング設定を定義するためのオブジェクトです。
  *
  * 開発者が宣言的にルーティングのツリーやリストを記述する際に使用します。
  *
- * @template TPath ルートに関連付けるパス文字列リテラル型です。
- * @template TComponent ルートに対応して描画されるコンポーネントの型です。React なら `React.ComponentType`、Solid.js なら Solid のコンポーネント型などを指定します。
+ * @template TPath ルートに関連付けるパス文字列リテラルです。
+ * @template TComponent ルートに対応して描画されるコンポーネントです。
+ * React なら `React.ComponentType`、Solid.js なら Solid のコンポーネント型などを指定します。
  */
 export type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
   /**
    * マッチングの対象となる URL パスのパターン文字列です。
    *
-   * トップレベルの定義では必須です。`children` 内では省略可能で、
-   * 省略時（または空文字時）は親のパスを継承します。
+   * トップレベルの定義では必須です。
+   * `children` 内では省略可能で、省略時 (または空文字時) は親のパスを継承します。
    * `index: true` の子で省略した場合は親と同一パスになります。
    * 子の `path` が `"/"` 始まりなら絶対パス、それ以外は親パスとの相対結合になります。
    */
   readonly path?: TPath | undefined;
 
   /**
-    * 親ルートのパスにおいて、インデックスルートとして機能させるかどうかのフラグです。
-    */
+   * 親ルートのパスにおいて、インデックスルートとして機能させるかどうかのフラグです。
+   */
   readonly index?: boolean | undefined;
 
   /**
@@ -215,22 +218,22 @@ export type RouteDefinitionObject<TPath extends string = string, TComponent = an
    * 明示的な親子関係を宣言するための子ルート定義の配列です (React Router 互換形状)。
    *
    * `processRoutes` がフラット化の際に親パスと結合します。
-   * 既存の flat 配列（`children` なし）は従来通り動作します。
+   * 既存の flat 配列 (`children` なし) は従来通り動作します。
    */
   readonly children?: readonly RouteDefinition<string, TComponent>[] | undefined;
 };
 /**
- * ルーティング設定をインポート経由で定義するための構造体型定義です。
+ * ルーティング設定をインポート経由で定義するための構造体です。
  *
- * @template TPath ルートに関連付けるパス文字列リテラル型です。
- * @template TComponent 描画対象となるコンポーネントの型です。
+ * @template TPath ルートに関連付けるパス文字列リテラルです。
+ * @template TComponent 描画対象となるコンポーネントです。
  */
 export type RouteDefinitionModule<TPath extends string = string, TComponent = any> = {
   /**
    * マッチングの対象となる URL パスのパターン文字列です。
    *
-   * トップレベルの定義では必須です。`children` 内では省略可能で、
-   * 省略時（または空文字時）は親のパスを継承します。
+   * トップレベルの定義では必須です。
+   * `children` 内では省略可能で、省略時 (または空文字時) は親のパスを継承します。
    */
   readonly path?: TPath | undefined;
 
@@ -279,27 +282,27 @@ export type RouteDefinitionModule<TPath extends string = string, TComponent = an
    * 明示的な親子関係を宣言するための子ルート定義の配列です (React Router 互換形状)。
    *
    * `processRoutes` がフラット化の際に親パスと結合します。
-   * 既存の flat 配列（`children` なし）は従来通り動作します。
+   * 既存の flat 配列 (`children` なし) は従来通り動作します。
    */
   readonly children?: readonly RouteDefinition<string, TComponent>[] | undefined;
 };
 
 /**
- * アプリケーションのルーティング設定を定義するためのオブジェクトの型定義です。
+ * アプリケーションのルーティング設定を定義するためのオブジェクトです。
  *
- * @template TPath ルートに関連付けるパス文字列リテラル型です。
- * @template TComponent 描画対象となるコンポーネントの型です。
+ * @template TPath ルートに関連付けるパス文字列リテラルです。
+ * @template TComponent 描画対象となるコンポーネントです。
  */
 export type RouteDefinition<TPath extends string = string, TComponent = any> =
   | RouteDefinitionObject<TPath, TComponent>
   | RouteDefinitionModule<TPath, TComponent>;
 
 /**
- * `RouteDefinition` を基にシステム内部で解析、コンパイルされ、ルーティングエンジンが直接処理を行うための実体化されたルートオブジェクトの型定義です。
+ * `RouteDefinition` を基にシステム内部で解析、コンパイルされ、ルーティングエンジンが直接処理を行うための実体化されたルートオブジェクトです。
  *
  * 省略可能だったプロパティーが正規化され、正規表現によるマッチング機構が追加されています。
  *
- * @template TComponent 表示対象となるコンポーネントの型です。
+ * @template TComponent 表示対象となるコンポーネントです。
  */
 export type Route<TComponent = any> = {
   /**
@@ -318,22 +321,26 @@ export type Route<TComponent = any> = {
   readonly utils: RoutePatternUtils;
 
   /**
-   * データ更新用のアクション関数です。未定義の場合は `undefined` となります。
+   * データ更新用のアクション関数です。
+   * 未定義の場合は `undefined` となります。
    */
   readonly action: ActionFunction | undefined;
 
   /**
-   * データの再読み込み動作を制御する確定的な判定関数です。定義がない場合はシステム既定の挙動を行う関数が割り当てられます。
+   * データの再読み込み動作を制御する確定的な判定関数です。
+   * 定義がない場合はシステム既定の挙動を行う関数が割り当てられます。
    */
   readonly shouldReload: ShouldReloadFunction;
 
   /**
-   * 画面描画に必要なデータを取得する関数です。未定義の場合は `undefined` となります。
+   * 画面描画に必要なデータを取得する関数です。
+   * 未定義の場合は `undefined` となります。
    */
   readonly loader: LoaderFunction | undefined;
 
   /**
-   * 表示対象となるコンポーネントです。未定義の場合は `undefined` となります。
+   * 表示対象となるコンポーネントです。
+   * 未定義の場合は `undefined` となります。
    */
   readonly component: TComponent | undefined;
 };

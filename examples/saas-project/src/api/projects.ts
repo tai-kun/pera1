@@ -7,7 +7,7 @@ export type Project = {
 const initialProjects: readonly Project[] = [
   { id: "apollo", name: "Apollo", description: "月面着陸を目指す旗艦プロジェクトです。" },
   { id: "zephyr", name: "Zephyr", description: "軽量な風のように速い Web 体験を届けます。" },
-  { id: "orion", name: "Orion", description: "夜空を観測するコミュニティ基盤を育てます。" },
+  { id: "orion", name: "Orion", description: "夜空を観測するコミュニティー基盤を育てます。" },
 ];
 
 const STORAGE_KEY = "pera1-saas-project:custom-projects";

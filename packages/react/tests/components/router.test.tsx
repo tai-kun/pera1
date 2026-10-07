@@ -155,8 +155,7 @@ describe("Router", () => {
   test("マッチがあるとき通常マッチが notFoundComponent より優先される (006)", async ({
     expect,
   }) => {
-    // 準備: 明示的な `/*` 定義は通常マッチとして routes に含まれるため、
-    // notFoundComponent があっても使われないことを、一致ありの状態で確認する。
+    // 準備: 明示的な `/*` 定義は通常マッチとして routes に含まれるため、notFoundComponent があっても使われないことを、一致ありの状態で確認します。
     await using cleanup = new AsyncDisposableStack();
 
     function Comp() {

@@ -24,12 +24,14 @@ export type GenerateTypesArgs = {
   readonly typesDir: string;
 
   /**
-   * ルートとして扱うファイルの glob パターンです。ページディレクトリーからの相対パスで指定します。
+   * ルートとして扱うファイルの glob パターンです。
+   * ページディレクトリーからの相対パスで指定します。
    */
   readonly include: readonly string[];
 
   /**
-   * ルートから除外するファイルの glob パターンです。ページディレクトリーからの相対パスで指定します。
+   * ルートから除外するファイルの glob パターンです。
+   * ページディレクトリーからの相対パスで指定します。
    */
   readonly exclude: readonly string[];
 };
@@ -57,8 +59,7 @@ export type GenerateTypesResult = {
 /**
  * ルート型を格納するディレクトリー名です。
  *
- * TypeScript の `rootDirs` は、ルートファイルからの `./+types/...` という相対インポートを
- * 型ディレクトリー内の同じ位置へ解決するために使われます。
+ * TypeScript の `rootDirs` は、ルートファイルからの `./+types/...` という相対インポートを型ディレクトリー内の同じ位置へ解決するために使われます。
  */
 const typesDirectoryName = "+types";
 
@@ -73,7 +74,8 @@ const typeFileExtension = ".d.ts";
 const gitIgnoreFileName = ".gitignore";
 
 /**
- * `.gitignore` の内容です。ディレクトリー配下のすべてを無視します。
+ * `.gitignore` の内容です。
+ * ディレクトリー配下のすべてを無視します。
  */
 const gitIgnoreContent = "*\n";
 
@@ -81,8 +83,8 @@ const gitIgnoreContent = "*\n";
  * `.gitignore` を出力するディレクトリーを決めます。
  *
  * 既定では型ディレクトリーの親（`.pera1/types` なら `.pera1`）に出力し、生成物全体を無視します。
- * 親がプロジェクトルートと一致する場合や、プロジェクトの外にある場合、ファイルシステムのルートに
- * なる場合は、型ディレクトリー自身に出力します。プロジェクトルートが対象になる場合は `undefined` を返します。
+ * 親がプロジェクトルートと一致する場合や、プロジェクトの外にある場合、ファイルシステムのルートになる場合は、型ディレクトリー自身に出力します。
+ * プロジェクトルートが対象になる場合は `undefined` を返します。
  *
  * @param root プロジェクトルートの絶対パスです。
  * @param typesDirectory 型ディレクトリーの絶対パスです。
@@ -155,8 +157,7 @@ function collectRoutePaths(
 /**
  * ページモジュールに対応する型ファイルの絶対パスを計算します。
  *
- * 型ファイルは、プロジェクトルートからのページモジュールの相対パスを型ディレクトリー内に再現し、
- * その隣に `+types` ディレクトリーを作って配置します。
+ * 型ファイルは、プロジェクトルートからのページモジュールの相対パスを型ディレクトリー内に再現し、その隣に `+types` ディレクトリーを作って配置します。
  *
  * @param root プロジェクトルートの絶対パスです。
  * @param typesDirectory 型ディレクトリーの絶対パスです。
@@ -186,11 +187,11 @@ function toTypeFilePath(
 }
 
 /**
- * ルートファイルが import する型定義の内容を生成します。
+ * ルートファイルが import する型の内容を生成します。
  *
  * @param sourcePath プロジェクトルートからのルートファイルの相対パスです。
  * @param routePath ルートのパスパターンです。
- * @returns 型定義ファイルの内容です。
+ * @returns 型ファイルの内容です。
  */
 function generateTypeFileContent(sourcePath: string, routePath: string): string {
   return [
@@ -303,11 +304,10 @@ function removeEmptyDirectories(directory: string): boolean {
 /**
  * ファイル構成からルート型を生成し、型ディレクトリーを同期します。
  *
- * 生成するのは `Route` 名前空間を持つ `.d.ts` ファイルです。内容が変わっていないファイルは
- * 書き換えず、ルートファイルがなくなった型ファイルは削除します。
+ * 生成するのは `Route` 名前空間を持つ `.d.ts` ファイルです。
+ * 内容が変わっていないファイルは書き換えず、ルートファイルがなくなった型ファイルは削除します。
  *
- * あわせて、生成物が git に追跡されないよう、生成ディレクトリー（既定では `.pera1`）に
- * `*` だけを書いた `.gitignore` を出力します。
+ * あわせて、生成物が git に追跡されないよう、生成ディレクトリー（既定では `.pera1`）に `*` だけを書いた `.gitignore` を出力します。
  *
  * @param args 生成に必要な設定です。
  * @returns 生成および削除したファイルと警告の一覧です。
@@ -342,7 +342,8 @@ export default function generateTypes(args: GenerateTypesArgs): GenerateTypesRes
       ? fs.readFileSync(typeFilePath, "utf8")
       : undefined;
 
-    // 内容が同じなら書き換えません。開発サーバーのファイル監視を不要に反応させないためです。
+    // 内容が同じなら書き換えません。
+    // 開発サーバーのファイル監視を不要に反応させないためです。
     if (existing === content) {
       continue;
     }

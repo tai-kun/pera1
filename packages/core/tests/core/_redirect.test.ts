@@ -270,7 +270,7 @@ describe("startLoaders との統合", () => {
     const prevEntry = entry("entry-1", "/app");
     const currentEntry = entry("entry-2", "/app/dashboard");
 
-    // 実行1: 裸パスへの遷移でリダイレクトが発生する
+    // 実行 1: 裸パスへの遷移でリダイレクトが発生する
     const first = startLoaders({
       prevRoutes: [],
       currentRoutes: matchRoutes(routes, prevEntry.url)! as any,
@@ -282,7 +282,7 @@ describe("startLoaders との統合", () => {
     const { redirectTo: firstRedirect } = await first.idle();
     expect(firstRedirect).toBeInstanceOf(RedirectResponse);
 
-    // 実行2: 子への遷移では再実行しリダイレクトしない
+    // 実行 2: 子への遷移では再実行しリダイレクトしない
     const second = startLoaders({
       prevRoutes: matchRoutes(routes, prevEntry.url)! as any,
       currentRoutes: matchRoutes(routes, currentEntry.url)! as any,

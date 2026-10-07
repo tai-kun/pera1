@@ -6,8 +6,8 @@ import { BASE_URL } from "./_server.js";
 /**
  * AI エージェントのような待機なし高速操作でも連絡先の作成・遷移が壊れないことを検証します。
  */
-describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
-  test("ノーウェイト連続遷移でも最終URLと表示が一致する", async ({ expect, page }) => {
+describe("連絡先帳 / AI エージェント高速操作ストレス", () => {
+  test("ノーウェイト連続遷移でも最終 URL と表示が一致する", async ({ expect, page }) => {
     // 準備と実行: commit 時点で次へ進む高速発行
     for (const target of ["/contacts", "/contacts/1", "/contacts/2", "/contacts", "/contacts/1"]) {
       await page.goto(`${BASE_URL}${target}`, { waitUntil: "commit" });
@@ -21,7 +21,7 @@ describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => email.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("存在しないIDへの高速往復でも一覧に戻れる", async ({ expect, page }) => {
+  test("存在しない ID への高速往復でも一覧に戻れる", async ({ expect, page }) => {
     // 実行: 存在/非存在を高速で行き来する (loader エラーパスの割り込み耐性)
     await page.goto(`${BASE_URL}/contacts/1`, { waitUntil: "commit" });
     await page.goto(`${BASE_URL}/contacts/no-such-id-rapid`, { waitUntil: "commit" });
@@ -58,7 +58,7 @@ describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => email.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("空名前の高速連打でもURLが変わらずエラーを維持する", async ({ expect, page }) => {
+  test("空名前の高速連打でも URL が変わらずエラーを維持する", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/contacts`);
     const button = page.getByRole("button", { name: "追加" });
@@ -91,7 +91,7 @@ describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
     expect(["/contacts", "/contacts/1"]).toContain(new URL(page.url()).pathname);
   });
 
-  test("Back/Forwardとリロードの複合ラッシュでも壊れない", async ({ expect, page }) => {
+  test("Back/Forward とリロードの複合ラッシュでも壊れない", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/`);
     await page.goto(`${BASE_URL}/contacts`);
@@ -110,7 +110,7 @@ describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("0ms間隔タイピングで連絡先を追加できる", async ({ expect, page }) => {
+  test("0ms 間隔タイピングで連絡先を追加できる", async ({ expect, page }) => {
     // 準備
     await page.goto(`${BASE_URL}/contacts`);
     const nameInput = page.getByLabel("名前");
@@ -130,7 +130,7 @@ describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("不正URLラッシュでもクラッシュしない", async ({ expect, page }) => {
+  test("不正 URL ラッシュでもクラッシュしない", async ({ expect, page }) => {
     // 準備
     const pageErrors: string[] = [];
     page.on("pageerror", (error) => {
@@ -158,7 +158,7 @@ describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
     expect(pageErrors).toStrictEqual([]);
   });
 
-  test("2タブで別詳細を同時展開しても混線しない", async ({ expect, page }) => {
+  test("2 タブで別詳細を同時展開しても混線しない", async ({ expect, page }) => {
     // 準備
     const secondPage = await page.context().newPage();
     try {
@@ -178,7 +178,7 @@ describe("連絡先帳 / AIエージェント高速操作ストレス", () => {
     }
   });
 
-  test("高速操作ラッシュ中にpageerrorとconsole errorが出ない", async ({
+  test("高速操作ラッシュ中に pageerror と console error が出ない", async ({
     expect,
     page,
   }) => {

@@ -13,7 +13,7 @@ const products = new Map<string, Product>([
   ["p4", { id: "p4", name: "Wireless Mouse", price: 4500, category: "electronics", description: "静音ワイヤレスマウスです。" }],
   ["p5", { id: "p5", name: "USB-C Hub", price: 6800, category: "electronics", description: "7-in-1 USB-C ハブです。" }],
   ["p6", { id: "p6", name: "Mechanical Keyboard", price: 12800, category: "electronics", description: "打鍵感の良いメカニカルキーボードです。" }],
-  ["p7", { id: "p7", name: "Cotton T-Shirt", price: 1980, category: "clothing", description: "綿100% の T シャツです。" }],
+  ["p7", { id: "p7", name: "Cotton T-Shirt", price: 1980, category: "clothing", description: "綿 100% の T シャツです。" }],
   ["p8", { id: "p8", name: "Denim Jacket", price: 8900, category: "clothing", description: "定番デニムジャケットです。" }],
   ["p9", { id: "p9", name: "Running Shoes", price: 11000, category: "clothing", description: "軽量ランニングシューズです。" }],
   ["p10", { id: "p10", name: "Notebook Pro", price: 2400, category: "books", description: "方眼ノートのプロ仕様です。" }],

@@ -19,7 +19,7 @@ import useScrollRestoration, {
 } from "../hooks/use-scroll-restoration.js";
 
 /**
- * `ComponentRenderer` コンポーネントに渡されるプロパティーの型定義です。
+ * `ComponentRenderer` コンポーネントに渡すプロパティーです。
  */
 type ComponentRendererProps = {
   /**
@@ -54,7 +54,7 @@ function ComponentRenderer(props: ComponentRendererProps): React.JSX.Element | n
 }
 
 /**
- * `RouteRenderer` コンポーネントに渡されるプロパティーの型定義です。
+ * `RouteRenderer` コンポーネントに渡すプロパティーです。
  */
 type RouteRendererProps = {
   /**
@@ -97,7 +97,7 @@ export type RouterRouteDefinitionModule = RouteDefinitionModule<string, React.Co
 export type RouterRouteDefinition = RouterRouteDefinitionObject | RouterRouteDefinitionModule;
 
 /**
- * `Router` コンポーネントのプロパティーの型定義です。
+ * `Router` コンポーネントに渡すプロパティーです。
  */
 export type RouterProps = {
   /**
@@ -113,8 +113,7 @@ export type RouterProps = {
   /**
    * どのルートにもマッチしなかったときに描画されるフォールバックコンポーネントです (006)。
    *
-   * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、
-   * 本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
+   * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
    * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
    */
   notFoundComponent?: React.ComponentType<{}> | undefined;
@@ -175,7 +174,7 @@ export default function Router(props: RouterProps) {
     readonly getRoutes: () => readonly MatchedRoute<React.ComponentType<{}>>[] | undefined;
     readonly getSnapshot: () => RouterSnapshot;
   }>(() => {
-    log.debug("Routerコントローラーを作成します（定義数: {count}）", {
+    log.debug("Router コントローラーを作成します（定義数: {count}）", {
       count: routesProp.length,
     });
     const controller = createRouter<React.ComponentType<{}>>({
@@ -194,14 +193,12 @@ export default function Router(props: RouterProps) {
     };
   }, [engine, routesProp]);
 
-  // `getSnapshot()` の返すオブジェクトは同一参照ですが、内部の `currentEntry` は
-  // 遷移のたびにコントローラー側で差し替えられます。一度だけ写し取ると
-  // `useLoaderData` などが古いエントリーを参照し続けてしまうため、
-  // レンダリングのたびに最新のスナップショットへ載せ替えます。
+  // `getSnapshot()` の返すオブジェクトは同一参照ですが、内部の `currentEntry` は遷移のたびにコントローラー側で差し替えられます。
+  // 一度だけ写し取ると `useLoaderData` などが古いエントリーを参照し続けてしまうため、レンダリングのたびに最新のスナップショットへ載せ替えます。
   // 同一参照の代入であり冪等なので、並行レンダリングでも安全です。
   routerRef.current = router.getSnapshot();
 
-  // コンポーネントのマウントしたときにルーターエンジンを始動させ、アンマウントするときには自動的に破棄処理と連動させます。
+  // コンポーネントをマウントしたときにルーターエンジンを始動させ、アンマウントするときには自動的に破棄処理と連動させます。
   React.useEffect(() => {
     log.debug("エンジンの監視を開始します");
     const stop = router.start();
@@ -215,8 +212,7 @@ export default function Router(props: RouterProps) {
   const routes = React.useSyncExternalStore(router.context.subscribe, router.getRoutes);
 
   // 有効なルートマッチングがない場合は 404 フォールバックを描画します。
-  // 明示的な `/*` 定義は通常のマッチとして上記 `routes` に含まれるため、
-  // ここに来るのは真の未マッチ (engine の `update(null)` / `init() === null`) のみです。
+  // 明示的な `/*` 定義は通常のマッチとして上記 `routes` に含まれるため、ここに来るのは真の未マッチ (engine の `update(null)` / `init() === null`) のみです。
   if (!routes) {
     if (NotFound) {
       log.debug("一致するルートがないため notFoundComponent を描画します");

@@ -34,7 +34,7 @@ type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
 };
 ```
 
-| プロパティ | 型 | 必須 | 説明 |
+| プロパティー | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `path` | `TPath` | トップレベルでははい、`children` 内ではいいえ | マッチングの対象となるパスパターンです。子で省略時は親パスを継承します。`"/"` 始まりは絶対パス、それ以外は親との相対結合です。 |
 | `index` | `boolean` | いいえ | 親パスに完全一致したときだけ使うインデックスルートにします。 |
@@ -72,7 +72,7 @@ type RouteDefinition<TPath extends string = string, TComponent = any> =
 
 正規化を終えたルートが `Route` です。`createRouter` が定義を変換するときに作り、`matchRoutes` やエンジンが受け取ります。省略可能だったプロパティーは、この時点で確定します。
 
-| プロパティ | 型 | 説明 |
+| プロパティー | 型 | 説明 |
 | --- | --- | --- |
 | `path` | `string` | パスパターンです。 |
 | `index` | `boolean` | インデックスルートかどうかです。 |
@@ -166,7 +166,7 @@ async function contactAction({ params, request }: ActionFunctionArgs<"/contacts/
 
 `ShouldReloadFunctionArgs` は `triggerMethod` で分かれる判別可能ユニオンです。GET では送信データがありません。POST では `formData` と `actionData` が加わります。
 
-| プロパティ | GET | POST | 内容 |
+| プロパティー | GET | POST | 内容 |
 | --- | --- | --- | --- |
 | `triggerMethod` | `"GET"` | `"POST"` | 再取得のきっかけです。 |
 | `currentUrl` / `prevUrl` | あり | あり | 遷移前後の URL です。 |

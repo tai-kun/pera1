@@ -143,7 +143,8 @@ createRoot(document.getElementById("root")!).render(
 const routes = [
   { path: "/", index: true, component: HomePage },
   { path: "/", component: RootLayout },
-  // レガシー: 明示的な `/*` 定義。新規コードでは `notFoundComponent` を使ってください。
+  // レガシー: 明示的な `/*` 定義です。
+  // 新規コードでは `notFoundComponent` を使ってください。
   { path: "/*", component: NotFoundPage },
 ];
 ```

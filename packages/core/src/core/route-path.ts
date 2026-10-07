@@ -76,7 +76,8 @@ export default class RoutePath implements ReadonlyRoutePath {
    *
    * 引数として渡された入力値を解析し、スラッシュの重複排除および末尾のスラッシュ削除を自動的に行います。
    *
-   * @param path 初期化に使用するパス文字列、または `ReadonlyURL` の一部のプロパティーを持つオブジェクトです。既定値は空文字列です。
+   * @param path 初期化に使用するパス文字列、または `ReadonlyURL` の一部のプロパティーを持つオブジェクトです。
+   * 既定値は空文字列です。
    */
   public constructor(path: string | Pick<ReadonlyURL, "pathname" | "search" | "hash"> = "") {
     if (typeof path === "string") {
