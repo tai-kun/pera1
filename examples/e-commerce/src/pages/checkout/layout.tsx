@@ -20,10 +20,6 @@ export default function CheckoutLayout() {
   // `/checkout` 単体への遷移は子の index へ自動誘導されます。
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   return (
     <section>
       <h2>チェックアウト</h2>

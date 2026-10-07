@@ -17,10 +17,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function SettingsPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   return (
     <>
       <h2>Settings</h2>

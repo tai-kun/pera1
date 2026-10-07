@@ -28,10 +28,6 @@ export async function loader(_args: LoaderFunctionArgs) {
 
 export default function ConfirmPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   const navigate = useNavigate();
   const [error, setError] = React.useState<string | null>(null);
 

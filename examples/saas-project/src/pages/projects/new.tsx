@@ -18,10 +18,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function NewProjectPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   const navigate = useNavigate();
   const [error, setError] = React.useState<string | null>(null);
 

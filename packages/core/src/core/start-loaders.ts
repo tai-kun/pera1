@@ -75,7 +75,7 @@ export interface StartedLoaders {
    *
    * 検出された `RedirectResponse` は公開マップには格納されません。
    *
-   * コンポーネント側には `null` で解決済みのプロミスが渡ります。
+   * コンポーネント側には解決されないプロミスが渡ります。
    *
    * @returns 処理結果に伴うリダイレクト要求を含むオブジェクトを返します。
    */
@@ -108,7 +108,7 @@ function areParamsEqual(a: RouteParams, b: RouteParams): boolean {
  *
  * キャッシュの再利用または読み込みを動的に判定し、実行します。
  *
- * ローダーが `RedirectResponse` を返した場合は `null` に置き換えて公開します。
+ * ローダーが `RedirectResponse` を返した場合は解決されないプロミスとして公開します。
  *
  * エンジンは `idle()` の戻り値で自動遷移します。
  *

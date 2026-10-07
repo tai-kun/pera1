@@ -24,10 +24,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 export default function UserDetailPage() {
   const params = useParams<"/users/:userId">();
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   if (!data.profile) {
     return (
       <AppLayout>

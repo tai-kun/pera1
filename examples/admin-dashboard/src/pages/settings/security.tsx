@@ -17,10 +17,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function SecurityPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   return (
     <>
       <h3>セキュリティ設定</h3>

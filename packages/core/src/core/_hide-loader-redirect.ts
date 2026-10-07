@@ -5,25 +5,29 @@ import RedirectResponse from "./redirect-response.js";
 /**
  * ローダーの実行結果から `RedirectResponse` を隠蔽するラッパーです。
  *
- * リダイレクト時は `null` で解決済みのプロミスを返します。
+ * リダイレクト時は解決されない `NinjaPromise<never>` を返します。
  *
- * コンポーネント側へ `RedirectResponse` を露出させません。
+ * コンポーネントは遷移完了までサスペンスを維持し、`RedirectResponse` に触れません。
  *
  * @param raw 隠蔽前のローダー実行結果です。
  * @returns コンポーネント公開用のプロミスを返します。
  */
 export default function hideLoaderRedirect(raw: NinjaPromise<unknown>): NinjaPromise<unknown> {
   if (raw.status === "fulfilled") {
-    return raw.value instanceof RedirectResponse ? NinjaPromise.resolve(null) : raw;
+    return raw.value instanceof RedirectResponse ? new NinjaPromise<never>(() => {}) : raw;
   }
+
   if (raw.status === "rejected") {
     return raw;
   }
+
   const { promise, resolve, reject } = NinjaPromise.withResolvers<unknown>();
   void (async () => {
     try {
       const value = await raw;
-      resolve(value instanceof RedirectResponse ? null : value);
+      if (!(value instanceof RedirectResponse)) {
+        resolve(value);
+      }
     } catch (reason) {
       reject(reason);
     }

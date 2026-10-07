@@ -111,7 +111,7 @@ describe("startLoaders のリダイレクト検出", () => {
     expect(redirectTo).toBe(first);
   });
 
-  test("リダイレクト応答はコンポーネント側へ露出しない", async ({ expect, signal }) => {
+  test("リダイレクト応答は解決されないプロミスとして公開する", async ({ expect, signal }) => {
     // 準備
     const redirectResponse = new RedirectResponse("/login");
     const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(redirectResponse);
@@ -132,10 +132,10 @@ describe("startLoaders のリダイレクト検出", () => {
     // 検証: エンジン側では回収される
     expect(redirectTo).toBe(redirectResponse);
 
-    // 検証: 公開ストアでは null に置き換えられる
+    // 検証: 公開ストアでは解決されない
     const stored = dataStore.get("entry-2")?.get(mockLoader);
     expect(stored).toBeDefined();
-    await expect(stored!).resolves.toBe(null);
+    expect(stored!.status).toBe("pending");
   });
 
   test("ローダーが存在しない場合、redirectTo は undefined になる", async ({

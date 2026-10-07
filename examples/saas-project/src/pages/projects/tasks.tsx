@@ -24,15 +24,10 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function TasksPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  const [tasks, setTasks] = React.useState(data?.tasks ?? []);
+  const [tasks, setTasks] = React.useState(data.tasks);
   React.useEffect(() => {
-    if (data !== null) {
-      setTasks(data.tasks);
-    }
+    setTasks(data.tasks);
   }, [data]);
-  if (data === null) {
-    return null;
-  }
 
   if (!data.project) {
     return (

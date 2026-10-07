@@ -27,10 +27,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function PaymentPage() {
   const params = useParams<"/travel/booking/:bookingId/payment">();
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   const navigate = useNavigate();
 
   if (data.booking === null) {

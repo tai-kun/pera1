@@ -19,10 +19,6 @@ export async function loader(_args: LoaderFunctionArgs) {
 
 export default function ShippingPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   const navigate = useNavigate();
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {

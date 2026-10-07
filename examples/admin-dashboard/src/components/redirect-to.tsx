@@ -6,7 +6,7 @@ import * as React from "react";
  *
  * @deprecated loader の `redirect()` はエンジンが自動遷移させるようになったため、
  * 新規のガードではこのコンポーネントは不要です。描画側では
- * loader のリダイレクトは `null` に置き換えられるため、描画側では `null` の場合に `null` を返します。
+ * loader のリダイレクトは解決されないプロミスとして扱われるため、描画側の分岐は不要です。
  * 本コンポーネントは、loader を介さない描画側での誘導
  * (`/settings` → `/settings/profile` など) と後方互換のために残しています。
  */

@@ -20,10 +20,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AppLayout() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   const navigate = useNavigate();
 
   function handleLogout() {

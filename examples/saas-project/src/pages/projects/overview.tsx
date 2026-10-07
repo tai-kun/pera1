@@ -23,10 +23,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function OverviewPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   if (!data.project) {
     return (
       <>

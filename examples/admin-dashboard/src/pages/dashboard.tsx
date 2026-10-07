@@ -18,10 +18,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function DashboardPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data === null) {
-    return null;
-  }
-
   return (
     <AppLayout>
       <h2>ダッシュボード</h2>
