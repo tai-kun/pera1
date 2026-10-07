@@ -1,5 +1,6 @@
-import { describe, test } from "vitest";
+import { describe, test, vi } from "vitest";
 
+import log from "../../src/_logger.js";
 import processRoutes from "../../src/core/_process-routes.js";
 import matchRoutes from "../../src/core/match-routes.js";
 import type { RouteDefinition, ShouldReloadFunctionArgs } from "../../src/core/route.types.js";
@@ -387,11 +388,7 @@ describe("children による明示的ネストの展開", () => {
 
   test("index ルートが children を持つとき警告するが展開は継続する", ({ expect }) => {
     // 準備
-    const originalWarn = console.warn;
-    const calls: unknown[][] = [];
-    console.warn = (...args: unknown[]) => {
-      calls.push(args);
-    };
+    const spy = vi.spyOn(log, "warn").mockImplementation(() => {});
 
     try {
       // 実行
@@ -400,11 +397,10 @@ describe("children による明示的ネストの展開", () => {
       ]);
 
       // 検証
-      expect(calls.length).toBe(1);
-      expect(String(calls[0]?.[0])).toContain("index route");
+      expect(spy).toHaveBeenCalledTimes(1);
       expect(result.map((r) => r.path)).toContain("/a/b");
     } finally {
-      console.warn = originalWarn;
+      spy.mockRestore();
     }
   });
 

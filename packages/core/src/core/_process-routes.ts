@@ -1,3 +1,4 @@
+import log from "../_logger.js";
 import compareRoutePaths from "./_compare-route-paths.js";
 import { createIndexRedirectLoader } from "./_index-redirect.js";
 import RoutePatternUtils from "./route-pattern-utils.js";
@@ -63,7 +64,9 @@ function resolveFullPath(
 /**
  * 開発時に `index: true` のルートが `children` を持つ不正な定義を警告します。
  *
- * React Router と同様に index ルートは子を持てません。警告に留め、フラット化自体は継続します。
+ * React Router と同様に index ルートは子を持てません。
+ *
+ * 警告に留め、フラット化自体は継続します。
  *
  * @param definition 検証対象のルート定義です。
  * @param fullPath 解決済みの完全パス文字列です。
@@ -73,14 +76,13 @@ function warnIfIndexHasChildren(
   fullPath: string,
 ): void {
   const children = (definition as { readonly children?: readonly unknown[] }).children;
+
   if (definition.index === true && Array.isArray(children) && children.length > 0) {
     if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
       return;
     }
-    console.warn(
-      `[pera1] index route "${fullPath}" has children, which will be ignored in matching. ` +
-        `Remove "index: true" from the parent or move children to a layout route.`,
-    );
+
+    log.warn("index ルートは children を持てません（path: {path}）。children は無視して展開を継続します。", { path: fullPath });
   }
 }
 
