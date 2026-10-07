@@ -209,7 +209,7 @@ jobs:
 
             if npm view "$name@$version" version >/dev/null 2>&1; then
               echo "::warning::$name@$version は npm レジストリーに存在します。"
-            else
+            elif npm view "$name" version >/dev/null 2>&1; then
               echo "::error::$name@$version は npm レジストリーに存在しません。"
               exit 1
             fi
