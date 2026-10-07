@@ -2,17 +2,17 @@ import {
   type LoaderFunctionArgs,
   Outlet,
   RedirectResponse,
-  redirect,
+  redirectToLogin,
   useLoaderData,
   useNavigate,
 } from "@pera1/react";
 import * as React from "react";
 
-import { getCurrentUser, loginUrlFor, logout } from "../api/auth.js";
+import { getCurrentUser, logout } from "../api/auth.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
-    return redirect(loginUrlFor(request.url.pathname, request.url.search));
+    return redirectToLogin(request);
   }
   // `/app` → `/app/dashboard` の誘導は `indexRedirect` (routes.tsx) に宣言しています。
   // 完全一致のときだけ合成ローダーが `redirect()` を返し、子への遷移では再実行で通常データを返すため、キャッシュの再利用で固まりません。

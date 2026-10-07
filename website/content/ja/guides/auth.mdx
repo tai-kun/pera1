@@ -1,0 +1,130 @@
+---
+title: 認証ガード
+description: "redirectToLogin・sanitizeRedirectTo・requireRole による、ログイン誘導と認可の公式パターンを解説します。"
+---
+
+ログイン必須のページは、ローダーの先頭で未認証を検出してログインページへ誘導します。この往復の定型は `@pera1/core` のガードヘルパーに集約されているため、各アプリで `redirectTo` の組み立てや検証を自作する必要はありません。
+
+## 保護ページは `redirectToLogin` で守る [#guard]
+
+ローダーの先頭で現在のユーザーを確認し、未認証なら `redirectToLogin` の戻り値をそのまま返します。現在のパスは `redirectTo` クエリーに保存されるため、ログイン後に元のページへ復帰できます。ユーザーの取得方法自体はアプリ固有のままです（`localStorage` 参照や API 呼び出しなど、`getCurrentUser` の中身は各自で用意します）。
+
+```tsx
+import { redirectToLogin } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function dashboardLoader({ request }: LoaderFunctionArgs) {
+  const user = getCurrentUser();
+  if (!user) {
+    return redirectToLogin(request);
+  }
+  return { user };
+}
+```
+
+ログイン先のパスが `/login` でない場合は、`redirectToLogin(request, { loginPath: "/sign-in" })` のように指定します。クエリー名や組み立て処理を自作する必要はありません。
+
+## ガードはレイアウトのローダーに集約する [#layout]
+
+保護ページが複数ある場合、各ページに分岐を分散させず、レイアウトのローダー単層で守ることを推奨します。子ページのローダーにはガードを書かず、レイアウトだけが認証の入口になります。分岐が一か所に集まるため、保護漏れの監査が容易です。
+
+```tsx
+import { redirectToLogin } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function appLoader({ request }: LoaderFunctionArgs) {
+  if (!getCurrentUser()) {
+    return redirectToLogin(request);
+  }
+  return { authenticated: true as const };
+}
+```
+
+裸パスを正規化したいだけの場合（`/app` → `/app/dashboard` など）は、ローダーに分岐を書く代わりに [`indexRedirect`](/guides/routing#index-redirect) を使います。
+
+## `redirectTo` の受け渡し規約 [#redirect-to]
+
+未認証時の誘導からログイン完了までの受け渡しは、次の 3 点の規約で統一します。
+
+1. クエリー名と hidden input 名は `REDIRECT_TO_PARAM`（値は `"redirectTo"`）を使う。
+2. ログイン画面のローダーではクエリーの値を `sanitizeRedirectTo` で検証する。
+3. ログイン画面のアクションではフォームの値をもう一度 `sanitizeRedirectTo` で検証する。
+
+```tsx
+import { REDIRECT_TO_PARAM, redirect, sanitizeRedirectTo } from "@pera1/core";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@pera1/core";
+
+async function loginLoader({ request }: LoaderFunctionArgs) {
+  const redirectTo = sanitizeRedirectTo(
+    request.url.searchParams.get(REDIRECT_TO_PARAM),
+    "/dashboard",
+  );
+  if (getCurrentUser()) {
+    return redirect(redirectTo);
+  }
+  return { redirectTo };
+}
+
+async function loginAction({ request }: ActionFunctionArgs) {
+  const redirectTo = sanitizeRedirectTo(
+    String(request.formData.get(REDIRECT_TO_PARAM) ?? ""),
+    "/dashboard",
+  );
+  const user = await login(request);
+  if (!user) {
+    return { error: "メールアドレスまたはパスワードが正しくありません。" };
+  }
+  return redirect(redirectTo);
+}
+```
+
+フォーム側では検証済みの値を hidden input で往復させます。`name` には直接文字列を書かず、定数を使います。
+
+```tsx
+<form method="post" action="/login">
+  <input type="hidden" name={REDIRECT_TO_PARAM} value={data.redirectTo} />
+</form>
+```
+
+アクション側の再検証を省略してはいけません。クエリーはローダー通過後に書き換えられる可能性があり、フォームの値がそのまま信じられる保証はないためです。
+
+## `sanitizeRedirectTo` が弾く値 [#sanitize]
+
+`sanitizeRedirectTo(value, fallback)` は、同一オリジンのパスだけを通します。`/` で始まり 2 文字目が `/` でも `\` でもない値を安全とみなします。安全でない値や空の値が渡された場合はフォールバック（未指定なら `/`）を返します。
+
+open redirect 対策として、次の値を弾きます。
+
+- `//evil.com` のようなプロトコル相対 URL
+- `/\evil.com` のようなバックスラッシュ始まり（ブラウザーの正規化で別オリジンに化けるため）
+- パス途中のバックスラッシュや空白・制御文字を含む値
+- `/%2f%2fevil.com` のような符号化や、`/%252f` のような二重符号化による回避
+- タブや改行の除去で `//` に化ける値
+- `https://evil.com` や `javascript:` のような絶対 URL・スキーム付き
+
+クエリー内の正当な符号化（`/search?q=a%20b` など）は保持されます。
+
+## 認可は `requireRole` で宣言する [#authorize]
+
+ロールによる認可は `user.role !== "admin"` のような分岐を各ページに書かず、`requireRole` に許可ロールの集合として宣言します。未認証のときはログインページ誘導を、ロール不一致のときは `forbiddenPath` への遷移を返し、通過できるときは `null` を返します。
+
+```tsx
+import { redirectToLogin, requireRole } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function adminLoader({ request }: LoaderFunctionArgs) {
+  const user = getCurrentUser();
+  if (!user) {
+    return redirectToLogin(request);
+  }
+  const forbidden = requireRole(request, user, {
+    roles: ["admin"],
+    forbiddenPath: "/dashboard",
+  });
+  if (forbidden) {
+    return forbidden;
+  }
+  return { user };
+}
+```
+
+描画側のフォールバックは他のガードと同じです。遷移が間に合わない初回表示に備えて、`data instanceof RedirectResponse` の場合に `null` を返すだけで十分です。詳しくは[データ取得](/guides/data-loading#redirect)を参照してください。

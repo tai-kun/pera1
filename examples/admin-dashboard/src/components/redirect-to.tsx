@@ -1,8 +1,6 @@
 import { RedirectResponse, useNavigate } from "@pera1/react";
 import * as React from "react";
 
-export { RedirectResponse };
-
 /**
  * loader が返した `RedirectResponse` に従って画面遷移を実行します。
  *

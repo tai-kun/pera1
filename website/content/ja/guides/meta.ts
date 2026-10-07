@@ -9,6 +9,7 @@ export default defineMeta({
     "data-loading",
     "mutations",
     "navigation",
+    "auth",
     "error-handling",
     "code-splitting",
     "custom-engines",

@@ -123,16 +123,16 @@ function Layout() {
 
 ## ガードするには `redirect` を返す [#redirect]
 
-未ログイン時のログインページへの誘導のように、条件によって別の画面へ移したい場合は、ローダーから `redirect` の戻り値をそのまま返します。アクションの `redirect` と対称的に、エンジンが自動遷移させます。
+未ログイン時のログインページへの誘導のように、条件によって別の画面へ移したい場合は、ローダーから `redirect` の戻り値をそのまま返します。アクションの `redirect` と対称的に、エンジンが自動遷移させます。認証ガードの定型（`redirectTo` の受け渡しや検証）は [`@pera1/core` のガードヘルパー](/guides/auth)に集約されているため、次のように書きます。
 
 ```tsx
-import { redirect } from "@pera1/core";
+import { redirectToLogin } from "@pera1/core";
 import type { LoaderFunctionArgs } from "@pera1/core";
 
 async function dashboardLoader({ request }: LoaderFunctionArgs) {
   const user = getCurrentUser();
   if (!user) {
-    return redirect(`/login?redirectTo=${request.url.pathname}`);
+    return redirectToLogin(request);
   }
   return { user };
 }

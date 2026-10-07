@@ -2,8 +2,10 @@ import {
   type ActionData,
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
+  REDIRECT_TO_PARAM,
   RedirectResponse,
   redirect,
+  sanitizeRedirectTo,
   useActionData,
   useLoaderData,
 } from "@pera1/react";
@@ -11,15 +13,11 @@ import * as React from "react";
 
 import { getCurrentUser, login } from "../api/auth.js";
 
-function sanitizeRedirectTo(value: string | null): string {
-  if (value && value.startsWith("/")) {
-    return value;
-  }
-  return "/dashboard";
-}
-
 export async function loader({ request }: LoaderFunctionArgs) {
-  const redirectTo = sanitizeRedirectTo(request.url.searchParams.get("redirectTo"));
+  const redirectTo = sanitizeRedirectTo(
+    request.url.searchParams.get(REDIRECT_TO_PARAM),
+    "/dashboard",
+  );
   if (getCurrentUser()) {
     return redirect(redirectTo);
   }
@@ -29,7 +27,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export async function action({ request }: ActionFunctionArgs) {
   const email = String(request.formData.get("email") ?? "").trim();
   const password = String(request.formData.get("password") ?? "");
-  const redirectTo = sanitizeRedirectTo(String(request.formData.get("redirectTo") ?? ""));
+  const redirectTo = sanitizeRedirectTo(
+    String(request.formData.get(REDIRECT_TO_PARAM) ?? ""),
+    "/dashboard",
+  );
   if (email === "" || password === "") {
     return { error: "メールアドレスとパスワードを入力してください。" };
   }
@@ -51,7 +52,7 @@ export default function LoginPage() {
     <>
       <h2>ログイン</h2>
       <form method="post" action="/login">
-        <input type="hidden" name="redirectTo" value={data.redirectTo} />
+        <input type="hidden" name={REDIRECT_TO_PARAM} value={data.redirectTo} />
         <p>
           <label>
             メールアドレス

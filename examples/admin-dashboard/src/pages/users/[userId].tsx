@@ -1,19 +1,19 @@
 import {
   type LoaderFunctionArgs,
   RedirectResponse,
-  redirect,
+  redirectToLogin,
   useLoaderData,
   useParams,
 } from "@pera1/react";
 import * as React from "react";
 
-import { getCurrentUser, loginUrlFor } from "../../api/auth.js";
+import { getCurrentUser } from "../../api/auth.js";
 import { findUser } from "../../api/users.js";
 import AppLayout from "../app-layout.js";
 
 export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
-    return redirect(loginUrlFor(request.url.pathname, request.url.search));
+    return redirectToLogin(request);
   }
   const userId = params["userId"];
   if (userId === undefined) {

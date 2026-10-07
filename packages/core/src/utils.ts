@@ -39,3 +39,5 @@ export type * from "./core/route.types.js";
 
 export type * from "./utils/redirect.js";
 export { default as redirect } from "./utils/redirect.js";
+
+export * from "./utils/auth-guard.js";

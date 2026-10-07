@@ -1,18 +1,18 @@
 import {
   type LoaderFunctionArgs,
   RedirectResponse,
-  redirect,
+  redirectToLogin,
   useLoaderData,
 } from "@pera1/react";
 import * as React from "react";
 
-import { getCurrentUser, loginUrlFor } from "../api/auth.js";
+import { getCurrentUser } from "../api/auth.js";
 import { listProjects } from "../api/projects.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = getCurrentUser();
   if (!user) {
-    return redirect(loginUrlFor(request.url.pathname, request.url.search));
+    return redirectToLogin(request);
   }
   return { user, projects: await listProjects() };
 }

@@ -1,21 +1,27 @@
 import {
   type LoaderFunctionArgs,
   RedirectResponse,
-  redirect,
+  redirectToLogin,
+  requireRole,
   useLoaderData,
 } from "@pera1/react";
 import * as React from "react";
 
-import { getCurrentUser, loginUrlFor } from "../api/auth.js";
+import { getCurrentUser } from "../api/auth.js";
 import AppLayout from "./app-layout.js";
 
 export async function loader({ request }: LoaderFunctionArgs) {
   const user = getCurrentUser();
   if (!user) {
-    return redirect(loginUrlFor(request.url.pathname, request.url.search));
+    return redirectToLogin(request);
   }
-  if (user.role !== "admin") {
-    return redirect("/dashboard");
+  // 認可の宣言は各ページへの分散ではなく、管理者専用ページの入口に集約します。
+  const forbidden = requireRole(request, user, {
+    roles: ["admin"],
+    forbiddenPath: "/dashboard",
+  });
+  if (forbidden) {
+    return forbidden;
   }
   return { user };
 }

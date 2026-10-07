@@ -67,10 +67,3 @@ export function logout(): void {
     // 削除に失敗しても無視します。
   }
 }
-
-/**
- * 未ログイン時に `/login` へ戻すための遷移先パスを組み立てます。
- */
-export function loginUrlFor(pathname: string, search: string): string {
-  return `/login?redirectTo=${encodeURIComponent(pathname + search)}`;
-}
