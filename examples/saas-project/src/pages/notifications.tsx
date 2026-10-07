@@ -17,6 +17,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function NotificationsPage() {
   const data = React.use(useLoaderData<typeof loader>());
+  if (data === null) {
+    return null;
+  }
+
   return (
     <>
       <h2>Notifications</h2>

@@ -42,6 +42,10 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginPage() {
   const data = React.use(useLoaderData<typeof loader>());
+  if (data === null) {
+    return null;
+  }
+
   return (
     <>
       <h2>ログイン</h2>

@@ -7,17 +7,23 @@ import useRouteContext from "./use-route-context.js";
 import useRouterContext from "./use-router-context.js";
 
 /**
+ * ローダーの戻り値からリダイレクト応答を `null` に変換するユーティリティー型です。
+ *
+ * ランタイムの置き換えに合わせて、型レベルでも `RedirectResponse` を露出させません。
+ */
+type LoaderResult<TResult> = TResult extends RedirectResponse ? null : TResult;
+
+/**
  * ローダー関数またはデータ型から、最終的に解決されるデータの型を抽出するユーティリティー型です。
  *
- * ローダーが `redirect()` を返した場合はエンジンが自動遷移させ、コンポーネント側へ露出させません。
+ * ローダーが `redirect()` を返した場合はエンジンが自動遷移させ、コンポーネント側には `null` が届きます。
  *
- * そのため戻り値の型から `RedirectResponse` を取り除きます。
+ * 描画側では `null` の場合に `null` を返す分岐を残しておきます。
  *
  * @template TData ローダー関数、または解決されるデータの型です。
  */
-export type FulfilledLoaderData<TData = unknown> = Exclude<
-  Awaited<TData extends (...args: any) => infer TReturn ? TReturn : TData>,
-  RedirectResponse
+export type FulfilledLoaderData<TData = unknown> = LoaderResult<
+  Awaited<TData extends (...args: any) => infer TReturn ? TReturn : TData>
 >;
 /**
  * {@link useLoaderData|`useLoaderData`} カスタムフックが返すオブジェクトの型定義です。
@@ -33,9 +39,16 @@ export type LoaderData<TData = unknown> = NinjaPromise<FulfilledLoaderData<TData
  *
  * データの選択ロジック自体は `@pera1/core` の `selectLoaderData` に委譲します。
  *
- * ローダーが `redirect()` を返した場合はエンジンが自動遷移させ、コンポーネント側へ露出させません。
+ * ローダーが `redirect()` を返した場合はエンジンが自動遷移させ、コンポーネント側には `null` が届きます。
  *
- * リダイレクト時は解決を待たせてサスペンスを維持するため、描画側の分岐は不要です。
+ * 描画側では次の分岐を残しておきます。
+ *
+ * ```tsx
+ * const data = React.use(useLoaderData<typeof loader>());
+ * if (data === null) {
+ *   return null;
+ * }
+ * ```
  *
  * @template TData ローダー関数そのものの型、またはローダーが返すことが期待されるデータ構造の型定義です。
  * @returns ローダーの実行状態を管理している `NinjaPromise` を返します。

@@ -3,53 +3,30 @@ import { NinjaPromise } from "ninja-promise";
 import RedirectResponse from "./redirect-response.js";
 
 /**
- * ローダーの実行結果から `RedirectResponse` を隠蔽し、コンポーネント側へ露出させないためのラッパーです。
+ * ローダーの実行結果から `RedirectResponse` を隠蔽するラッパーです。
  *
- * 同期的にリダイレクトが確定した場合は永遠に解決しないプロミスを返します。
+ * リダイレクト時は `null` で解決済みのプロミスを返します。
  *
- * 非同期の場合は元処理の解決を待ち受けます。
- *
- * リダイレクト時には解決させずにサスペンスを維持し、通常値のときのみ透過させます。
- *
- * 拒否時はそのまま透過させます。
+ * コンポーネント側へ `RedirectResponse` を露出させません。
  *
  * @param raw 隠蔽前のローダー実行結果です。
  * @returns コンポーネント公開用のプロミスを返します。
  */
-export default function hideLoaderRedirect(
-  raw: NinjaPromise<unknown>,
-): NinjaPromise<unknown> {
-  switch (raw.status) {
-    case "fulfilled": {
-      if (raw.value instanceof RedirectResponse) {
-        return NinjaPromise.withResolvers<unknown>().promise;
-      }
-
-      return raw;
-    }
-
-    case "rejected": {
-      return raw;
-    }
-
-    case "pending": {
-      const { promise, resolve, reject } = NinjaPromise.withResolvers<unknown>();
-
-      void (async () => {
-        try {
-          const value = await raw;
-
-          if (value instanceof RedirectResponse) {
-            return;
-          }
-
-          resolve(value);
-        } catch (reason) {
-          reject(reason);
-        }
-      })();
-
-      return promise;
-    }
+export default function hideLoaderRedirect(raw: NinjaPromise<unknown>): NinjaPromise<unknown> {
+  if (raw.status === "fulfilled") {
+    return raw.value instanceof RedirectResponse ? NinjaPromise.resolve(null) : raw;
   }
+  if (raw.status === "rejected") {
+    return raw;
+  }
+  const { promise, resolve, reject } = NinjaPromise.withResolvers<unknown>();
+  void (async () => {
+    try {
+      const value = await raw;
+      resolve(value instanceof RedirectResponse ? null : value);
+    } catch (reason) {
+      reject(reason);
+    }
+  })();
+  return promise;
 }

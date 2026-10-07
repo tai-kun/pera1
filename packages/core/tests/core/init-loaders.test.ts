@@ -292,7 +292,7 @@ describe("initLoaders のエッジケース", () => {
     await expect(promise).rejects.toThrow(error);
   });
 
-  test("RedirectResponse は公開マップへ露出しない", async ({ expect, signal }) => {
+  test("RedirectResponse は null に置き換えて公開する", async ({ expect, signal }) => {
     // 準備
     const response = new RedirectResponse("/redirect");
     const loader = vi.fn<() => any>(() => response);
@@ -305,7 +305,7 @@ describe("initLoaders のエッジケース", () => {
 
     // 検証
     expect(redirectTo).toBe(response);
-    expect(map.get(loader)?.status).toBe("pending");
+    await expect(map.get(loader)!).resolves.toBe(null);
   });
 
   test("一部の loader が throw しても他に影響しない", async ({ expect, signal }) => {
@@ -372,7 +372,7 @@ describe("initLoaders のエッジケース", () => {
     expect(map.has(loader)).toBe(true);
   });
 
-  test("RedirectResponse は公開マップへ露出せず idle() で回収される", async ({
+  test("RedirectResponse は null に置き換えて idle() で回収する", async ({
     expect,
     signal,
   }) => {
@@ -389,6 +389,6 @@ describe("initLoaders のエッジケース", () => {
 
     // 検証
     expect(redirectTo).toBe(redirectResponse);
-    expect(dataMap.get(loader)?.status).toBe("pending");
+    await expect(dataMap.get(loader)!).resolves.toBe(null);
   });
 });

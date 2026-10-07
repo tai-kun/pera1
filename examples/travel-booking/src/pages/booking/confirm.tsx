@@ -32,6 +32,10 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function ConfirmPage() {
   const params = useParams<"/travel/booking/:bookingId/confirm">();
   const data = React.use(useLoaderData<typeof loader>());
+  if (data === null) {
+    return null;
+  }
+
   const navigate = useNavigate();
   const [error, setError] = React.useState<string | null>(null);
 

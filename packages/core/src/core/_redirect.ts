@@ -133,7 +133,7 @@ export function resolveRedirectDestination(
   }
 
   if (resolved.includes(":")) {
-    resolved = RoutePatternUtils.inject(resolved, params as Record<string, string>);
+    resolved = RoutePatternUtils.inject(resolved, params);
   }
 
   return resolved + search + hash;

@@ -32,6 +32,10 @@ export async function loader({ params }: LoaderFunctionArgs) {
 export default function CompletePage() {
   const params = useParams<"/travel/booking/:bookingId/complete">();
   const data = React.use(useLoaderData<typeof loader>());
+  if (data === null) {
+    return null;
+  }
+
 
   if (data.booking === null) {
     return (

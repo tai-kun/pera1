@@ -142,7 +142,7 @@ async function dashboardLoader({ request }: LoaderFunctionArgs) {
 
 裸パスを正規化したいだけの場合（`/app` → `/app/dashboard` など）は、ローダーに分岐を書く代わりに [`redirect`](/guides/routing#index-redirect) を使います。ローダーでパス名に応じて `redirect()` を返すと、その結果がキャッシュされ、子への遷移時にも再利用されて画面が固まるためです。
 
-描画側の分岐は不要です。リダイレクト時は解決を待たせてサスペンスを維持し、コンポーネント側へ `RedirectResponse` を露出させません。
+描画側では `null` の場合に `null` を返す分岐を残しておきます。リダイレクト時は `null` で解決されるためです。
 
 ```tsx
 import { useLoaderData } from "@pera1/react";
@@ -150,6 +150,9 @@ import { use } from "react";
 
 function DashboardPage() {
   const data = use(useLoaderData<typeof dashboardLoader>());
+  if (data === null) {
+    return null;
+  }
   return <h2>ようこそ、{data.user.name}さん。</h2>;
 }
 ```

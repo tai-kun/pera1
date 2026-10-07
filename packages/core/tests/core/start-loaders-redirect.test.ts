@@ -132,10 +132,10 @@ describe("startLoaders のリダイレクト検出", () => {
     // 検証: エンジン側では回収される
     expect(redirectTo).toBe(redirectResponse);
 
-    // 検証: 公開ストアには露出しない
+    // 検証: 公開ストアでは null に置き換えられる
     const stored = dataStore.get("entry-2")?.get(mockLoader);
     expect(stored).toBeDefined();
-    expect(stored.status).toBe("pending");
+    await expect(stored!).resolves.toBe(null);
   });
 
   test("ローダーが存在しない場合、redirectTo は undefined になる", async ({

@@ -40,8 +40,7 @@ function resolveFullPath(
   parentPath: string | undefined,
   definition: RouteDefinition<string, any>,
 ): string {
-  const raw = (definition as { readonly path?: unknown }).path;
-  const childPath = typeof raw === "string" ? raw : "";
+  const childPath = typeof definition.path === "string" ? definition.path : "";
 
   if (parentPath === undefined) {
     if (childPath === "") {
@@ -75,8 +74,7 @@ function warnIfIndexHasChildren(
   definition: RouteDefinition<string, any>,
   fullPath: string,
 ): void {
-  const children = (definition as { readonly children?: readonly unknown[] }).children;
-
+  const children = definition.children;
   if (definition.index === true && Array.isArray(children) && children.length > 0) {
     if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
       return;
@@ -111,21 +109,15 @@ function flattenRouteDefinitions<TComponent>(
   parentPath: string | undefined = undefined,
 ): FlattenedEntry<TComponent>[] {
   const flattened: FlattenedEntry<TComponent>[] = [];
-
   for (const definition of definitions) {
     const fullPath = resolveFullPath(parentPath, definition);
     warnIfIndexHasChildren(definition, fullPath);
-
-    const children = (definition as {
-      readonly children?: readonly RouteDefinition<string, TComponent>[] | undefined;
-    }).children;
+    const children = definition.children;
     if (children !== undefined && children.length > 0) {
       flattened.push(...flattenRouteDefinitions(children, fullPath));
     }
-
     flattened.push({ definition, fullPath });
   }
-
   return flattened;
 }
 

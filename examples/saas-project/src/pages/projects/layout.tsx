@@ -29,6 +29,10 @@ export default function ProjectLayout() {
   const params = useParams<"/app/projects/:projectId">();
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
+  if (data === null) {
+    return null;
+  }
+
   if (!data.project) {
     return (
       <>

@@ -17,6 +17,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function ProfilePage() {
   const data = React.use(useLoaderData<typeof loader>());
+  if (data === null) {
+    return null;
+  }
+
   return (
     <>
       <h3>プロフィール設定</h3>

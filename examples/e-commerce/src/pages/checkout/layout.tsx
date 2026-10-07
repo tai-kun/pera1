@@ -20,6 +20,10 @@ export async function loader(_args: LoaderFunctionArgs) {
 export default function CheckoutLayout() {
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
+  if (data === null) {
+    return null;
+  }
+
   if (pathname === "/checkout") {
     return <RedirectTo response={redirect("/checkout/shipping")} />;
   }
