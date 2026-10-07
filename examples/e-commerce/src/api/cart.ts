@@ -21,16 +21,19 @@ function ensureInitialized(): void {
   if (initialized) {
     return;
   }
+
   initialized = true;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       return;
     }
+
     const parsed = JSON.parse(raw) as Record<string, unknown>;
     if (typeof parsed !== "object" || parsed === null) {
       return;
     }
+
     for (const [productId, quantity] of Object.entries(parsed)) {
       if (typeof quantity === "number" && Number.isInteger(quantity) && quantity > 0) {
         quantities.set(productId, quantity);
@@ -59,6 +62,7 @@ export async function addToCart(productId: string, quantity = 1): Promise<void> 
   if (!product) {
     throw new Error(`商品 ${productId} は見つかりませんでした。`);
   }
+
   const current = quantities.get(productId) ?? 0;
   quantities.set(productId, current + quantity);
   persist();

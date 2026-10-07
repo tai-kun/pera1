@@ -50,6 +50,7 @@ export default function ResultsPage() {
   if (adultsParam !== "") {
     params.set("adults", adultsParam);
   }
+
   const backSearch = params.toString() === "" ? "/travel/search" : `/travel/search?${params.toString()}`;
 
   return (

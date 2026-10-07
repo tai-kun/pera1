@@ -100,6 +100,7 @@ export function findIndexChildTarget(
   if (entries.some((entry) => entry.index && entry.fullPath === parentPath)) {
     return undefined;
   }
+
   const prefix = parentPath === "/" ? "//" : parentPath + "/";
   let best: BarePathEntry | undefined;
   let bestExtra = Number.POSITIVE_INFINITY;
@@ -113,6 +114,7 @@ export function findIndexChildTarget(
     if (!entry.fullPath.startsWith(prefix)) {
       continue;
     }
+
     const extra = splitSegments(entry.fullPath).length - splitSegments(parentPath).length;
     if (extra <= 0) {
       continue;

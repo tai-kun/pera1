@@ -14,6 +14,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!user) {
     return redirectToLogin(request);
   }
+
   // 認可の宣言は各ページへの分散ではなく、管理者専用ページの入口に集約します。
   const forbidden = requireRole(request, user, {
     roles: ["admin"],

@@ -13,6 +13,7 @@ export async function action({ request }: Route.ActionArgs) {
   if (name === "") {
     return { error: "名前を入力してください。" };
   }
+
   const contact = await createContact(name, email);
 
   return redirect(`/contacts/${contact.id}`);

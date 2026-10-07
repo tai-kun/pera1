@@ -13,6 +13,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (bookingId === undefined) {
     throw new Error("bookingId が指定されていません。");
   }
+
   const booking = await findBooking(bookingId);
   if (!booking) {
     return { bookingId, booking: null, payment: null };
@@ -52,6 +53,7 @@ export default function PaymentPage() {
     if (cardNumber === "" || expiry === "" || cvc === "") {
       return;
     }
+
     setPayment(bookingId, { cardNumber, expiry, cvc });
     navigate(`/travel/booking/${bookingId}/confirm`);
   }

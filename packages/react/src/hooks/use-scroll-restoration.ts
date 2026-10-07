@@ -62,6 +62,7 @@ export default function useScrollRestoration(scrollRestoration?: ScrollRestorati
     if (typeof window === "undefined") {
       return;
     }
+
     // ハッシュ付き遷移はブラウザーに任せます (エンジンも `hashChange` をスルーします)。
     try {
       const href = urlHref ?? window.location.href;

@@ -66,6 +66,7 @@ export default function initLoaders(
     if (typeof loader !== "function") {
       continue;
     }
+
     const raw = NinjaPromise.try(function executeLoader() {
       return loader({
         params,

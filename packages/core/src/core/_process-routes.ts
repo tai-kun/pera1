@@ -112,6 +112,7 @@ function flattenRouteDefinitions<TComponent>(
     if (children !== undefined && children.length > 0) {
       flattened.push(...flattenRouteDefinitions(children, fullPath));
     }
+
     flattened.push({ definition, fullPath });
   }
 

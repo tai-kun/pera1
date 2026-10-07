@@ -51,6 +51,7 @@ function ensureInitialized(): void {
   if (initialized) {
     return;
   }
+
   initialized = true;
   try {
     const counterRaw = localStorage.getItem(COUNTER_KEY);
@@ -60,14 +61,17 @@ function ensureInitialized(): void {
         nextId = parsed;
       }
     }
+
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       return;
     }
+
     const parsed = JSON.parse(raw) as Array<Partial<StoredBooking>>;
     if (!Array.isArray(parsed)) {
       return;
     }
+
     for (const entry of parsed) {
       if (typeof entry.id === "string" && entry.flight && typeof entry.flight.id === "string") {
         bookings.set(entry.id, entry as StoredBooking);
@@ -95,6 +99,7 @@ function isValidPassenger(value: unknown): value is Passenger {
   if (typeof value !== "object" || value === null) {
     return false;
   }
+
   const v = value as Record<string, unknown>;
 
   return typeof v["name"] === "string" && v["name"] !== "" && typeof v["email"] === "string" && v["email"] !== "";
@@ -104,6 +109,7 @@ function isValidPayment(value: unknown): value is PaymentInfo {
   if (typeof value !== "object" || value === null) {
     return false;
   }
+
   const v = value as Record<string, unknown>;
 
   return (
@@ -128,6 +134,7 @@ export async function createBooking(input: {
   if (!flight) {
     throw new Error("便が見つかりません。");
   }
+
   const id = `booking-${nextId++}`;
   const booking: StoredBooking = {
     id,
@@ -169,6 +176,7 @@ export function setPassengers(bookingId: string, passenger: Passenger): void {
   if (!booking) {
     throw new Error("予約が見つかりません。");
   }
+
   bookings.set(bookingId, { ...booking, passengers: passenger });
   persist();
 }
@@ -189,6 +197,7 @@ export function setPayment(bookingId: string, payment: PaymentInfo): void {
   if (!booking) {
     throw new Error("予約が見つかりません。");
   }
+
   bookings.set(bookingId, { ...booking, payment });
   persist();
 }
@@ -205,6 +214,7 @@ export async function confirmBooking(bookingId: string): Promise<Booking> {
   if (!isValidPayment(booking.payment)) {
     throw new Error("支払情報が入力されていません。");
   }
+
   const confirmed: StoredBooking = { ...booking, status: "confirmed" };
   bookings.set(bookingId, confirmed);
   persist();

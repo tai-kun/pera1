@@ -34,6 +34,7 @@ export default function SearchPage() {
     if (nextAdults !== "") {
       params.set("adults", nextAdults);
     }
+
     const query = params.toString();
     navigate(query === "" ? "/travel/search/results" : `/travel/search/results?${query}`);
   }

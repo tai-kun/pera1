@@ -9,14 +9,17 @@ export async function loader() {
   if (isCartEmptySync()) {
     return redirect("/cart");
   }
+
   const shipping = getShipping();
   if (!shipping) {
     return redirect("/checkout/shipping");
   }
+
   const payment = getPayment();
   if (!payment) {
     return redirect("/checkout/payment");
   }
+
   const cart = await listCart();
 
   return { cart, shipping, payment };

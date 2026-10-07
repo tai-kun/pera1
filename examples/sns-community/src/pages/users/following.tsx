@@ -11,10 +11,12 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (username === undefined) {
     throw new Error("username が指定されていません。");
   }
+
   const user = await findUser(username);
   if (!user) {
     return { username, user: undefined, following: [] as const };
   }
+
   const all = await listUsers();
   const following = all.filter((candidate) => user.following.includes(candidate.username));
 

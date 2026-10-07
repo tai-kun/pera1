@@ -34,6 +34,7 @@ export async function action({ request }: ActionFunctionArgs) {
   if (email === "" || password === "") {
     return { error: "メールアドレスとパスワードを入力してください。" };
   }
+
   const user = await login(email, password);
   if (!user) {
     return { error: "メールアドレスまたはパスワードが正しくありません。" };

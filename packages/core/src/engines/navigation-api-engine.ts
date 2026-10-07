@@ -247,6 +247,7 @@ export default class NavigationApiEngine implements IEngine {
       if (this.navAbortController) {
         log.debug("進行中の遷移を中断します");
       }
+
       this.navAbortController?.abort();
       this.navAbortController = new AbortController();
       const { signal } = this.navAbortController;
@@ -448,6 +449,7 @@ export default class NavigationApiEngine implements IEngine {
 
             return;
           }
+
           // 同期がズレている場合はガードします。
           if (currentEntry.url.href !== destUrl.href) {
             log.debug(

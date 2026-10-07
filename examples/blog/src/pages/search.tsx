@@ -29,6 +29,7 @@ export default function SearchPage() {
 
       return;
     }
+
     headingRef.current?.focus();
   }, [q, page]);
 

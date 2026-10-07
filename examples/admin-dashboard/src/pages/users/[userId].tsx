@@ -14,6 +14,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
+
   const userId = params["userId"];
   if (userId === undefined) {
     throw new Error("userId が指定されていません。");

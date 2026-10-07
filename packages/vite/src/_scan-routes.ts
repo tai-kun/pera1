@@ -346,6 +346,7 @@ function convertDirectory(
         if (index !== undefined) {
           throw new Error(`インデックスルートが重複しています: ${index}, ${file.filePath}`);
         }
+
         index = file.filePath;
         continue;
       }
@@ -353,6 +354,7 @@ function convertDirectory(
         if (layout !== undefined) {
           throw new Error(`レイアウトルートが重複しています: ${layout}, ${file.filePath}`);
         }
+
         layout = file.filePath;
         continue;
       }

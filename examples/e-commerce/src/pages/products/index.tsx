@@ -19,6 +19,7 @@ function buildSearch(category: string, sort: string, page: number): string {
   if (sort !== "") {
     params.set("sort", sort);
   }
+
   params.set("page", String(page));
 
   return `/products?${params.toString()}`;

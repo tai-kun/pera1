@@ -28,16 +28,19 @@ function ensureInitialized(): void {
   if (initialized) {
     return;
   }
+
   initialized = true;
   try {
     const raw = localStorage.getItem(STORAGE_KEY);
     if (!raw) {
       return;
     }
+
     const parsed = JSON.parse(raw) as Array<Partial<Order>>;
     if (!Array.isArray(parsed)) {
       return;
     }
+
     for (const entry of parsed) {
       if (typeof entry.id === "string" && Array.isArray(entry.items)) {
         orders.set(entry.id, entry as Order);
@@ -66,14 +69,17 @@ export async function createOrder(): Promise<Order> {
   if (cart.lines.length === 0) {
     throw new Error("カートが空です。");
   }
+
   const shipping = getShipping();
   if (!shipping) {
     throw new Error("配送先が入力されていません。");
   }
+
   const payment = getPayment();
   if (!payment) {
     throw new Error("支払情報が入力されていません。");
   }
+
   const id = `order-${nextId++}`;
   const order: Order = {
     id,

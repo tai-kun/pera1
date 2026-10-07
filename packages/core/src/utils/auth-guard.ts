@@ -43,6 +43,7 @@ export function sanitizeRedirectTo(value: string | null | undefined, fallback = 
   if (!isRawRedirectTarget(candidate)) {
     return fallbackPath;
   }
+
   // 符号化された攻撃 (`/%2f` や `/%252f` など) は復号すると `//` や `/\` に化けるため、復号後の接頭辞も検査します。
   if (!hasSafeRedirectPrefix(stripUrlIgnoredChars(decodeRedirectTarget(candidate)).trim())) {
     return fallbackPath;
@@ -163,6 +164,7 @@ function isRawRedirectTarget(value: string): boolean {
   if (!hasSafeRedirectPrefix(value)) {
     return false;
   }
+
   // バックスラッシュや空白・制御文字はブラウザーの正規化で意味が変わるため、含む値は受け付けません。
   for (const char of value) {
     const code = char.charCodeAt(0);
@@ -186,6 +188,7 @@ function hasSafeRedirectPrefix(value: string): boolean {
   if (!value.startsWith("/")) {
     return false;
   }
+
   const second = value.charCodeAt(1);
 
   return second !== 0x2f && second !== 0x5c;
@@ -211,6 +214,7 @@ function decodeRedirectTarget(value: string): string {
     if (next === decoded) {
       break;
     }
+
     decoded = next;
   }
 

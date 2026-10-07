@@ -12,6 +12,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (bookingId === undefined) {
     throw new Error("bookingId が指定されていません。");
   }
+
   const booking = await findBooking(bookingId);
   if (!booking) {
     return { bookingId, booking: null, passenger: null };
@@ -47,6 +48,7 @@ export default function PassengersPage() {
     if (name === "" || email === "") {
       return;
     }
+
     setPassengers(bookingId, { name, email });
     navigate(`/travel/booking/${bookingId}/payment`);
   }

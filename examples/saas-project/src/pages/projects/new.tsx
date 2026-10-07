@@ -30,6 +30,7 @@ export default function NewProjectPage() {
 
       return;
     }
+
     setError(null);
     const project = await createProject(name, description);
     navigate(`/app/projects/${project.id}`);

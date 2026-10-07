@@ -67,6 +67,7 @@ export default function useNavigation(): Navigation {
     if (state === "idle") {
       return;
     }
+
     const snapshot = routerRef.current as unknown as {
       currentEntry?: { id?: unknown };
       actionDataStore?: Map<unknown, Map<unknown, PromiseLike<unknown> & { status?: string }>>;
@@ -76,12 +77,14 @@ export default function useNavigation(): Navigation {
     if (!currentId) {
       return;
     }
+
     const pending: PromiseLike<unknown>[] = [];
     for (const store of [snapshot?.actionDataStore, snapshot?.loaderDataStore]) {
       const map = store?.get(currentId);
       if (!map) {
         continue;
       }
+
       for (const data of map.values()) {
         if ((data as { status?: string }).status === "pending") {
           pending.push(data);

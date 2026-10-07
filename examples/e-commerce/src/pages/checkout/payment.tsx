@@ -11,6 +11,7 @@ export async function loader() {
   if (!getShipping()) {
     return redirect("/checkout/shipping");
   }
+
   const cart = await listCart();
 
   return { cart, payment: getPayment() };
@@ -29,6 +30,7 @@ export default function PaymentPage() {
     if (cardNumber === "" || expiry === "" || cvc === "") {
       return;
     }
+
     setPayment({ cardNumber, expiry, cvc });
     navigate("/checkout/confirm");
   }

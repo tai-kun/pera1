@@ -23,14 +23,17 @@ function restoreCustomProjects(): void {
     if (!raw) {
       return;
     }
+
     const parsed = JSON.parse(raw) as Partial<Project>[];
     if (!Array.isArray(parsed)) {
       return;
     }
+
     for (const item of parsed) {
       if (typeof item.id !== "string" || typeof item.name !== "string") {
         continue;
       }
+
       projects.set(item.id, {
         id: item.id,
         name: item.name,
@@ -59,6 +62,7 @@ function ensureRestored(): void {
   if (restored) {
     return;
   }
+
   restored = true;
   restoreCustomProjects();
 }

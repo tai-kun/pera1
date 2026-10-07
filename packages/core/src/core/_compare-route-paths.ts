@@ -94,6 +94,7 @@ export default function compareRoutePaths(pathA: string, pathB: string): number 
     if (scoreA !== scoreB) {
       return scoreB - scoreA;
     }
+
     // スコアが同じ場合は、文字列の辞書順で比較します。
     if (a !== b) {
       return enCollator.compare(a, b);

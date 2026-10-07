@@ -138,6 +138,7 @@ function applyStaticPriorityFilter<TComponent>(
     if (typeof pattern !== "string") {
       return { route, segments: undefined, exact: false, wildcard: false };
     }
+
     const segments = splitPatternSegments(pattern);
     const wildcard = segments.some(isWildcardSegment);
 
@@ -170,11 +171,13 @@ function applyStaticPriorityFilter<TComponent>(
       filtered.push(entry.route);
       continue;
     }
+
     let excluded = false;
     for (const winner of winners) {
       if (entry.route === winner.route) {
         continue;
       }
+
       const loserSegments = entry.segments;
       const winnerSegments = winner.segments!;
       const length = Math.min(loserSegments.length, winnerSegments.length);

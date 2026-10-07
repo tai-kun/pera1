@@ -8,6 +8,7 @@ export async function loader() {
   if (isCartEmptySync()) {
     return redirect("/cart");
   }
+
   const cart = await listCart();
 
   return { cart, shipping: getShipping() };
@@ -27,6 +28,7 @@ export default function ShippingPage() {
     if (name === "" || address === "" || city === "" || zip === "") {
       return;
     }
+
     setShipping({ name, address, city, zip });
     navigate("/checkout/payment");
   }

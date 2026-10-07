@@ -12,6 +12,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
+
   const projectId = params["projectId"];
   if (projectId === undefined) {
     throw new Error("projectId が指定されていません。");

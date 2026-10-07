@@ -31,6 +31,7 @@ export function getCurrentUser(): User | null {
     if (!raw) {
       return null;
     }
+
     const user = JSON.parse(raw) as Partial<User>;
     if (typeof user.id !== "string" || typeof user.email !== "string") {
       return null;
@@ -52,6 +53,7 @@ export async function login(email: string, password: string): Promise<User | und
   if (!found) {
     return undefined;
   }
+
   const user: User = { id: found.id, name: found.name, email: found.email, role: found.role };
   try {
     localStorage.setItem(STORAGE_KEY, JSON.stringify(user));

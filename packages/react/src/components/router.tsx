@@ -229,6 +229,7 @@ export default function Router(props: RouterProps) {
         </RouterContext>
       );
     }
+
     warnMissingNotFound();
     log.debug("一致するルートがないため null を描画します");
 

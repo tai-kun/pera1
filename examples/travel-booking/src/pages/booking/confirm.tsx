@@ -13,14 +13,17 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (bookingId === undefined) {
     throw new Error("bookingId が指定されていません。");
   }
+
   const booking = await findBooking(bookingId);
   if (!booking) {
     return { bookingId, booking: null, passengers: null, payment: null };
   }
+
   const passengers = getPassengers(bookingId);
   if (!passengers) {
     return redirect(`/travel/booking/${bookingId}/passengers`);
   }
+
   const payment = getPayment(bookingId);
   if (!payment) {
     return redirect(`/travel/booking/${bookingId}/payment`);

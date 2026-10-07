@@ -31,6 +31,7 @@ function isValidShipping(value: unknown): value is ShippingInfo {
   if (typeof value !== "object" || value === null) {
     return false;
   }
+
   const v = value as Record<string, unknown>;
 
   return (
@@ -49,6 +50,7 @@ function isValidPayment(value: unknown): value is PaymentInfo {
   if (typeof value !== "object" || value === null) {
     return false;
   }
+
   const v = value as Record<string, unknown>;
 
   return (

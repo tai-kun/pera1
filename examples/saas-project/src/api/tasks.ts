@@ -38,6 +38,7 @@ export async function toggleTask(projectId: string, taskId: string): Promise<Tas
   if (!tasks) {
     return undefined;
   }
+
   const next = tasks.map((task) =>
     task.id === taskId ? { ...task, done: !task.done } : task,
   );
