@@ -67,6 +67,16 @@ function ensureRestored(): void {
   restoreCustomProjects();
 }
 
+function slugify(name: string): string {
+  const slug = name
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+
+  return slug === "" ? `project-${Date.now()}` : slug;
+}
+
 export async function listProjects(): Promise<Project[]> {
   ensureRestored();
 
@@ -77,16 +87,6 @@ export async function findProject(id: string): Promise<Project | undefined> {
   ensureRestored();
 
   return projects.get(id);
-}
-
-function slugify(name: string): string {
-  const slug = name
-    .trim()
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  return slug === "" ? `project-${Date.now()}` : slug;
 }
 
 export async function createProject(name: string, description: string): Promise<Project> {

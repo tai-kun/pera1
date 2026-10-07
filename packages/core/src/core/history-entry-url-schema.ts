@@ -4,6 +4,16 @@ import type { ReadonlyURL } from "./readonly-url.types.js";
 import RoutePath from "./route-path.js";
 
 /**
+ * `HistoryEntryUrlSchema` による検証と変換を行う前の入力値です。
+ */
+export type HistoryEntryUrlLike = v.InferInput<ReturnType<typeof HistoryEntryUrlSchema>>;
+
+/**
+ * `HistoryEntryUrlSchema` による検証、並び替え、および変換が正常に完了した、安全な出力値です。
+ */
+export type HistoryEntryUrl = v.InferOutput<ReturnType<typeof HistoryEntryUrlSchema>>;
+
+/**
  * 履歴エントリーで使用される URL 文字列を検証し、正規化し、ブランド化するためのスキーマを作成する関数です。
  *
  * スキーマの構築処理は一度だけ実行され、以降はシングルトンインスタンスとしてキャッシュから再利用されます。
@@ -28,15 +38,5 @@ const HistoryEntryUrlSchema = () =>
       v.brand("HistoryEntryUrl"),
     ),
   );
-
-/**
- * `HistoryEntryUrlSchema` による検証と変換を行う前の入力値です。
- */
-export type HistoryEntryUrlLike = v.InferInput<ReturnType<typeof HistoryEntryUrlSchema>>;
-
-/**
- * `HistoryEntryUrlSchema` による検証、並び替え、および変換が正常に完了した、安全な出力値です。
- */
-export type HistoryEntryUrl = v.InferOutput<ReturnType<typeof HistoryEntryUrlSchema>>;
 
 export default HistoryEntryUrlSchema;

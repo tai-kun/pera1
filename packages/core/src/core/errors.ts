@@ -5,12 +5,10 @@ import getTypeName from "type-name";
 import type { BaseIssue } from "valibot";
 
 /**************************************************************************************************/
-
 export type { ErrorMeta, ErrorOptions };
 export { setErrorMessage };
 
 /**************************************************************************************************/
-
 /**
  * データ検証の過程で検出された具体的な問題点です。
  *
@@ -19,18 +17,6 @@ export { setErrorMessage };
 export type Issue = BaseIssue<unknown>;
 
 /**************************************************************************************************/
-
-/**
- * pera1 ルーティングライブラリーにおける、すべてのカスタムエラーの頂点に位置する基底クラスです。
- *
- * @template TMeta エラーの発生コンテキストを保持するために紐付けるメタデータオブジェクトです。
- */
-export class ErrorBase<
-  TMeta extends ErrorMeta | undefined = undefined,
-> extends I18nErrorBase<TMeta> {}
-
-/**************************************************************************************************/
-
 /**
  * プログラムの制御フローにおいて、理論上到達しないはずのコード領域へ侵入した際に付与されるメタデータです。
  */
@@ -51,6 +37,103 @@ export type UnreachableErrorArgs = ErrorOptions & {
   readonly actual: [never?];
 };
 
+/**************************************************************************************************/
+/**
+ * 予期しないデータ構造や型に遭遇した際に付与される、検証エラー情報のメタデータです。
+ */
+export type UnexpectedValidationErrorMeta = {
+  /**
+   * スキーマ検証によって不適合と判定された問題点のリストです。
+   * 最低 1 つ以上の要素を持つことが保証された読み取り専用の配列です。
+   */
+  readonly issues: readonly [Issue, ...Issue[]];
+
+  /**
+   * 検証の対象となった、予期しない生の入力値です。
+   */
+  readonly value: unknown;
+};
+
+/**
+ * `UnexpectedValidationError` のインスタンスを初期化する際に渡される引数オブジェクトです。
+ */
+export type UnexpectedValidationErrorArgs = ErrorOptions & UnexpectedValidationErrorMeta;
+
+/**************************************************************************************************/
+/**
+ * データの再読み込み判定において、不正なデータ型が検出された際に付与されるメタデータです。
+ */
+export type LoaderConditionErrorMeta = {
+  /**
+   * エラーが発生した対象ルートの URL パス文字列です。
+   */
+  readonly url: string;
+
+  /**
+   * 不正な値を返した対象の `shouldReload` 関数の参照です。
+   */
+  readonly shouldReload: Function;
+
+  /**
+   * `shouldReload` 関数が実際に返した、期待値とは異なるオブジェクトやプリミティブ値です。
+   */
+  readonly returnValue: unknown;
+};
+
+/**
+ * `LoaderConditionError` のインスタンスを初期化する際に渡される引数オブジェクトです。
+ */
+export type LoaderConditionErrorArgs = ErrorOptions & LoaderConditionErrorMeta;
+
+/**************************************************************************************************/
+/**
+ * ローダーデータの紛失を通知する際に付与されるメタデータです。
+ */
+export type LoaderDataNotFoundErrorMeta = {
+  /**
+   * データの取得を試みた対象のローダー関数の参照です。
+   * 未定義の場合は `undefined` となることがあります。
+   */
+  readonly loader: Function | undefined;
+};
+
+/**
+ * `LoaderDataNotFoundError` のインスタンスを初期化する際に渡される引数オブジェクトです。
+ */
+export type LoaderDataNotFoundErrorArgs = ErrorOptions & LoaderDataNotFoundErrorMeta;
+
+/**************************************************************************************************/
+/**
+ * ルートパターンの不一致を通知する際に付与されるメタデータです。
+ */
+export type RoutePatternMismatchErrorMeta = {
+  /**
+   * ルートパターン文字列です。
+   */
+  readonly route: string;
+
+  /**
+   * 検証対象のパス文字列です。
+   */
+  readonly target: string;
+};
+
+/**
+ * `RoutePatternMismatchError` のインスタンスを初期化する際に渡される引数オブジェクトです。
+ */
+export type RoutePatternMismatchErrorArgs = ErrorOptions & RoutePatternMismatchErrorMeta;
+
+/**************************************************************************************************/
+/**
+ * pera1 ルーティングライブラリーにおける、すべてのカスタムエラーの頂点に位置する基底クラスです。
+ *
+ * @template TMeta エラーの発生コンテキストを保持するために紐付けるメタデータオブジェクトです。
+ */
+export class ErrorBase<
+  TMeta extends ErrorMeta | undefined = undefined,
+> extends I18nErrorBase<TMeta> {}
+
+/**************************************************************************************************/
 /**
  * 網羅性チェックにおいて、プログラムの制御フローが理論上決して到達しないはずの場所に達した場合に投げるエラーです。
  */
@@ -87,7 +170,6 @@ export class UnreachableError extends ErrorBase<UnreachableErrorMeta> {
 );
 
 /**************************************************************************************************/
-
 /**
  * データ検証の失敗に関連するエラーを集約するための共通基底クラスです。
  *
@@ -98,28 +180,6 @@ export class ValidationErrorBase<
 > extends ErrorBase<TMeta> {}
 
 /**************************************************************************************************/
-
-/**
- * 予期しないデータ構造や型に遭遇した際に付与される、検証エラー情報のメタデータです。
- */
-export type UnexpectedValidationErrorMeta = {
-  /**
-   * スキーマ検証によって不適合と判定された問題点のリストです。
-   * 最低 1 つ以上の要素を持つことが保証された読み取り専用の配列です。
-   */
-  readonly issues: readonly [Issue, ...Issue[]];
-
-  /**
-   * 検証の対象となった、予期しない生の入力値です。
-   */
-  readonly value: unknown;
-};
-
-/**
- * `UnexpectedValidationError` のインスタンスを初期化する際に渡される引数オブジェクトです。
- */
-export type UnexpectedValidationErrorArgs = ErrorOptions & UnexpectedValidationErrorMeta;
-
 /**
  * スキーマによるデータ構造の検証において、予期しない形式の値に遭遇した場合に投げるエラーです。
  */
@@ -144,7 +204,6 @@ export class UnexpectedValidationError extends ValidationErrorBase<UnexpectedVal
 }
 
 /**************************************************************************************************/
-
 /**
  * ブラウザー標準の Navigation API が、現在の実行環境でサポートされていない場合に投げるエラーです。
  */
@@ -170,32 +229,6 @@ export class NavigationApiNotSupportedError extends ErrorBase<undefined> {
 );
 
 /**************************************************************************************************/
-
-/**
- * データの再読み込み判定において、不正なデータ型が検出された際に付与されるメタデータです。
- */
-export type LoaderConditionErrorMeta = {
-  /**
-   * エラーが発生した対象ルートの URL パス文字列です。
-   */
-  readonly url: string;
-
-  /**
-   * 不正な値を返した対象の `shouldReload` 関数の参照です。
-   */
-  readonly shouldReload: Function;
-
-  /**
-   * `shouldReload` 関数が実際に返した、期待値とは異なるオブジェクトやプリミティブ値です。
-   */
-  readonly returnValue: unknown;
-};
-
-/**
- * `LoaderConditionError` のインスタンスを初期化する際に渡される引数オブジェクトです。
- */
-export type LoaderConditionErrorArgs = ErrorOptions & LoaderConditionErrorMeta;
-
 /**
  * ユーザーが定義した `shouldReload` 関数が、仕様に準拠した同期的な真偽値ではなく、不正な値を返した場合に投げるエラーです。
  */
@@ -232,7 +265,6 @@ export class LoaderConditionError extends ErrorBase<LoaderConditionErrorMeta> {
 );
 
 /**************************************************************************************************/
-
 /**
  * ルーター全体の共通状態 `RouterContext` が、React のコンポーネントツリー内の上位から供給されていない場合に投げるエラーです。
  */
@@ -258,7 +290,6 @@ export class RouterContextMissingError extends ErrorBase<undefined> {
 );
 
 /**************************************************************************************************/
-
 /**
  * 個々のルート固有の状態 `RouteContext` が、React のコンポーネントツリー内の上位から供給されていない場合に投げるエラーです。
  */
@@ -284,23 +315,6 @@ export class RouteContextMissingError extends ErrorBase<undefined> {
 );
 
 /**************************************************************************************************/
-
-/**
- * ローダーデータの紛失を通知する際に付与されるメタデータです。
- */
-export type LoaderDataNotFoundErrorMeta = {
-  /**
-   * データの取得を試みた対象のローダー関数の参照です。
-   * 未定義の場合は `undefined` となることがあります。
-   */
-  readonly loader: Function | undefined;
-};
-
-/**
- * `LoaderDataNotFoundError` のインスタンスを初期化する際に渡される引数オブジェクトです。
- */
-export type LoaderDataNotFoundErrorArgs = ErrorOptions & LoaderDataNotFoundErrorMeta;
-
 /**
  * ルートに紐づくデータ取得用のローダー関数が正常に処理されたはずであるにもかかわらず、該当するキャッシュデータや応答結果が見つからない場合に投げるエラーです。
  */
@@ -337,27 +351,6 @@ export class LoaderDataNotFoundError extends ErrorBase<LoaderDataNotFoundErrorMe
 );
 
 /**************************************************************************************************/
-
-/**
- * ルートパターンの不一致を通知する際に付与されるメタデータです。
- */
-export type RoutePatternMismatchErrorMeta = {
-  /**
-   * ルートパターン文字列です。
-   */
-  readonly route: string;
-
-  /**
-   * 検証対象のパス文字列です。
-   */
-  readonly target: string;
-};
-
-/**
- * `RoutePatternMismatchError` のインスタンスを初期化する際に渡される引数オブジェクトです。
- */
-export type RoutePatternMismatchErrorArgs = ErrorOptions & RoutePatternMismatchErrorMeta;
-
 /**
  * 対象のパスまたは URL が、指定されたルートパターンに一致しない場合に投げるエラーです。
  */

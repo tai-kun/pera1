@@ -35,26 +35,6 @@ type ComponentRendererProps = {
 };
 
 /**
- * マッチした個々のルートコンポーネントを、固有の `RouteContext` で包み込みながら再帰的にマウントし、展開していくための内部レンダラーコンポーネントです。
- */
-function ComponentRenderer(props: ComponentRendererProps): React.JSX.Element | null {
-  const parentRoute = React.use(RouteContext);
-  const { route, outlet } = props;
-  const context = {
-    ...route,
-    outlet,
-    // 親ルートのアクションとローダーを引き継ぐことで、`useActionData` と `useLoaderData` がデータを参照できるようにします。
-    action: route.action ?? parentRoute?.action,
-    loader: route.loader ?? parentRoute?.loader,
-  };
-  const Comp = route.component;
-
-  return (
-    <RouteContext value={context}>{typeof Comp === "function" ? <Comp /> : outlet}</RouteContext>
-  );
-}
-
-/**
  * `RouteRenderer` コンポーネントに渡すプロパティーです。
  */
 type RouteRendererProps = {
@@ -68,20 +48,6 @@ type RouteRendererProps = {
    */
   readonly index?: number;
 };
-
-/**
- * マッチしたルート配列を親から子の順番に巡回し、各階層を入れ子状の React エレメントツリーに再帰的に構築するコンポーネントです。
- */
-function RouteRenderer(props: RouteRendererProps): React.ReactElement {
-  const { index = 0, routes } = props;
-  const route = routes[index]!;
-
-  // 配列の終端に達していない場合はインデックスを 1 進めて自身を再帰的に呼び出し、ネストされる子要素を生成します。
-  const outlet =
-    index < routes.length - 1 ? <RouteRenderer routes={routes} index={index + 1} /> : null;
-
-  return <ComponentRenderer route={route} outlet={outlet} />;
-}
 
 export type RouterRouteDefinitionObject = RouteDefinitionObject<string, React.ComponentType<{}>> & {
   readonly action?: { (args: any): unknown } | undefined;
@@ -131,6 +97,40 @@ export type RouterProps = {
    */
   readonly scrollRestoration?: ScrollRestorationOption | undefined;
 };
+
+/**
+ * マッチした個々のルートコンポーネントを、固有の `RouteContext` で包み込みながら再帰的にマウントし、展開していくための内部レンダラーコンポーネントです。
+ */
+function ComponentRenderer(props: ComponentRendererProps): React.JSX.Element | null {
+  const parentRoute = React.use(RouteContext);
+  const { route, outlet } = props;
+  const context = {
+    ...route,
+    outlet,
+    // 親ルートのアクションとローダーを引き継ぐことで、`useActionData` と `useLoaderData` がデータを参照できるようにします。
+    action: route.action ?? parentRoute?.action,
+    loader: route.loader ?? parentRoute?.loader,
+  };
+  const Comp = route.component;
+
+  return (
+    <RouteContext value={context}>{typeof Comp === "function" ? <Comp /> : outlet}</RouteContext>
+  );
+}
+
+/**
+ * マッチしたルート配列を親から子の順番に巡回し、各階層を入れ子状の React エレメントツリーに再帰的に構築するコンポーネントです。
+ */
+function RouteRenderer(props: RouteRendererProps): React.ReactElement {
+  const { index = 0, routes } = props;
+  const route = routes[index]!;
+
+  // 配列の終端に達していない場合はインデックスを 1 進めて自身を再帰的に呼び出し、ネストされる子要素を生成します。
+  const outlet =
+    index < routes.length - 1 ? <RouteRenderer routes={routes} index={index + 1} /> : null;
+
+  return <ComponentRenderer route={route} outlet={outlet} />;
+}
 
 /**
  * 未マッチかつフォールバック未定義のときに開発モードでのみ警告します。

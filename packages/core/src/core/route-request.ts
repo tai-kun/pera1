@@ -88,6 +88,8 @@ type RouteRequestImpl = {
   [P in keyof RouteGetRequest & keyof RoutePostRequest]: RouteRequest[P];
 };
 
+export type { RouteGetRequest, RoutePostRequest };
+
 /**
  * ルーティングコンテキストにおける HTTP リクエストを抽象化し、管理するクラスです。
  *
@@ -203,7 +205,5 @@ const RouteRequest = class RouteRequest implements RouteRequestImpl {
     });
   }
 };
-
-export type { RouteGetRequest, RoutePostRequest };
 
 export default RouteRequest;

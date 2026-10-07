@@ -9,6 +9,12 @@ export type Flight = {
   readonly price: number;
 };
 
+export type FlightSearchQuery = {
+  readonly from: string;
+  readonly to: string;
+  readonly date: string;
+};
+
 const FLIGHTS: readonly Flight[] = [
   {
     id: "JL101",
@@ -91,12 +97,6 @@ const FLIGHTS: readonly Flight[] = [
     price: 15900,
   },
 ];
-
-export type FlightSearchQuery = {
-  readonly from: string;
-  readonly to: string;
-  readonly date: string;
-};
 
 export async function searchFlights(query: FlightSearchQuery): Promise<Flight[]> {
   const from = query.from.trim().toUpperCase();

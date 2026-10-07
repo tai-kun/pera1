@@ -3,23 +3,6 @@ import * as React from "react";
 
 import type { action as contactsAction, loader as contactsLoader } from "./_layout.js";
 
-export default function ContactsPage() {
-  const contacts = React.use(useLoaderData<typeof contactsLoader>());
-
-  return (
-    <>
-      <ul>
-        {contacts.map((contact) => (
-          <li key={contact.id}>
-            <a href={`/contacts/${contact.id}`}>{contact.name}</a>
-          </li>
-        ))}
-      </ul>
-      <CreateContactForm />
-    </>
-  );
-}
-
 function CreateContactForm() {
   const actionData = useActionData<typeof contactsAction>();
 
@@ -48,3 +31,21 @@ function ActionError({ actionData }: { readonly actionData: ActionData<typeof co
 
   return null;
 }
+
+export default function ContactsPage() {
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
+
+  return (
+    <>
+      <ul>
+        {contacts.map((contact) => (
+          <li key={contact.id}>
+            <a href={`/contacts/${contact.id}`}>{contact.name}</a>
+          </li>
+        ))}
+      </ul>
+      <CreateContactForm />
+    </>
+  );
+}
+

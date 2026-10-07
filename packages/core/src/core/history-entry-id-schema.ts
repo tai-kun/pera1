@@ -2,14 +2,6 @@ import singleton from "./_singleton.js";
 import * as v from "./_valibot.js";
 
 /**
- * 履歴エントリーの識別子を検証およびブランド化するためのスキーマを作成する関数です。
- *
- * スキーマの生成処理は一度だけ実行され、以降はシングルトンインスタンスとしてキャッシュから再利用されます。
- */
-const HistoryEntryIdSchema = () =>
-  singleton("HistoryEntryIdSchema", () => v.pipe(v.string(), v.uuid(), v.brand("HistoryEntryId")));
-
-/**
  * `HistoryEntryIdSchema` による検証を通過する前の入力値です。
  */
 export type HistoryEntryIdLike = v.InferInput<ReturnType<typeof HistoryEntryIdSchema>>;
@@ -18,5 +10,13 @@ export type HistoryEntryIdLike = v.InferInput<ReturnType<typeof HistoryEntryIdSc
  * `HistoryEntryIdSchema` による検証および解析が正常に完了した、安全な出力値です。
  */
 export type HistoryEntryId = v.InferOutput<ReturnType<typeof HistoryEntryIdSchema>>;
+
+/**
+ * 履歴エントリーの識別子を検証およびブランド化するためのスキーマを作成する関数です。
+ *
+ * スキーマの生成処理は一度だけ実行され、以降はシングルトンインスタンスとしてキャッシュから再利用されます。
+ */
+const HistoryEntryIdSchema = () =>
+  singleton("HistoryEntryIdSchema", () => v.pipe(v.string(), v.uuid(), v.brand("HistoryEntryId")));
 
 export default HistoryEntryIdSchema;

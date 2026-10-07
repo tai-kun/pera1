@@ -12,6 +12,24 @@ import * as React from "react";
 
 import { getCurrentUser, login } from "../api/auth.js";
 
+function LoginError() {
+  const actionData = useActionData<typeof action>();
+  if (!actionData) {
+    return null;
+  }
+
+  return <ActionError actionData={actionData} />;
+}
+
+function ActionError({ actionData }: { readonly actionData: ActionData<typeof action> }) {
+  const data = React.use(actionData);
+  if (data && "error" in data) {
+    return <p role="alert">{data.error}</p>;
+  }
+
+  return null;
+}
+
 export async function loader({ request }: LoaderFunctionArgs) {
   const redirectTo = sanitizeRedirectTo(
     request.url.searchParams.get(REDIRECT_TO_PARAM),
@@ -71,20 +89,3 @@ export default function LoginPage() {
   );
 }
 
-function LoginError() {
-  const actionData = useActionData<typeof action>();
-  if (!actionData) {
-    return null;
-  }
-
-  return <ActionError actionData={actionData} />;
-}
-
-function ActionError({ actionData }: { readonly actionData: ActionData<typeof action> }) {
-  const data = React.use(actionData);
-  if (data && "error" in data) {
-    return <p role="alert">{data.error}</p>;
-  }
-
-  return null;
-}

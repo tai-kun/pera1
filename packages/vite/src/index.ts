@@ -63,18 +63,6 @@ export type Pera1VitePluginOptions = {
 };
 
 /**
- * ルート定義を提供する仮想モジュールの ID です。
- *
- * アプリケーション側では `import { routes } from "virtual:pera1/routes"` として参照します。
- */
-export const virtualRoutesId = "virtual:pera1/routes";
-
-/**
- * Vite が内部で使う、解決済みの仮想モジュール ID です。
- */
-const resolvedVirtualRoutesId = `\0${virtualRoutesId}`;
-
-/**
  * ルートノードが参照するページモジュールを、重複なくすべて列挙します。
  *
  * @param nodes 列挙の対象となるルートノードです。
@@ -105,6 +93,19 @@ function isInDirectory(directoryPath: string, filePath: string): boolean {
 
   return relativePath !== "" && !relativePath.startsWith("..") && !path.isAbsolute(relativePath);
 }
+
+/**
+ * ルート定義を提供する仮想モジュールの ID です。
+ *
+ * アプリケーション側では `import { routes } from "virtual:pera1/routes"` として参照します。
+ */
+export const virtualRoutesId = "virtual:pera1/routes";
+
+/**
+ * Vite が内部で使う、解決済みの仮想モジュール ID です。
+ */
+const resolvedVirtualRoutesId = `\0${virtualRoutesId}`;
+
 
 /**
  * ファイルとディレクトリーの構成からルート定義を生成し、`virtual:pera1/routes` として提供する Vite プラグインです。

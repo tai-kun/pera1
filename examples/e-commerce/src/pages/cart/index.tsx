@@ -3,16 +3,6 @@ import * as React from "react";
 
 import { clearCart, listCart } from "../../api/cart.js";
 
-export async function loader() {
-  return listCart();
-}
-
-export default function CartPage() {
-  const initial = React.use(useLoaderData<typeof loader>());
-
-  return <CartView initial={initial} />;
-}
-
 function CartView({ initial }: { readonly initial: Awaited<ReturnType<typeof listCart>> }) {
   const [summary, setSummary] = React.useState(initial);
   const [cleared, setCleared] = React.useState(false);
@@ -64,3 +54,14 @@ function CartView({ initial }: { readonly initial: Awaited<ReturnType<typeof lis
     </section>
   );
 }
+
+export async function loader() {
+  return listCart();
+}
+
+export default function CartPage() {
+  const initial = React.use(useLoaderData<typeof loader>());
+
+  return <CartView initial={initial} />;
+}
+

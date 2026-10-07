@@ -4,34 +4,6 @@ import * as React from "react";
 import { addToCart } from "../../api/cart.js";
 import { findProduct, type Product } from "../../api/products.js";
 
-export async function loader({ params }: LoaderFunctionArgs) {
-  const productId = params["productId"];
-  if (productId === undefined) {
-    throw new Error("productId が指定されていません。");
-  }
-
-  return { product: await findProduct(productId) };
-}
-
-export default function ProductDetailPage() {
-  const params = useParams<"/products/:productId">();
-  const { product } = React.use(useLoaderData<typeof loader>());
-
-  if (!product) {
-    return (
-      <article>
-        <h2>商品が見つかりません</h2>
-        <p>ID: {params.productId} の商品は存在しません。</p>
-        <p>
-          <a href="/products">商品一覧に戻る</a>
-        </p>
-      </article>
-    );
-  }
-
-  return <ProductDetailView product={product} productId={params.productId} />;
-}
-
 function ProductDetailView({ product, productId }: { readonly product: Product; readonly productId: string }) {
   const [added, setAdded] = React.useState(false);
 
@@ -63,3 +35,32 @@ function ProductDetailView({ product, productId }: { readonly product: Product; 
     </article>
   );
 }
+
+export async function loader({ params }: LoaderFunctionArgs) {
+  const productId = params["productId"];
+  if (productId === undefined) {
+    throw new Error("productId が指定されていません。");
+  }
+
+  return { product: await findProduct(productId) };
+}
+
+export default function ProductDetailPage() {
+  const params = useParams<"/products/:productId">();
+  const { product } = React.use(useLoaderData<typeof loader>());
+
+  if (!product) {
+    return (
+      <article>
+        <h2>商品が見つかりません</h2>
+        <p>ID: {params.productId} の商品は存在しません。</p>
+        <p>
+          <a href="/products">商品一覧に戻る</a>
+        </p>
+      </article>
+    );
+  }
+
+  return <ProductDetailView product={product} productId={params.productId} />;
+}
+

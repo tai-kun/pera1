@@ -5,6 +5,15 @@ export type Post = {
   readonly category: string;
 };
 
+export type SearchResult = {
+  readonly q: string;
+  readonly page: number;
+  readonly pageSize: number;
+  readonly total: number;
+  readonly totalPages: number;
+  readonly posts: Post[];
+};
+
 const posts = new Map<string, Post>([
   [
     "1",
@@ -99,15 +108,6 @@ const posts = new Map<string, Post>([
 ]);
 
 export const PAGE_SIZE = 3;
-
-export type SearchResult = {
-  readonly q: string;
-  readonly page: number;
-  readonly pageSize: number;
-  readonly total: number;
-  readonly totalPages: number;
-  readonly posts: Post[];
-};
 
 export async function listPosts(): Promise<Post[]> {
   return [...posts.values()];

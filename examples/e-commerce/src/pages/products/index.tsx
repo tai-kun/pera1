@@ -3,14 +3,6 @@ import * as React from "react";
 
 import { listProducts } from "../../api/products.js";
 
-export async function loader({ request }: LoaderFunctionArgs) {
-  const category = request.url.searchParams.get("category") ?? "";
-  const sort = request.url.searchParams.get("sort") ?? "";
-  const page = Number(request.url.searchParams.get("page") ?? "1");
-
-  return listProducts({ category, sort, page });
-}
-
 function buildSearch(category: string, sort: string, page: number): string {
   const params = new URLSearchParams();
   if (category !== "") {
@@ -23,6 +15,14 @@ function buildSearch(category: string, sort: string, page: number): string {
   params.set("page", String(page));
 
   return `/products?${params.toString()}`;
+}
+
+export async function loader({ request }: LoaderFunctionArgs) {
+  const category = request.url.searchParams.get("category") ?? "";
+  const sort = request.url.searchParams.get("sort") ?? "";
+  const page = Number(request.url.searchParams.get("page") ?? "1");
+
+  return listProducts({ category, sort, page });
 }
 
 export default function ProductsPage() {

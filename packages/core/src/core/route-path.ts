@@ -1,11 +1,6 @@
 import type { ReadonlyURL, ReadonlyURLSearchParams } from "./readonly-url.types.js";
 
 /**
- * 連続する複数のスラッシュを検出するための正規表現です。
- */
-const MULTI_SLASH = /\/\/+/gu;
-
-/**
  * アプリケーション内のルーティングにおけるパスを安全に構築し、解析し、操作するためのクラスです。
  *
  * 内包するホストやプロトコルといった余分な情報を排除し、パス、クエリー、ハッシュのみを一貫した規則で管理します。
@@ -47,6 +42,11 @@ export interface ReadonlyRoutePath {
    */
   clone(): RoutePath;
 }
+
+/**
+ * 連続する複数のスラッシュを検出するための正規表現です。
+ */
+const MULTI_SLASH = /\/\/+/gu;
 
 /**
  * アプリケーション内のルーティングにおけるパスを安全に構築し、解析し、操作するためのクラスです。

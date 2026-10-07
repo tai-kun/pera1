@@ -24,16 +24,6 @@ export interface RoutePatternMatchURL {
 }
 
 /**
- * 引数に渡された対象から URL パスを取得し、一貫した形式に正規化します。
- *
- * @param target 文字列または URL 情報を持つオブジェクトです。
- * @returns 正規化されたパス文字列です。
- */
-function normalizeTarget(target: string | RoutePatternMatchURL): string {
-  return new RoutePath(typeof target === "string" ? target : target.pathname).pathname;
-}
-
-/**
  * ルートパターンを解析および処理する際の挙動を設定するオプションです。
  */
 export type RoutePatternUtilsOptions = {
@@ -45,6 +35,16 @@ export type RoutePatternUtilsOptions = {
    */
   readonly allowChild?: boolean | undefined;
 };
+
+/**
+ * 引数に渡された対象から URL パスを取得し、一貫した形式に正規化します。
+ *
+ * @param target 文字列または URL 情報を持つオブジェクトです。
+ * @returns 正規化されたパス文字列です。
+ */
+function normalizeTarget(target: string | RoutePatternMatchURL): string {
+  return new RoutePath(typeof target === "string" ? target : target.pathname).pathname;
+}
 
 /**
  * ルートパターンの解析などを行うユーティリティークラスです。

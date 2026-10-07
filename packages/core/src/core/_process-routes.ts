@@ -4,6 +4,11 @@ import { createBarePathLoader, findIndexChildTarget } from "./_redirect.js";
 import RoutePatternUtils from "./route-pattern-utils.js";
 import type { Route, RouteDefinition } from "./route.types.js";
 
+type FlattenedEntry<TComponent> = {
+  readonly definition: RouteDefinition<string, TComponent>;
+  readonly fullPath: string;
+};
+
 /**
  * 連続する複数のスラッシュを検出するための正規表現です。
  */
@@ -81,11 +86,6 @@ function warnIfIndexHasChildren(definition: RouteDefinition<string, any>, fullPa
     );
   }
 }
-
-type FlattenedEntry<TComponent> = {
-  readonly definition: RouteDefinition<string, TComponent>;
-  readonly fullPath: string;
-};
 
 /**
  * `children` による明示的ネストを再帰的にフラット化します。

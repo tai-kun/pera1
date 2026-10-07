@@ -5,31 +5,6 @@ import HistoryEntryIdSchema, { type HistoryEntryId } from "./history-entry-id-sc
 import HistoryEntryUrlSchema, { type HistoryEntryUrl } from "./history-entry-url-schema.js";
 
 /**
- * 履歴エントリーオブジェクト全体の構造を検証するためのスキーマを作成する関数です。
- *
- * スキーマの構築処理は一度だけ実行され、以降はシングルトンインスタンスとしてキャッシュから再利用されます。
- */
-const HistoryEntrySchema = () =>
-  singleton("HistoryEntrySchema", () =>
-    v.object({
-      /**
-       * 履歴エントリーの識別子です。
-       */
-      id: HistoryEntryIdSchema(),
-
-      /**
-       * 履歴エントリーの絶対 URL です。
-       */
-      url: v.nullable(HistoryEntryUrlSchema()),
-
-      /**
-       * 履歴エントリーリスト内の履歴エントリーのインデックスです。
-       */
-      index: v.pipe(v.number(), v.safeInteger(), v.minValue(-1)),
-    }),
-  );
-
-/**
  * `HistoryEntrySchema` による検証と構造変換を行う前の、生の入力オブジェクトです。
  */
 export type HistoryEntryLike = v.InferInput<ReturnType<typeof HistoryEntrySchema>>;
@@ -53,6 +28,31 @@ export type HistoryEntry = {
    */
   readonly index: number;
 };
+
+/**
+ * 履歴エントリーオブジェクト全体の構造を検証するためのスキーマを作成する関数です。
+ *
+ * スキーマの構築処理は一度だけ実行され、以降はシングルトンインスタンスとしてキャッシュから再利用されます。
+ */
+const HistoryEntrySchema = () =>
+  singleton("HistoryEntrySchema", () =>
+    v.object({
+      /**
+       * 履歴エントリーの識別子です。
+       */
+      id: HistoryEntryIdSchema(),
+
+      /**
+       * 履歴エントリーの絶対 URL です。
+       */
+      url: v.nullable(HistoryEntryUrlSchema()),
+
+      /**
+       * 履歴エントリーリスト内の履歴エントリーのインデックスです。
+       */
+      index: v.pipe(v.number(), v.safeInteger(), v.minValue(-1)),
+    }),
+  );
 
 /**
  * 履歴エントリーオブジェクトを検証し、仕様を満たしている場合に確定的な `HistoryEntry` 型へ変換します。
