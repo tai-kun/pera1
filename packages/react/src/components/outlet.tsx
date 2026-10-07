@@ -1,5 +1,5 @@
 import { RouteContextMissingError } from "@pera1/core";
-import * as React from "react";
+import { use, type ReactElement } from "react";
 
 import log from "../_logger.js";
 import RouteContext from "../contexts/route-context.js";
@@ -10,8 +10,8 @@ import RouteContext from "../contexts/route-context.js";
  * @returns 描画すべき子ルートの React 要素を返します。
  * これ以上下位のルートがない場合は `null` を返します。
  */
-export default function Outlet(): React.ReactElement | null {
-  const routeContext = React.use(RouteContext);
+export default function Outlet(): ReactElement | null {
+  const routeContext = use(RouteContext);
   if (!routeContext) {
     log.debug("RouteContext が見つかりません");
 

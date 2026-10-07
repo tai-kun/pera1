@@ -20,6 +20,12 @@ export default defineConfig({
       reporter: ["text", "json-summary", "html"],
       include: ["src/**/*.ts"],
       reportsDirectory: "./coverage/client",
+      thresholds: {
+        lines: 100,
+        functions: 100,
+        branches: 100,
+        statements: 100,
+      },
     },
     browser: {
       provider: playwright(),

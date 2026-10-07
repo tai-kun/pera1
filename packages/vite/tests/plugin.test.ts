@@ -302,7 +302,10 @@ test("ビルド監視フックがページファイルの変更で型を再生�
   expect(fs.existsSync(path.join(root, ".pera1/types/src/pages/+types/_index.d.ts"))).toBe(true);
 
   // 実行: ページディレクトリーの外の変更では何もしません。
-  hooks.watchChange.call({ warn: (message) => warnings.push(message) }, path.join(root, "other.ts"));
+  hooks.watchChange.call(
+    { warn: (message) => warnings.push(message) },
+    path.join(root, "other.ts"),
+  );
 
   // 検証
   expect(warnings).toStrictEqual([]);

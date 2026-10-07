@@ -419,9 +419,7 @@ export default class NavigationApiEngine implements IEngine {
 
           // 全ローダーの完了を待機します。
           // ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
-          const { redirectTo } = (await startedLoaders?.idle()) ?? {
-            redirectTo: undefined,
-          };
+          const { redirectTo } = await startedLoaders.idle();
 
           // アクション後のローダーがリダイレクトを返した場合も自動遷移します。
           if (redirectTo) {
@@ -491,9 +489,7 @@ export default class NavigationApiEngine implements IEngine {
 
           // 全ローダーの完了を待機します。
           // ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブにはローディングスピーナーが表示されます。
-          const { redirectTo } = (await startedLoaders?.idle()) ?? {
-            redirectTo: undefined,
-          };
+          const { redirectTo } = await startedLoaders.idle();
 
           // いずれかのローダーがリダイレクトを返した場合は自動遷移します
           // (アクションの `redirect()` と対称的な振る舞いです)。
@@ -588,6 +584,8 @@ export default class NavigationApiEngine implements IEngine {
     switch (args.type) {
       case "FORM_DATA": {
         const { action, target } = args;
+        // デバッグ無効時は評価されない遅延コールバックのためカバレッジ対象外にします。
+        /* v8 ignore next 4 */
         log.debug("フォームを送信します（action: {action}）", () => ({
           action,
           fieldCount: [...target.keys()].length,

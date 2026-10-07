@@ -220,9 +220,7 @@ test.skipIf(!fs.existsSync(builtEntry))(
 
     // 検証
     expect(code).toBe(0);
-    expect(fs.existsSync(path.join(root, ".pera1/types/app/routes/+types/_index.d.ts"))).toBe(
-      true,
-    );
+    expect(fs.existsSync(path.join(root, ".pera1/types/app/routes/+types/_index.d.ts"))).toBe(true);
   },
 );
 

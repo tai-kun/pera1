@@ -97,6 +97,10 @@ jobs:
         run: mise run test
         working-directory: ${{ matrix.package-directory }}
 
+      - name: "カバレッジ"
+        run: mise run test:coverage
+        working-directory: ${{ matrix.package-directory }}
+
   examples-e2e:
     strategy:
       fail-fast: false
@@ -156,6 +160,10 @@ jobs:
 
       - name: "ビルド"
         run: pnpm run build
+        working-directory: ${{ matrix.package-directory }}
+
+      - name: "単体テスト"
+        run: pnpm exec vitest run --coverage --config ./vitest.unit.config.ts
         working-directory: ${{ matrix.package-directory }}
 
       - name: "E2E テスト"

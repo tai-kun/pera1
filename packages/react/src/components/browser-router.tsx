@@ -1,4 +1,5 @@
 import { NavigationApiEngine } from "@pera1/core";
+import type { ComponentType, ReactElement } from "react";
 
 import log from "../_logger.js";
 import useSingleton from "../hooks/_use-singleton.js";
@@ -20,7 +21,7 @@ export type BrowserRouterProps = {
    * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
    * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
    */
-  readonly notFoundComponent?: React.ComponentType<{}> | undefined;
+  readonly notFoundComponent?: ComponentType<{}> | undefined;
 
   /**
    * 遷移後に先頭へスクロールするかを制御するオプトイン指定です (012)。
@@ -41,7 +42,7 @@ export type BrowserRouterProps = {
  *
  * @param props アプリケーションに組み込むルート定義の配列です。
  */
-export default function BrowserRouter(props: BrowserRouterProps): React.ReactElement {
+export default function BrowserRouter(props: BrowserRouterProps): ReactElement {
   const { routes, notFoundComponent, scrollRestoration } = props;
   const engine = useSingleton(() => {
     log.debug("NavigationApiEngine を作成します");

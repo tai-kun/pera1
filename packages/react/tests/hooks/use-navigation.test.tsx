@@ -1,7 +1,8 @@
+import { RouterContextMissingError } from "@pera1/core";
 import { NinjaPromise } from "ninja-promise";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { describe, test } from "vitest";
+import { describe, test, vi } from "vitest";
 
 import type { RouterContextValue } from "../../src/contexts/router-context.js";
 import RouterContext from "../../src/contexts/router-context.js";
@@ -216,5 +217,151 @@ describe("useNavigation", () => {
 
     // 検証
     expect(container.textContent).toBe("idle");
+  });
+});
+
+describe("useNavigation の異常系", () => {
+  test("RouterContext がなければエラーを投げる", async ({ expect }) => {
+    // 準備
+    await using cleanup = new AsyncDisposableStack();
+
+    function Comp() {
+      const navigation = useNavigation();
+
+      return <span>{navigation.state}</span>;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    cleanup.defer(() => {
+      document.body.removeChild(container);
+    });
+
+    const root = createRoot(container);
+    cleanup.defer(async () => {
+      try {
+        await act(async () => {
+          root.unmount();
+        });
+      } catch {}
+    });
+
+    using _spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // 実行と検証
+    await expect(
+      act(async () => {
+        root.render(<Comp />);
+      }),
+    ).rejects.toThrow(RouterContextMissingError);
+  });
+
+  test("アンマウント後の確定では再描画しない", async ({ expect }) => {
+    // 準備
+    await using cleanup = new AsyncDisposableStack();
+
+    function loader() {
+      return "ok";
+    }
+    const deferred = NinjaPromise.withResolvers<string>();
+    const entryId = "550e8400-e29b-41d4-a716-446655440000";
+    const routerRef = {
+      current: {
+        currentEntry: { id: entryId, url: new URL("https://example.com/"), index: 0 },
+        actionDataStore: new Map(),
+        loaderDataStore: new Map([[entryId, new Map([[loader, deferred.promise]])]]),
+      },
+    };
+    const ctx = { routerRef, subscribe: () => () => {} };
+    let state: string | undefined;
+
+    function Comp() {
+      state = useNavigation().state;
+
+      return <span>{state}</span>;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    cleanup.defer(() => {
+      document.body.removeChild(container);
+    });
+
+    const root = createRoot(container);
+    await act(async () => {
+      root.render(
+        <RouterContext.Provider value={ctx as unknown as RouterContextValue}>
+          <Comp />
+        </RouterContext.Provider>,
+      );
+    });
+    expect(state).toBe("loading");
+
+    // 実行: アンマウントしてから確定させます。
+    await act(async () => {
+      root.unmount();
+    });
+    deferred.resolve("done");
+    await act(async () => {});
+
+    // 検証: 例外なく終了します。
+    expect(state).toBe("loading");
+  });
+});
+
+describe("useNavigation の確定済みデータ", () => {
+  test("確定済みのデータは走査対象外になる", async ({ expect }) => {
+    // 準備
+    await using cleanup = new AsyncDisposableStack();
+
+    function action() {
+      return "ok";
+    }
+    function loader() {
+      return "ok";
+    }
+    const pending = NinjaPromise.withResolvers<string>().promise;
+    const settled = NinjaPromise.resolve("done");
+    const entryId = "550e8400-e29b-41d4-a716-446655440000";
+    const routerRef = {
+      current: {
+        currentEntry: { id: entryId, url: new URL("https://example.com/"), index: 0 },
+        actionDataStore: new Map([[entryId, new Map([[action, pending]])]]),
+        loaderDataStore: new Map([[entryId, new Map([[loader, settled]])]]),
+      },
+    };
+    const ctx = { routerRef, subscribe: () => () => {} };
+    let state: string | undefined;
+
+    function Comp() {
+      state = useNavigation().state;
+
+      return <span>{state}</span>;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    cleanup.defer(() => {
+      document.body.removeChild(container);
+    });
+
+    const root = createRoot(container);
+    cleanup.defer(async () => {
+      await act(async () => {
+        root.unmount();
+      });
+    });
+
+    // 実行
+    await act(async () => {
+      root.render(
+        <RouterContext.Provider value={ctx as unknown as RouterContextValue}>
+          <Comp />
+        </RouterContext.Provider>,
+      );
+    });
+
+    // 検証: アクションが pending のため submitting になります。
+    expect(state).toBe("submitting");
   });
 });

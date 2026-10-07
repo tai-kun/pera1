@@ -107,7 +107,6 @@ export const VIRTUAL_ROUTES_ID = "virtual:pera1/routes";
  */
 const RESOLVED_VIRTUAL_ROUTES_ID = `\0${VIRTUAL_ROUTES_ID}`;
 
-
 /**
  * ファイルとディレクトリーの構成からルート定義を生成し、`virtual:pera1/routes` として提供する Vite プラグインです。
  *

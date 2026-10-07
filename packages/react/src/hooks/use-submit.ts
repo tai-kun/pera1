@@ -5,7 +5,7 @@ import type {
   SubmitPostOptions,
 } from "@pera1/core";
 import { toSubmitArgs } from "@pera1/core";
-import * as React from "react";
+import { useCallback } from "react";
 
 import log from "../_logger.js";
 import useFormAction from "./use-form-action.js";
@@ -58,7 +58,7 @@ export default function useSubmit(): SubmitFunction {
   const routerSubmit = useRouterContext((router) => router.submit);
 
   // レンダリングごとに参照が変わって子コンポーネントが不要に再描画されるのを防ぐため、`useCallback` でラップします。
-  return React.useCallback(
+  return useCallback(
     function submit(target, options = {}) {
       const submitArgs = toSubmitArgs(target, formAction, options);
       if (submitArgs.type === "FORM_DATA") {

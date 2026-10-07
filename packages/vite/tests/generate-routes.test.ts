@@ -61,7 +61,9 @@ test("子ルートを持つレイアウトを階層として生成する", ({ ex
       path: "/",
       index: false,
       modulePath: "/project/src/pages/_layout.tsx",
-      children: [createNode({ path: "/", index: true, modulePath: "/project/src/pages/_index.tsx" })],
+      children: [
+        createNode({ path: "/", index: true, modulePath: "/project/src/pages/_index.tsx" }),
+      ],
     }),
   ];
 

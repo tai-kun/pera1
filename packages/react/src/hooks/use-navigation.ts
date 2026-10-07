@@ -1,6 +1,6 @@
 import { RouterContextMissingError, selectNavigationState } from "@pera1/core";
 import type { NavigationState } from "@pera1/core";
-import * as React from "react";
+import { use, useEffect, useMemo, useReducer, useSyncExternalStore } from "react";
 
 import log from "../_logger.js";
 import RouterContext from "../contexts/router-context.js";
@@ -43,7 +43,7 @@ export type Navigation = {
  * @returns 現在の遷移状態を内包したオブジェクトを返します。
  */
 export default function useNavigation(): Navigation {
-  const routerContext = React.use(RouterContext);
+  const routerContext = use(RouterContext);
   if (!routerContext) {
     log.debug("RouterContext が見つかりません");
 
@@ -54,16 +54,16 @@ export default function useNavigation(): Navigation {
 
   // ルーターの更新通知ごとに `selectNavigationState` を再評価します。
   // `getSnapshot` はプリミティブな状態文字列を返すため、キャッシュ不要で比較可能です。
-  const state = React.useSyncExternalStore(subscribe, () =>
+  const state = useSyncExternalStore(subscribe, () =>
     selectNavigationState(routerRef.current as never),
   );
 
   // ローダーの完了のときにエンジンからの再通知はないため、pending の確定を待って自発的に再描画します。
-  const [, bump] = React.useReducer((count: number) => count + 1, 0);
+  const [, bump] = useReducer((count: number) => count + 1, 0);
   const entryId = (routerRef.current as { currentEntry?: { id?: string } } | null)?.currentEntry
     ?.id;
 
-  React.useEffect(() => {
+  useEffect(() => {
     if (state === "idle") {
       return;
     }
@@ -74,6 +74,9 @@ export default function useNavigation(): Navigation {
       loaderDataStore?: Map<unknown, Map<unknown, PromiseLike<unknown> & { status?: string }>>;
     } | null;
     const currentId = snapshot?.currentEntry?.id;
+    // レンダーとエフェクトの間でエントリーが消えた場合の保険です。
+    // 単一スレッドのテストでは再現できないためカバレッジ対象外にします。
+    /* v8 ignore next 3 */
     if (!currentId) {
       return;
     }
@@ -91,6 +94,9 @@ export default function useNavigation(): Navigation {
         }
       }
     }
+    // レンダー時には pending があったものの、エフェクト実行までに確定した場合の保険です。
+    // 単一スレッドのテストでは再現できないためカバレッジ対象外にします。
+    /* v8 ignore next 3 */
     if (pending.length === 0) {
       return;
     }
@@ -107,5 +113,5 @@ export default function useNavigation(): Navigation {
     };
   }, [state, entryId, routerRef]);
 
-  return React.useMemo(() => ({ state }), [state]);
+  return useMemo(() => ({ state }), [state]);
 }

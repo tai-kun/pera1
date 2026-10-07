@@ -1,6 +1,6 @@
 import type { NavigateOptions, NavigateTo } from "@pera1/core";
 import { toNavigateArgs } from "@pera1/core";
-import * as React from "react";
+import { useCallback } from "react";
 
 import log from "../_logger.js";
 import useRouterContext from "./use-router-context.js";
@@ -38,7 +38,7 @@ export default function useNavigate(): NavigateFunction {
   const routerNavigate = useRouterContext((router) => router.navigate);
 
   // レンダリングごとに参照が変わって子コンポーネントが不要に再描画されるのを防ぐため、`useCallback` でラップします。
-  return React.useCallback(
+  return useCallback(
     function navigate(...args: [NavigateTo, options?: NavigateOptions | undefined] | [number]) {
       const navigateArgs = toNavigateArgs(args[0] as NavigateTo | number, args[1]);
       if (navigateArgs.type === "MOVE") {

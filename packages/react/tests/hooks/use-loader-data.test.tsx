@@ -108,3 +108,54 @@ describe("useLoaderData", () => {
     ).rejects.toThrow(LoaderDataNotFoundError);
   });
 });
+
+describe("useLoaderData の匿名ローダー", () => {
+  test("名前のないローダーは anonymous と表示する", async ({ expect }) => {
+    // 準備
+    await using cleanup = new AsyncDisposableStack();
+
+    const loader = (() => "data") as () => string;
+    Object.defineProperty(loader, "name", { value: "" });
+    const routerRef = {
+      current: { currentEntry: { id: "other" }, loaderDataStore: new Map() },
+    };
+    const routerCtx = { routerRef, subscribe: () => () => {} };
+    const routeValue = { loader, outlet: null };
+
+    function Comp() {
+      const data = useLoaderData();
+
+      return <span>{String(data)}</span>;
+    }
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    cleanup.defer(() => {
+      document.body.removeChild(container);
+    });
+
+    const root = createRoot(container);
+    cleanup.defer(async () => {
+      try {
+        await act(async () => {
+          root.unmount();
+        });
+      } catch {}
+    });
+
+    using _spy = vi.spyOn(console, "error").mockImplementation(() => {});
+
+    // 実行と検証
+    await expect(
+      act(async () => {
+        root.render(
+          <RouterContext.Provider value={routerCtx as unknown as RouterContextValue}>
+            <RouteContext.Provider value={routeValue as unknown as RouteContextValue}>
+              <Comp />
+            </RouteContext.Provider>
+          </RouterContext.Provider>,
+        );
+      }),
+    ).rejects.toThrow("anonymous");
+  });
+});

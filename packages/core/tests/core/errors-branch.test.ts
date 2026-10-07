@@ -1,5 +1,5 @@
-import { describe, test } from "vitest";
 import { setGlobalConfig } from "valibot";
+import { describe, test } from "vitest";
 
 import { LoaderConditionError, LoaderDataNotFoundError } from "../../src/core/errors.js";
 

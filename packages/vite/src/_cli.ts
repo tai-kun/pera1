@@ -4,8 +4,8 @@ import { parseArgs } from "node:util";
 
 import { loadConfigFromFile } from "vite";
 
-import generateTypes from "./_generate-types.js";
 import toErrorMessage from "./_error.js";
+import generateTypes from "./_generate-types.js";
 import {
   DEFAULT_DIR,
   DEFAULT_EXCLUDE,
@@ -94,9 +94,9 @@ function flattenPlugins(plugins: readonly unknown[]): readonly unknown[] {
  * @returns 解決済みのプラグインオプション、または取得できなかった場合は `undefined` です。
  */
 async function loadPluginOptions(root: string): Promise<ResolvedPluginOptions | undefined> {
-  const configFile = VITE_CONFIG_FILE_NAMES
-    .map((fileName) => path.join(root, fileName))
-    .find((filePath) => fs.existsSync(filePath));
+  const configFile = VITE_CONFIG_FILE_NAMES.map((fileName) => path.join(root, fileName)).find(
+    (filePath) => fs.existsSync(filePath),
+  );
 
   if (configFile === undefined) {
     return undefined;
