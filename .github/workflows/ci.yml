@@ -96,3 +96,68 @@ jobs:
       - name: "テスト"
         run: mise run test
         working-directory: ${{ matrix.package-directory }}
+
+  examples-e2e:
+    strategy:
+      fail-fast: false
+      matrix:
+        package-directory:
+          - "examples/admin-dashboard"
+          - "examples/blog"
+          - "examples/contacts"
+          - "examples/e-commerce"
+          - "examples/saas-project"
+          - "examples/sns-community"
+          - "examples/travel-booking"
+    timeout-minutes: 30
+    runs-on: ubuntu-latest
+    steps:
+      - name: "チェックアウト"
+        uses: actions/checkout@d23441a48e516b6c34aea4fa41551a30e30af803 # v6.1.0
+
+      - name: "mise をセットアップ"
+        uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
+
+      - name: "依存関係をインストール（ルート）"
+        run: pnpm i
+
+      - name: "内部依存パッケージのビルド"
+        run: |
+          # examples は `@pera1/react`（推移的に `@pera1/core`）に依存し、
+          # `contacts` はさらに `@pera1/vite` に依存するため、依存順に明示してビルドします。
+          echo "packages/core で内部依存パッケージ @pera1/core をビルドします"
+          (cd packages/core && npm run build)
+          echo
+          echo "packages/react で内部依存パッケージ @pera1/react をビルドします"
+          (cd packages/react && npm run build)
+          echo
+          if jq -e '
+            ((.dependencies // {}) + (.devDependencies // {}) + (.peerDependencies // {}) + (.optionalDependencies // {}))
+            | has("@pera1/vite")
+          ' "${{ matrix.package-directory }}/package.json" > /dev/null; then
+            echo "packages/vite で内部依存パッケージ @pera1/vite をビルドします"
+            (cd packages/vite && npm run build)
+            echo
+          fi
+
+      - name: "依存関係をインストール（パッケージ）"
+        run: |
+          if grep -q "playwright" package.json; then
+            npx playwright install --with-deps
+          fi
+        working-directory: ${{ matrix.package-directory }}
+
+      - name: "テスト準備"
+        run: |
+          if [ -f ./scripts/pretest.sh ]; then
+            bash -euo pipefail ./scripts/pretest.sh
+          fi
+        working-directory: ${{ matrix.package-directory }}
+
+      - name: "ビルド"
+        run: npm run build
+        working-directory: ${{ matrix.package-directory }}
+
+      - name: "E2E テスト"
+        run: pnpm exec vitest run --config ./vitest.e2e.config.ts
+        working-directory: ${{ matrix.package-directory }}
