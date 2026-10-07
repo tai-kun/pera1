@@ -1,7 +1,6 @@
 import {
   type LoaderFunctionArgs,
   useLoaderData,
-  useParams,
 } from "@pera1/react";
 import * as React from "react";
 
@@ -16,15 +15,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function ConversationPage() {
-  const params = useParams<"/messages/:conversationId">();
   const { conversationId, conversation } = React.use(useLoaderData<typeof loader>());
-  const displayId = conversation?.id ?? conversationId ?? params.conversationId;
 
   if (!conversation) {
     return (
       <article>
         <h3>会話が見つかりません</h3>
-        <p>ID: {displayId} の会話は存在しません。</p>
+        <p>ID: {conversationId} の会話は存在しません。</p>
         <p>
           <a href="/messages">会話一覧に戻る</a>
         </p>

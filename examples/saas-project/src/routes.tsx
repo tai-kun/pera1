@@ -19,83 +19,88 @@ import TasksPage, { loader as tasksLoader } from "./pages/projects/tasks.js";
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
-    index: true,
-    component: HomePage,
-  },
-  {
-    path: "/",
     component: RootLayout,
-  },
-  {
-    path: "/login",
-    index: true,
-    component: LoginPage,
-    loader: loginLoader,
-    action: loginAction,
-  },
-  {
-    path: "/app",
-    component: AppLayout,
-    loader: appLoader,
-  },
-  {
-    path: "/app/dashboard",
-    index: true,
-    component: DashboardPage,
-    loader: dashboardLoader,
-  },
-  {
-    path: "/app/projects",
-    index: true,
-    component: ProjectsPage,
-    loader: projectsLoader,
-  },
-  {
-    path: "/app/projects/new",
-    index: true,
-    component: NewProjectPage,
-    loader: newProjectLoader,
-  },
-  {
-    path: "/app/projects/:projectId",
-    component: ProjectLayout,
-    loader: projectLoader,
-  },
-  {
-    path: "/app/projects/:projectId/overview",
-    index: true,
-    component: OverviewPage,
-    loader: overviewLoader,
-  },
-  {
-    path: "/app/projects/:projectId/tasks",
-    index: true,
-    component: TasksPage,
-    loader: tasksLoader,
-  },
-  {
-    path: "/app/projects/:projectId/members",
-    index: true,
-    component: MembersPage,
-    loader: membersLoader,
-  },
-  {
-    path: "/app/projects/:projectId/settings",
-    index: true,
-    component: ProjectSettingsPage,
-    loader: projectSettingsLoader,
-  },
-  {
-    path: "/app/notifications",
-    index: true,
-    component: NotificationsPage,
-    loader: notificationsLoader,
-  },
-  {
-    path: "/app/settings",
-    index: true,
-    component: SettingsPage,
-    loader: settingsLoader,
+    children: [
+      {
+        index: true,
+        component: HomePage,
+      },
+      {
+        path: "login",
+        index: true,
+        component: LoginPage,
+        loader: loginLoader,
+        action: loginAction,
+      },
+      {
+        path: "app",
+        component: AppLayout,
+        loader: appLoader,
+        children: [
+          {
+            path: "dashboard",
+            index: true,
+            component: DashboardPage,
+            loader: dashboardLoader,
+          },
+          {
+            path: "projects",
+            index: true,
+            component: ProjectsPage,
+            loader: projectsLoader,
+          },
+          {
+            path: "projects/new",
+            index: true,
+            component: NewProjectPage,
+            loader: newProjectLoader,
+          },
+          {
+            path: "projects/:projectId",
+            component: ProjectLayout,
+            loader: projectLoader,
+            children: [
+              {
+                path: "overview",
+                index: true,
+                component: OverviewPage,
+                loader: overviewLoader,
+              },
+              {
+                path: "tasks",
+                index: true,
+                component: TasksPage,
+                loader: tasksLoader,
+              },
+              {
+                path: "members",
+                index: true,
+                component: MembersPage,
+                loader: membersLoader,
+              },
+              {
+                path: "settings",
+                index: true,
+                component: ProjectSettingsPage,
+                loader: projectSettingsLoader,
+              },
+            ],
+          },
+          {
+            path: "notifications",
+            index: true,
+            component: NotificationsPage,
+            loader: notificationsLoader,
+          },
+          {
+            path: "settings",
+            index: true,
+            component: SettingsPage,
+            loader: settingsLoader,
+          },
+        ],
+      },
+    ],
   },
   {
     path: "/*",

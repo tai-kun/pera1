@@ -1,15 +1,8 @@
-import {
-  type LoaderFunctionArgs,
-  Outlet,
-  redirect,
-  useLoaderData,
-  useRoutePath,
-} from "@pera1/react";
-import * as React from "react";
+import { Outlet, redirect, useRoutePath } from "@pera1/react";
 
 import { isCartEmptySync } from "../../api/cart.js";
 
-export async function loader(_args: LoaderFunctionArgs) {
+export async function loader() {
   if (isCartEmptySync()) {
     return redirect("/cart");
   }
@@ -17,9 +10,7 @@ export async function loader(_args: LoaderFunctionArgs) {
 }
 
 export default function CheckoutLayout() {
-  // `/checkout` 単体への遷移は子の index へ自動誘導されます。
   const { pathname } = useRoutePath();
-  const data = React.use(useLoaderData<typeof loader>());
   return (
     <section>
       <h2>チェックアウト</h2>

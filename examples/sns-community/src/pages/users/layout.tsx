@@ -2,7 +2,6 @@ import {
   type LoaderFunctionArgs,
   Outlet,
   useLoaderData,
-  useParams,
 } from "@pera1/react";
 import * as React from "react";
 
@@ -17,15 +16,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function ProfileLayout() {
-  const params = useParams<"/users/:username">();
   const { username, user } = React.use(useLoaderData<typeof loader>());
-  const displayUsername = user?.username ?? username ?? params.username;
 
   if (!user) {
     return (
       <section>
         <h2>ユーザーが見つかりません</h2>
-        <p>ID: {displayUsername} のユーザーは存在しません。</p>
+        <p>ID: {username} のユーザーは存在しません。</p>
         <p>
           <a href="/explore">ユーザーを探す</a>
         </p>

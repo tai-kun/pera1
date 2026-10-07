@@ -1,4 +1,4 @@
-import { type ActionFunctionArgs, redirect, Outlet } from "@pera1/react";
+import { type ActionFunctionArgs, Outlet, redirect } from "@pera1/react";
 
 import { createContact, listContacts } from "../../api/contacts.js";
 

@@ -3,7 +3,6 @@ import {
   redirect,
   useLoaderData,
   useNavigate,
-  useParams,
 } from "@pera1/react";
 import * as React from "react";
 
@@ -30,7 +29,6 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function ConfirmPage() {
-  const params = useParams<"/travel/booking/:bookingId/confirm">();
   const data = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
   const [error, setError] = React.useState<string | null>(null);
@@ -39,7 +37,7 @@ export default function ConfirmPage() {
     return (
       <section>
         <h3>予約が見つかりません</h3>
-        <p>ID: {data.bookingId ?? params.bookingId} の予約は存在しません。</p>
+        <p>ID: {data.bookingId} の予約は存在しません。</p>
         <p>
           <a href="/travel/search">検索に戻る</a>
         </p>

@@ -5,7 +5,6 @@ export async function loader() {
 }
 
 export default function TravelLayout() {
-  // `/travel` 単体への遷移は子の index へ自動誘導されます。
   return (
     <section>
       <h2>旅行</h2>

@@ -9,11 +9,7 @@ import PostsPage, { loader as postsLoader } from "./pages/posts/index.js";
 import RootLayout from "./pages/root.js";
 import SearchPage, { loader as searchLoader } from "./pages/search.js";
 
-// `children` による明示的ネストの代表例。`processRoutes` がフラット化の際に
-// 親パスと結合するため、従来の flat 配列と等価にマッチする。
-// 404 は `main.tsx` の `notFoundComponent` (006 の一次 API) で処理するため、
-// `path: "/*"` の手書きフォールバックは置いていない。明示的な `/*` 定義との
-// 併存も可能で、その場合は `/*` の通常マッチが優先される。
+// `children` による明示的ネストで親子対応を構造で表します。
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",

@@ -12,34 +12,33 @@ import ContactsLayout, {
 import HomePage from "./pages/index.js";
 import RootLayout from "./pages/root.js";
 
-// 404 は `main.tsx` の `notFoundComponent` (006 の一次 API) で処理するため、
-// `path: "/*"` の手書きフォールバックは置いていない。明示的な `/*` 定義との
-// 併存も可能で、その場合は `/*` の通常マッチが優先される。
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
-    index: true,
-    component: HomePage,
-  },
-  {
-    path: "/",
     component: RootLayout,
-  },
-  {
-    path: "/contacts",
-    index: true,
-    component: ContactsPage,
-  },
-  {
-    path: "/contacts",
-    component: ContactsLayout,
-    loader: contactsLoader,
-    action: createContactAction,
-  },
-  {
-    path: "/contacts/:id",
-    component: ContactPage,
-    loader: contactLoader,
-    action: deleteContactAction,
+    children: [
+      {
+        index: true,
+        component: HomePage,
+      },
+      {
+        path: "contacts",
+        component: ContactsLayout,
+        loader: contactsLoader,
+        action: createContactAction,
+        children: [
+          {
+            index: true,
+            component: ContactsPage,
+          },
+          {
+            path: ":id",
+            component: ContactPage,
+            loader: contactLoader,
+            action: deleteContactAction,
+          },
+        ],
+      },
+    ],
   },
 ];

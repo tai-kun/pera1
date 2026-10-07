@@ -40,13 +40,6 @@ export default function RootLayout() {
         <PendingBar />
       </header>
       <main>
-        {/*
-          Suspense 粒度の指針 (012):
-          - ここはページ全体を覆う粗いフォールバックです。初回表示やページ切替の「穴埋め」に使います。
-          - 検索結果のリストなど部分的な遅延は、ページ側に小さな `<Suspense>` を置いて
-            その区画だけを置き換える方が、画面のちらつきが少なく読み上げも安定します。
-          - 進行中の遷移全体を知らせたい場合は `useNavigation` を `Suspense` の外側で使います (上記 `PendingBar`)。
-        */}
         <React.Suspense fallback={<p>読み込み中…</p>}>
           <Outlet />
         </React.Suspense>

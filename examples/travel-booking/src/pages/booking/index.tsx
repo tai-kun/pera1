@@ -1,7 +1,6 @@
 import {
   type LoaderFunctionArgs,
   useLoaderData,
-  useParams,
 } from "@pera1/react";
 import * as React from "react";
 
@@ -16,15 +15,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function BookingPage() {
-  const params = useParams<"/travel/booking/:bookingId">();
   const { bookingId, booking } = React.use(useLoaderData<typeof loader>());
-  const displayId = booking?.id ?? bookingId ?? params.bookingId;
 
   if (!booking) {
     return (
       <section>
         <h3>予約が見つかりません</h3>
-        <p>ID: {displayId} の予約は存在しません。</p>
+        <p>ID: {bookingId} の予約は存在しません。</p>
         <p>
           <a href="/travel/search">検索に戻る</a>
         </p>

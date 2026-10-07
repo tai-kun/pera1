@@ -3,7 +3,6 @@ import {
   Outlet,
   redirectToLogin,
   useLoaderData,
-  useParams,
   useRoutePath,
 } from "@pera1/react";
 import * as React from "react";
@@ -19,14 +18,12 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (projectId === undefined) {
     throw new Error("projectId が指定されていません。");
   }
-  // `/app/projects/new` は静的ルートが完全一致した時点で param 兄弟が
-  // マッチ鎖から除外されるため (matchRoutes の static 優先)、ここでの
-  // `projectId === "new"` 分岐は不要です。
+  // `/app/projects/new` は静的ルートが優先されるため、
+  // ここでの `projectId === "new"` 分岐は不要です。
   return { projectId, project: await findProject(projectId) };
 }
 
 export default function ProjectLayout() {
-  const params = useParams<"/app/projects/:projectId">();
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
   if (!data.project) {
@@ -41,8 +38,7 @@ export default function ProjectLayout() {
     );
   }
   const base = `/app/projects/${data.project.id}`;
-  // `:projectId` 単体への遷移は子の index へ自動誘導されます。
-  const displayName = data.project.name ?? params.projectId;
+  const displayName = data.project.name;
 
   return (
     <section>

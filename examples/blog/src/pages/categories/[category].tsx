@@ -1,4 +1,4 @@
-import { type LoaderFunctionArgs, useLoaderData, useParams } from "@pera1/react";
+import { type LoaderFunctionArgs, useLoaderData } from "@pera1/react";
 import * as React from "react";
 
 import { listPostsByCategory } from "../../api/posts.js";
@@ -12,13 +12,11 @@ export async function loader({ params }: LoaderFunctionArgs) {
 }
 
 export default function CategoryPage() {
-  const params = useParams<"/categories/:category">();
   const { category, posts } = React.use(useLoaderData<typeof loader>());
-  const displayCategory = category ?? params.category;
 
   return (
     <section>
-      <h3>カテゴリ: {displayCategory}</h3>
+      <h3>カテゴリ: {category}</h3>
       {posts.length === 0 ? (
         <p>このカテゴリには記事がありません。</p>
       ) : (

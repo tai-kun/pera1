@@ -1,16 +1,11 @@
-import {
-  type LoaderFunctionArgs,
-  redirect,
-  useLoaderData,
-  useNavigate,
-} from "@pera1/react";
+import { redirect, useLoaderData, useNavigate } from "@pera1/react";
 import * as React from "react";
 
 import { isCartEmptySync, listCart } from "../../api/cart.js";
 import { getPayment, getShipping } from "../../api/checkout.js";
 import { createOrder } from "../../api/orders.js";
 
-export async function loader(_args: LoaderFunctionArgs) {
+export async function loader() {
   if (isCartEmptySync()) {
     return redirect("/cart");
   }

@@ -15,59 +15,62 @@ import UsersPage, { loader as usersLoader } from "./pages/users/index.js";
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
-    index: true,
-    component: HomePage,
-  },
-  {
-    path: "/",
     component: RootLayout,
-  },
-  {
-    path: "/login",
-    index: true,
-    component: LoginPage,
-    loader: loginLoader,
-    action: loginAction,
-  },
-  {
-    path: "/dashboard",
-    index: true,
-    component: DashboardPage,
-    loader: dashboardLoader,
-  },
-  {
-    path: "/users",
-    index: true,
-    component: UsersPage,
-    loader: usersLoader,
-  },
-  {
-    path: "/users/:userId",
-    component: UserDetailPage,
-    loader: userDetailLoader,
-  },
-  {
-    path: "/settings",
-    component: SettingsLayout,
-    loader: settingsLoader,
-  },
-  {
-    path: "/settings/profile",
-    index: true,
-    component: ProfilePage,
-    loader: profileLoader,
-  },
-  {
-    path: "/settings/security",
-    index: true,
-    component: SecurityPage,
-    loader: securityLoader,
-  },
-  {
-    path: "/admin",
-    index: true,
-    component: AdminPage,
-    loader: adminLoader,
+    children: [
+      {
+        index: true,
+        component: HomePage,
+      },
+      {
+        path: "login",
+        index: true,
+        component: LoginPage,
+        loader: loginLoader,
+        action: loginAction,
+      },
+      {
+        path: "dashboard",
+        index: true,
+        component: DashboardPage,
+        loader: dashboardLoader,
+      },
+      {
+        path: "users",
+        index: true,
+        component: UsersPage,
+        loader: usersLoader,
+      },
+      {
+        path: "users/:userId",
+        component: UserDetailPage,
+        loader: userDetailLoader,
+      },
+      {
+        path: "settings",
+        component: SettingsLayout,
+        loader: settingsLoader,
+        children: [
+          {
+            path: "profile",
+            index: true,
+            component: ProfilePage,
+            loader: profileLoader,
+          },
+          {
+            path: "security",
+            index: true,
+            component: SecurityPage,
+            loader: securityLoader,
+          },
+        ],
+      },
+      {
+        path: "admin",
+        index: true,
+        component: AdminPage,
+        loader: adminLoader,
+      },
+    ],
   },
   {
     path: "/*",

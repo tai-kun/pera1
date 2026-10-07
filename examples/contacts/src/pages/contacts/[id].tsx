@@ -2,8 +2,8 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
   redirect,
-  useParams,
   useLoaderData,
+  useParams,
 } from "@pera1/react";
 import * as React from "react";
 

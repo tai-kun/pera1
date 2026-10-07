@@ -16,62 +16,65 @@ import RootLayout from "./pages/root.js";
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
-    index: true,
-    component: HomePage,
-  },
-  {
-    path: "/",
     component: RootLayout,
-  },
-  {
-    path: "/products",
-    index: true,
-    component: ProductsPage,
-    loader: productsLoader,
-  },
-  {
-    path: "/products/:productId",
-    component: ProductDetailPage,
-    loader: productDetailLoader,
-  },
-  {
-    path: "/categories/:category",
-    component: CategoryPage,
-    loader: categoryLoader,
-  },
-  {
-    path: "/cart",
-    index: true,
-    component: CartPage,
-    loader: cartLoader,
-  },
-  {
-    path: "/checkout",
-    component: CheckoutLayout,
-    loader: checkoutLoader,
-  },
-  {
-    path: "/checkout/shipping",
-    index: true,
-    component: ShippingPage,
-    loader: shippingLoader,
-  },
-  {
-    path: "/checkout/payment",
-    index: true,
-    component: PaymentPage,
-    loader: paymentLoader,
-  },
-  {
-    path: "/checkout/confirm",
-    index: true,
-    component: ConfirmPage,
-    loader: confirmLoader,
-  },
-  {
-    path: "/orders/:orderId",
-    component: OrderDetailPage,
-    loader: orderDetailLoader,
+    children: [
+      {
+        index: true,
+        component: HomePage,
+      },
+      {
+        path: "products",
+        index: true,
+        component: ProductsPage,
+        loader: productsLoader,
+      },
+      {
+        path: "products/:productId",
+        component: ProductDetailPage,
+        loader: productDetailLoader,
+      },
+      {
+        path: "categories/:category",
+        component: CategoryPage,
+        loader: categoryLoader,
+      },
+      {
+        path: "cart",
+        index: true,
+        component: CartPage,
+        loader: cartLoader,
+      },
+      {
+        path: "checkout",
+        component: CheckoutLayout,
+        loader: checkoutLoader,
+        children: [
+          {
+            path: "shipping",
+            index: true,
+            component: ShippingPage,
+            loader: shippingLoader,
+          },
+          {
+            path: "payment",
+            index: true,
+            component: PaymentPage,
+            loader: paymentLoader,
+          },
+          {
+            path: "confirm",
+            index: true,
+            component: ConfirmPage,
+            loader: confirmLoader,
+          },
+        ],
+      },
+      {
+        path: "orders/:orderId",
+        component: OrderDetailPage,
+        loader: orderDetailLoader,
+      },
+    ],
   },
   {
     path: "/*",

@@ -24,9 +24,7 @@ import UserPostsPage, {
   loader as userPostsLoader,
 } from "./pages/users/posts.js";
 
-// `children` による明示的ネストの代表例。`/users/:username` 配下の親子対応を
-// 構造で表し、従来の同 path 二重定義と等価にマッチする。
-// `/*` フォールバックは 006 のスコープのため従来通りとする。
+// `children` による明示的ネストで親子対応を構造で表します。
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",

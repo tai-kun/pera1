@@ -21,7 +21,6 @@ configureSync({
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    {/* 006: 404 は一次 API の `notFoundComponent` で描画する。`/*` の手書きは不要 (併存時は `/*` が優先)。 */}
     <BrowserRouter routes={routes} notFoundComponent={NotFoundPage} />
   </React.StrictMode>,
 );

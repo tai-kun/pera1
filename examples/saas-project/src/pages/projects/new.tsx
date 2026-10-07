@@ -1,7 +1,6 @@
 import {
   type LoaderFunctionArgs,
   redirectToLogin,
-  useLoaderData,
   useNavigate,
 } from "@pera1/react";
 import * as React from "react";
@@ -17,7 +16,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 }
 
 export default function NewProjectPage() {
-  const data = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
   const [error, setError] = React.useState<string | null>(null);
 

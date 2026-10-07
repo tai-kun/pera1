@@ -28,64 +28,68 @@ import SearchPage, { loader as searchLoader } from "./pages/travel/search.js";
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
-    index: true,
-    component: HomePage,
-  },
-  {
-    path: "/",
     component: RootLayout,
-  },
-  {
-    path: "/travel",
-    component: TravelLayout,
-    loader: travelLoader,
-  },
-  {
-    path: "/travel/search",
-    index: true,
-    component: SearchPage,
-    loader: searchLoader,
-  },
-  {
-    path: "/travel/search/results",
-    index: true,
-    component: ResultsPage,
-    loader: resultsLoader,
-  },
-  {
-    path: "/travel/booking/:bookingId",
-    component: BookingLayout,
-    loader: bookingLayoutLoader,
-  },
-  {
-    path: "/travel/booking/:bookingId",
-    index: true,
-    component: BookingPage,
-    loader: bookingLoader,
-  },
-  {
-    path: "/travel/booking/:bookingId/passengers",
-    index: true,
-    component: PassengersPage,
-    loader: passengersLoader,
-  },
-  {
-    path: "/travel/booking/:bookingId/payment",
-    index: true,
-    component: PaymentPage,
-    loader: paymentLoader,
-  },
-  {
-    path: "/travel/booking/:bookingId/confirm",
-    index: true,
-    component: ConfirmPage,
-    loader: confirmLoader,
-  },
-  {
-    path: "/travel/booking/:bookingId/complete",
-    index: true,
-    component: CompletePage,
-    loader: completeLoader,
+    children: [
+      {
+        index: true,
+        component: HomePage,
+      },
+      {
+        path: "travel",
+        component: TravelLayout,
+        loader: travelLoader,
+        children: [
+          {
+            path: "search",
+            index: true,
+            component: SearchPage,
+            loader: searchLoader,
+          },
+          {
+            path: "search/results",
+            index: true,
+            component: ResultsPage,
+            loader: resultsLoader,
+          },
+          {
+            path: "booking/:bookingId",
+            component: BookingLayout,
+            loader: bookingLayoutLoader,
+            children: [
+              {
+                index: true,
+                component: BookingPage,
+                loader: bookingLoader,
+              },
+              {
+                path: "passengers",
+                index: true,
+                component: PassengersPage,
+                loader: passengersLoader,
+              },
+              {
+                path: "payment",
+                index: true,
+                component: PaymentPage,
+                loader: paymentLoader,
+              },
+              {
+                path: "confirm",
+                index: true,
+                component: ConfirmPage,
+                loader: confirmLoader,
+              },
+              {
+                path: "complete",
+                index: true,
+                component: CompletePage,
+                loader: completeLoader,
+              },
+            ],
+          },
+        ],
+      },
+    ],
   },
   {
     path: "/*",

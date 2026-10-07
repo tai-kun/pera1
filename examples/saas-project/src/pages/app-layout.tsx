@@ -2,7 +2,6 @@ import {
   type LoaderFunctionArgs,
   Outlet,
   redirectToLogin,
-  useLoaderData,
   useNavigate,
 } from "@pera1/react";
 import * as React from "react";
@@ -13,13 +12,10 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
-  // `/app` 単体への遷移は子の index へ自動誘導されます。
-  // 完全一致のときだけ合成ローダーが `redirect()` を返し、子への遷移では再実行で通常データを返すため、キャッシュの再利用で固まりません。
   return { authenticated: true as const };
 }
 
 export default function AppLayout() {
-  const data = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
 
   function handleLogout() {
