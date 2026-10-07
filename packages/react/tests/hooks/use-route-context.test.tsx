@@ -15,6 +15,7 @@ describe("useRouteContext", () => {
 
     function Comp() {
       const ctx = useRouteContext();
+
       return <span>{ctx.path}</span>;
     }
 
@@ -50,6 +51,7 @@ describe("useRouteContext", () => {
 
     function Comp() {
       const ctx = useRouteContext();
+
       return <span>{ctx.path}</span>;
     }
 

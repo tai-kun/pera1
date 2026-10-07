@@ -18,6 +18,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (userId === undefined) {
     throw new Error("userId が指定されていません。");
   }
+
   return { profile: await findUser(userId) };
 }
 

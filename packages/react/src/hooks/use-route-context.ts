@@ -15,6 +15,7 @@ export default function useRouteContext(): RouteContextValue {
   const routeContext = React.use(RouteContext);
   if (!routeContext) {
     log.debug("RouteContext が見つかりません");
+
     throw new RouteContextMissingError();
   }
 

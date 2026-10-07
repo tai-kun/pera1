@@ -12,6 +12,7 @@ export async function loader() {
     return redirect("/checkout/shipping");
   }
   const cart = await listCart();
+
   return { cart, payment: getPayment() };
 }
 

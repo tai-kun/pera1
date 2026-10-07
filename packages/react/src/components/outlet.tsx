@@ -14,6 +14,7 @@ export default function Outlet(): React.ReactElement | null {
   const routeContext = React.use(RouteContext);
   if (!routeContext) {
     log.debug("RouteContext が見つかりません");
+
     throw new RouteContextMissingError();
   }
 

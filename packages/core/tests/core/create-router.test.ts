@@ -10,6 +10,7 @@ function createStubEngine(): IEngine & { calls: string[] } {
     init: () => null,
     start: () => {
       calls.push("start");
+
       return () => {
         calls.push("stop");
       };
@@ -21,6 +22,7 @@ function createStubEngine(): IEngine & { calls: string[] } {
       calls.push("navigate");
     },
   };
+
   return engine as unknown as IEngine & { calls: string[] };
 }
 
@@ -92,6 +94,7 @@ describe("createRouter", () => {
     const start = engine.start.bind(engine);
     engine.start = ((args: IEngine.StartArgs) => {
       update = args.update;
+
       return (start as (args: IEngine.StartArgs) => () => void)(args);
     }) as IEngine["start"];
 

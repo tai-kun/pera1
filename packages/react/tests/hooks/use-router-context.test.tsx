@@ -19,6 +19,7 @@ describe("useRouterContext", () => {
 
     function Comp() {
       const url = useRouterContext((r) => r.currentEntry.url);
+
       return <span>{url.href}</span>;
     }
 
@@ -54,6 +55,7 @@ describe("useRouterContext", () => {
 
     function Comp() {
       const v = useRouterContext((r) => r);
+
       return <span>{String(v)}</span>;
     }
 

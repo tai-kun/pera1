@@ -13,11 +13,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
+
   return { users: await listUsers() };
 }
 
 export default function UsersPage() {
   const data = React.use(useLoaderData<typeof loader>());
+
   return (
     <AppLayout>
       <h2>ユーザー一覧</h2>

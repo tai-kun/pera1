@@ -45,6 +45,7 @@ export default function BrowserRouter(props: BrowserRouterProps): React.ReactEle
   const { routes, notFoundComponent, scrollRestoration } = props;
   const engine = useSingleton(() => {
     log.debug("NavigationApiEngine を作成します");
+
     return new NavigationApiEngine();
   });
 

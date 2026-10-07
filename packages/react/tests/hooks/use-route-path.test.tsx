@@ -17,6 +17,7 @@ describe("useRoutePath", () => {
 
     function Comp() {
       const path = useRoutePath();
+
       return <span>{path.toString()}</span>;
     }
 

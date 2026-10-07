@@ -130,6 +130,7 @@ export default class NavigationApiEngine implements IEngine {
     const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
     if (!currentEntry) {
       log.debug("初期エントリーが未確定のため null を返します");
+
       return null;
     }
 
@@ -139,6 +140,7 @@ export default class NavigationApiEngine implements IEngine {
       log.debug("初期URLに一致するルートがありません（url: {url}）", {
         url: currentEntry.url.href,
       });
+
       return null;
     }
 
@@ -207,6 +209,7 @@ export default class NavigationApiEngine implements IEngine {
         log.debug("ナビゲーションをスルーします（type: {type}）", {
           type: event.navigationType,
         });
+
         return;
       }
 
@@ -278,6 +281,7 @@ export default class NavigationApiEngine implements IEngine {
             log.debug("アクションが定義されていないためコミットへ進みます（to: {to}）", {
               to: destUrl.href,
             });
+
             return;
           }
 
@@ -350,6 +354,7 @@ export default class NavigationApiEngine implements IEngine {
             log.debug("コミット後のエントリーが未確定のため未マッチにリセットします");
             // 現在のエントリーが存在しない場合は、ルーターを未マッチ状態（null）にリセットして制御をブラウザーに返します。
             update(null);
+
             return;
           }
 
@@ -362,6 +367,7 @@ export default class NavigationApiEngine implements IEngine {
                 expected: redirectUrl.href,
               },
             );
+
             return;
           }
 
@@ -377,6 +383,7 @@ export default class NavigationApiEngine implements IEngine {
             });
             // 現在のルート定義が見つからない場合は、ルーターを未マッチ状態（null）にリセットして制御をブラウザーに返します。
             update(null);
+
             return;
           }
 
@@ -438,6 +445,7 @@ export default class NavigationApiEngine implements IEngine {
           if (!currentEntry) {
             log.debug("遷移先のエントリーが未確定のため未マッチにリセットします");
             update(null);
+
             return;
           }
           // 同期がズレている場合はガードします。
@@ -449,6 +457,7 @@ export default class NavigationApiEngine implements IEngine {
                 expected: destUrl.href,
               },
             );
+
             return;
           }
 
@@ -675,6 +684,7 @@ export default class NavigationApiEngine implements IEngine {
         const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
         if (!currentEntry) {
           log.debug("現在のエントリーが未確定のため履歴移動をスキップします");
+
           return;
         }
 
@@ -691,6 +701,7 @@ export default class NavigationApiEngine implements IEngine {
               delta,
             },
           );
+
           // スタックの限界を超える移動要求の場合は何もしません。
           return;
         }

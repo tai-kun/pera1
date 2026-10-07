@@ -18,6 +18,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!project) {
     return { projectId, project: undefined, tasks: [] };
   }
+
   return { projectId, project, tasks: await listTasks(projectId) };
 }
 

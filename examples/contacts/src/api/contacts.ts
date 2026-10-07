@@ -22,6 +22,7 @@ export async function findContact(id: string): Promise<Contact | undefined> {
 export async function createContact(name: string, email: string): Promise<Contact> {
   const contact = { id: String(nextId++), name, email };
   contacts.set(contact.id, contact);
+
   return contact;
 }
 

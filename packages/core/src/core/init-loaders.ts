@@ -80,6 +80,7 @@ export default function initLoaders(
     url: request.url.href,
     count: dataMap.size,
   });
+
   return {
     dataMap,
     async idle() {
@@ -89,9 +90,11 @@ export default function initLoaders(
           log.debug("ローダーがリダイレクトを返しました（to: {to}）", {
             to: `${result.value.pathname}${result.value.search}${result.value.hash}`,
           });
+
           return { redirectTo: result.value };
         }
       }
+
       return { redirectTo: undefined };
     },
   };

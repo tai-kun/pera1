@@ -6,11 +6,13 @@ export async function loader() {
   if (isCartEmptySync()) {
     return redirect("/cart");
   }
+
   return { ready: true as const };
 }
 
 export default function CheckoutLayout() {
   const { pathname } = useRoutePath();
+
   return (
     <section>
       <h2>チェックアウト</h2>

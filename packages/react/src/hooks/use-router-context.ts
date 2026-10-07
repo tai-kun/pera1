@@ -19,9 +19,11 @@ export default function useRouterContext<TSlice>(
   const routerContext = React.use(RouterContext);
   if (!routerContext) {
     log.debug("RouterContext が見つかりません");
+
     throw new RouterContextMissingError();
   }
 
   const { routerRef, subscribe } = routerContext;
+
   return React.useSyncExternalStore(subscribe, () => selector(routerRef.current));
 }

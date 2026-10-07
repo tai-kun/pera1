@@ -51,6 +51,7 @@ export default function useNavigate(): NavigateFunction {
       } else {
         log.debug("画面遷移します（history: {history}）", { history: navigateArgs.history });
       }
+
       return routerNavigate(navigateArgs);
     },
     [routerNavigate],

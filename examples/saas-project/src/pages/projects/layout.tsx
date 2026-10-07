@@ -18,6 +18,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (projectId === undefined) {
     throw new Error("projectId が指定されていません。");
   }
+
   // `/app/projects/new` は静的ルートが優先されるため、ここでの `projectId === "new"` 分岐は不要です。
   return { projectId, project: await findProject(projectId) };
 }

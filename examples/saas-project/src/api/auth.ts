@@ -35,6 +35,7 @@ export function getCurrentUser(): User | null {
     if (typeof user.id !== "string" || typeof user.email !== "string") {
       return null;
     }
+
     return {
       id: user.id,
       name: typeof user.name === "string" ? user.name : user.email,
@@ -59,6 +60,7 @@ export async function login(email: string, password: string): Promise<User | und
     // 未ログインとして扱います。
     return undefined;
   }
+
   return user;
 }
 

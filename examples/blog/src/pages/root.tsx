@@ -13,6 +13,7 @@ function PendingBar() {
   if (navigation.state === "idle") {
     return null;
   }
+
   return (
     <p role="status" aria-live="polite">
       {navigation.state === "submitting" ? "送信中…" : "読み込み中…"}

@@ -13,11 +13,13 @@ describe("_use-singleton", () => {
     let callCount = 0;
     const factory = () => {
       callCount++;
+
       return { id: 1 };
     };
 
     function TestComponent() {
       const value = useSingleton(factory);
+
       return <span>{value.id}</span>;
     }
 
@@ -56,8 +58,10 @@ describe("_use-singleton", () => {
     function Comp() {
       const v = useSingleton(() => {
         count++;
+
         return { x: 1 };
       });
+
       return <span>{v.x}</span>;
     }
 

@@ -97,6 +97,7 @@ export function toNavigateArgs(
       history,
     };
   }
+
   return {
     to: {
       type: "DYNAMIC",

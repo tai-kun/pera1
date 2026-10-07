@@ -40,6 +40,7 @@ describe("useActionData", () => {
 
     function Comp() {
       const data = useActionData();
+
       return <span>{String(data === promise)}</span>;
     }
 
@@ -95,6 +96,7 @@ describe("useActionData", () => {
 
     function Comp() {
       const data = useActionData();
+
       return <span>{String(data)}</span>;
     }
 

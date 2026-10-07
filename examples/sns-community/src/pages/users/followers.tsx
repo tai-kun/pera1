@@ -17,6 +17,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   }
   const all = await listUsers();
   const followers = all.filter((candidate) => user.followers.includes(candidate.username));
+
   return { username, user, followers };
 }
 

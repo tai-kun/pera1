@@ -92,10 +92,12 @@ export async function createOrder(): Promise<Order> {
   persist();
   await clearCart();
   clearCheckoutState();
+
   return order;
 }
 
 export async function findOrder(id: string): Promise<Order | undefined> {
   ensureInitialized();
+
   return orders.get(id);
 }

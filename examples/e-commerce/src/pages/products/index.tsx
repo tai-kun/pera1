@@ -7,6 +7,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const category = request.url.searchParams.get("category") ?? "";
   const sort = request.url.searchParams.get("sort") ?? "";
   const page = Number(request.url.searchParams.get("page") ?? "1");
+
   return listProducts({ category, sort, page });
 }
 
@@ -19,6 +20,7 @@ function buildSearch(category: string, sort: string, page: number): string {
     params.set("sort", sort);
   }
   params.set("page", String(page));
+
   return `/products?${params.toString()}`;
 }
 

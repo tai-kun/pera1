@@ -108,6 +108,7 @@ describe("Router", () => {
     function NotFound() {
       // `RouterContext` 配下で描画されるため、ルーターのフックが使える。
       const navigateType = useRouterContext((router) => typeof router.navigate);
+
       return <span>{`not-found:${navigateType}`}</span>;
     }
 
@@ -349,6 +350,7 @@ describe("Router", () => {
 
     function Probe() {
       const id = useRouterContext((router) => router.currentEntry.id);
+
       return <span>{id}</span>;
     }
 
@@ -388,6 +390,7 @@ describe("Router", () => {
       init: () => ({ entry: entryA, routes: [routeA] }),
       start: (args) => {
         update = args.update;
+
         return () => {};
       },
       submit: () => {},

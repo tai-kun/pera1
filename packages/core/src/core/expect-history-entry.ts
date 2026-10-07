@@ -86,6 +86,7 @@ function expectHistoryEntry(entry: HistoryEntryLike | null | undefined): History
       hasUrl: url != null,
       index,
     });
+
     return null;
   }
 

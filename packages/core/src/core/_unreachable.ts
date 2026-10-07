@@ -21,6 +21,7 @@ function unreachable(value: never): never;
 function unreachable(...actual: [never?]): never {
   const error = new UnreachableError({ actual });
   tryCaptureStackTrace(error, unreachable);
+
   throw error;
 }
 

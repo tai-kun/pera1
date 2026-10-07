@@ -29,6 +29,7 @@ describe("createRouter の初期状態", () => {
     const engine = {
       init: (args: IEngine.InitArgs) => {
         capturedSignal = args.getSignal();
+
         return null;
       },
       start: () => {},
@@ -50,6 +51,7 @@ describe("createRouter の初期状態", () => {
       init: (args: IEngine.InitArgs) => {
         signals.push(args.getSignal());
         signals.push(args.getSignal());
+
         return null;
       },
       start: () => {},
@@ -185,6 +187,7 @@ describe("createRouter の start/stop", () => {
     const engine = {
       init: (args: IEngine.InitArgs) => {
         capturedSignal = args.getSignal();
+
         return null;
       },
       start: () => {},
@@ -216,6 +219,7 @@ describe("createRouter の start/stop", () => {
         } else {
           secondSignal = args.getSignal();
         }
+
         return stopFn;
       },
       submit: () => {},
@@ -244,6 +248,7 @@ describe("createRouter の start/stop", () => {
         // AbortSignal の abort を例外を投げるように差し替える
         const ac = (signal as any).__ac;
         void ac;
+
         return () => {};
       },
       submit: () => {},

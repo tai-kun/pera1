@@ -336,11 +336,13 @@ describe("initLoaders のエッジケース", () => {
     // oxlint-disable-next-line vitest/require-mock-type-parameters
     const loader1 = vi.fn((args: any) => {
       captured.push(args.request);
+
       return "1";
     });
     // oxlint-disable-next-line vitest/require-mock-type-parameters
     const loader2 = vi.fn((args: any) => {
       captured.push(args.request);
+
       return "2";
     });
     const routes: any[] = [

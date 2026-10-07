@@ -8,6 +8,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (postId === undefined) {
     throw new Error("postId が指定されていません。");
   }
+
   return findPost(postId);
 }
 

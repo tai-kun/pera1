@@ -122,6 +122,7 @@ export function findIndexChildTarget(
       bestExtra = extra;
     }
   }
+
   return best?.fullPath;
 }
 
@@ -172,6 +173,7 @@ export function createBarePathLoader(args: CreateBarePathLoaderArgs): CreatedBar
         return userData;
       }
     }
+
     return new RedirectResponse(resolveRedirectDestination(target, loaderArgs.params));
   }
 
@@ -182,6 +184,7 @@ export function createBarePathLoader(args: CreateBarePathLoaderArgs): CreatedBar
     if (typeof userShouldReload === "function") {
       return userShouldReload(reloadArgs);
     }
+
     return reloadArgs.defaultShouldReload;
   }
 

@@ -19,6 +19,7 @@ function createRouterCtx(entry: { id: string; url: URL; index: number }) {
     routerRef,
     subscribe: (cb: () => void) => {
       listeners.add(cb);
+
       return () => {
         listeners.delete(cb);
       };
@@ -33,6 +34,7 @@ function createRouterCtx(entry: { id: string; url: URL; index: number }) {
     (routerRef.current as { currentEntry: unknown }).currentEntry = next;
     notify();
   };
+
   return { ctx, setEntry };
 }
 
@@ -49,6 +51,7 @@ describe("useScrollRestoration", () => {
 
     function Comp() {
       useScrollRestoration(false);
+
       return <span>ok</span>;
     }
 
@@ -96,6 +99,7 @@ describe("useScrollRestoration", () => {
 
     function Comp() {
       useScrollRestoration(true);
+
       return <span>ok</span>;
     }
 
@@ -144,6 +148,7 @@ describe("useScrollRestoration", () => {
 
     function Comp() {
       useScrollRestoration(true);
+
       return <span>ok</span>;
     }
 

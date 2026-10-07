@@ -15,6 +15,7 @@ describe("useParams", () => {
 
     function Comp() {
       const params = useParams();
+
       return <span>{JSON.stringify(params)}</span>;
     }
 

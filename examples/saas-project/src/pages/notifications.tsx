@@ -12,11 +12,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!user) {
     return redirectToLogin(request);
   }
+
   return { user };
 }
 
 export default function NotificationsPage() {
   const data = React.use(useLoaderData<typeof loader>());
+
   return (
     <>
       <h2>Notifications</h2>

@@ -12,11 +12,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
+
   return { projects: await listProjects() };
 }
 
 export default function ProjectsPage() {
   const data = React.use(useLoaderData<typeof loader>());
+
   return (
     <>
       <h2>Projects</h2>

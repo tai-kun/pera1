@@ -25,6 +25,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!payment) {
     return redirect(`/travel/booking/${bookingId}/payment`);
   }
+
   return { bookingId, booking, passengers, payment };
 }
 

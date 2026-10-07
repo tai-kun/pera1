@@ -109,6 +109,7 @@ export async function searchFlights(query: FlightSearchQuery): Promise<Flight[]>
     if (to !== "" && flight.to !== to) {
       return false;
     }
+
     return true;
   });
   // 日付は表示用にリクエスト値で上書きします。
@@ -116,6 +117,7 @@ export async function searchFlights(query: FlightSearchQuery): Promise<Flight[]>
   if (date !== "") {
     return matched.map((flight) => ({ ...flight, date }));
   }
+
   return [...matched];
 }
 

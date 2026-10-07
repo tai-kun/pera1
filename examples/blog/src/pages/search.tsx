@@ -10,6 +10,7 @@ import { searchPosts } from "../api/posts.js";
 export async function loader({ request }: LoaderFunctionArgs) {
   const q = request.url.searchParams.get("q") ?? "";
   const page = Number(request.url.searchParams.get("page") ?? "1");
+
   return searchPosts(q, page);
 }
 
@@ -25,6 +26,7 @@ export default function SearchPage() {
   React.useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
+
       return;
     }
     headingRef.current?.focus();

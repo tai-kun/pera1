@@ -20,6 +20,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (getCurrentUser()) {
     return redirect(redirectTo);
   }
+
   return { redirectTo };
 }
 
@@ -37,11 +38,13 @@ export async function action({ request }: ActionFunctionArgs) {
   if (!user) {
     return { error: "メールアドレスまたはパスワードが正しくありません。" };
   }
+
   return redirect(redirectTo);
 }
 
 export default function LoginPage() {
   const data = React.use(useLoaderData<typeof loader>());
+
   return (
     <>
       <h2>ログイン</h2>
@@ -72,6 +75,7 @@ function LoginError() {
   if (!actionData) {
     return null;
   }
+
   return <ActionError actionData={actionData} />;
 }
 
@@ -80,5 +84,6 @@ function ActionError({ actionData }: { actionData: ActionData<typeof action> }) 
   if (data && "error" in data) {
     return <p role="alert">{data.error}</p>;
   }
+
   return null;
 }

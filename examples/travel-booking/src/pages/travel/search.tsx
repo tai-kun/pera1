@@ -6,6 +6,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const to = request.url.searchParams.get("to") ?? "";
   const date = request.url.searchParams.get("date") ?? "";
   const adults = request.url.searchParams.get("adults") ?? "";
+
   return { from, to, date, adults };
 }
 

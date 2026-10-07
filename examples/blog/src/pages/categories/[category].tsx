@@ -8,6 +8,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (category === undefined) {
     throw new Error("category が指定されていません。");
   }
+
   return { category, posts: await listPostsByCategory(category) };
 }
 

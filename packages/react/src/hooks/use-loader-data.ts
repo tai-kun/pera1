@@ -50,6 +50,7 @@ export default function useLoaderData<TData = unknown>(): LoaderData<TData> {
       path: urlPath,
       loader: loader?.name || "anonymous",
     });
+
     throw new LoaderDataNotFoundError({ loader });
   }
 

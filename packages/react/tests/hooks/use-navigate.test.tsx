@@ -19,6 +19,7 @@ describe("useNavigate", () => {
 
     function Comp() {
       nav = useNavigate();
+
       return <span>ok</span>;
     }
 
@@ -64,6 +65,7 @@ describe("useNavigate", () => {
 
     function Comp() {
       nav = useNavigate();
+
       return <span>ok</span>;
     }
 
@@ -105,6 +107,7 @@ describe("useNavigate", () => {
 
     function Comp() {
       nav = useNavigate();
+
       return <span>ok</span>;
     }
 
@@ -146,6 +149,7 @@ describe("useNavigate", () => {
 
     function Comp() {
       nav = useNavigate();
+
       return <span>ok</span>;
     }
 
@@ -189,6 +193,7 @@ describe("useNavigate", () => {
 
     function Comp() {
       nav = useNavigate();
+
       return <span>ok</span>;
     }
 

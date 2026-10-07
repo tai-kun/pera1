@@ -28,6 +28,7 @@ describe("useLoaderData", () => {
 
     function Comp() {
       const data = useLoaderData();
+
       return <span>{String(data === promise)}</span>;
     }
 
@@ -72,6 +73,7 @@ describe("useLoaderData", () => {
 
     function Comp() {
       const data = useLoaderData();
+
       return <span>{String(data)}</span>;
     }
 

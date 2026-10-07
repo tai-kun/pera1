@@ -65,11 +65,13 @@ function ensureRestored(): void {
 
 export async function listProjects(): Promise<Project[]> {
   ensureRestored();
+
   return [...projects.values()];
 }
 
 export async function findProject(id: string): Promise<Project | undefined> {
   ensureRestored();
+
   return projects.get(id);
 }
 
@@ -79,6 +81,7 @@ function slugify(name: string): string {
     .toLowerCase()
     .replace(/[^a-z0-9]+/g, "-")
     .replace(/^-+|-+$/g, "");
+
   return slug === "" ? `project-${Date.now()}` : slug;
 }
 
@@ -93,5 +96,6 @@ export async function createProject(name: string, description: string): Promise<
   const project: Project = { id, name: name.trim(), description: description.trim() };
   projects.set(id, project);
   persistCustomProjects();
+
   return project;
 }

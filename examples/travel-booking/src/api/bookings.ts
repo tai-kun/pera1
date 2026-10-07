@@ -96,6 +96,7 @@ function isValidPassenger(value: unknown): value is Passenger {
     return false;
   }
   const v = value as Record<string, unknown>;
+
   return typeof v["name"] === "string" && v["name"] !== "" && typeof v["email"] === "string" && v["email"] !== "";
 }
 
@@ -104,6 +105,7 @@ function isValidPayment(value: unknown): value is PaymentInfo {
     return false;
   }
   const v = value as Record<string, unknown>;
+
   return (
     typeof v["cardNumber"] === "string" &&
     v["cardNumber"] !== "" &&
@@ -141,11 +143,13 @@ export async function createBooking(input: {
   };
   bookings.set(id, booking);
   persist();
+
   return booking;
 }
 
 export async function findBooking(id: string): Promise<Booking | undefined> {
   ensureInitialized();
+
   return bookings.get(id);
 }
 
@@ -155,6 +159,7 @@ export function getPassengers(bookingId: string): Passenger | null {
   if (!booking) {
     return null;
   }
+
   return isValidPassenger(booking.passengers) ? booking.passengers : null;
 }
 
@@ -174,6 +179,7 @@ export function getPayment(bookingId: string): PaymentInfo | null {
   if (!booking) {
     return null;
   }
+
   return isValidPayment(booking.payment) ? booking.payment : null;
 }
 
@@ -202,5 +208,6 @@ export async function confirmBooking(bookingId: string): Promise<Booking> {
   const confirmed: StoredBooking = { ...booking, status: "confirmed" };
   bookings.set(bookingId, confirmed);
   persist();
+
   return confirmed;
 }

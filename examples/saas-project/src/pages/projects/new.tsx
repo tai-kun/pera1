@@ -12,6 +12,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
+
   return { authenticated: true as const };
 }
 
@@ -26,6 +27,7 @@ export default function NewProjectPage() {
     const description = String(form.get("description") ?? "").trim();
     if (name === "") {
       setError("プロジェクト名を入力してください。");
+
       return;
     }
     setError(null);

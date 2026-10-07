@@ -44,6 +44,7 @@ function normalizeSort(sort: string): "price" | "name" | "" {
   if (sort === "price" || sort === "name") {
     return sort;
   }
+
   return "";
 }
 
@@ -59,12 +60,14 @@ export async function listProducts(query: ProductListQuery): Promise<ProductList
     if (sort === "name") {
       return a.name.localeCompare(b.name);
     }
+
     return 0;
   });
   const safePage = Number.isInteger(query.page) && query.page > 0 ? query.page : 1;
   const totalPages = Math.max(1, Math.ceil(sorted.length / PAGE_SIZE));
   const currentPage = Math.min(safePage, totalPages);
   const start = (currentPage - 1) * PAGE_SIZE;
+
   return {
     category,
     sort,

@@ -46,6 +46,7 @@ export default function useNavigation(): Navigation {
   const routerContext = React.use(RouterContext);
   if (!routerContext) {
     log.debug("RouterContext が見つかりません");
+
     throw new RouterContextMissingError();
   }
 
@@ -97,6 +98,7 @@ export default function useNavigation(): Navigation {
         bump();
       }
     });
+
     return () => {
       cancelled = true;
     };

@@ -9,6 +9,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (productId === undefined) {
     throw new Error("productId が指定されていません。");
   }
+
   return { product: await findProduct(productId) };
 }
 

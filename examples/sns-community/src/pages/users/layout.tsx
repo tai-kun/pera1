@@ -12,6 +12,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (username === undefined) {
     throw new Error("username が指定されていません。");
   }
+
   return { username, user: await findUser(username) };
 }
 

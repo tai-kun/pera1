@@ -154,6 +154,7 @@ function ScrollRestorationHandler(props: {
   readonly scrollRestoration: ScrollRestorationOption | undefined;
 }): null {
   useScrollRestoration(props.scrollRestoration);
+
   return null;
 }
 
@@ -205,6 +206,7 @@ export default function Router(props: RouterProps) {
   React.useEffect(() => {
     log.debug("エンジンの監視を開始します");
     const stop = router.start();
+
     return () => {
       log.debug("エンジンの監視を停止します");
       stop();
@@ -219,6 +221,7 @@ export default function Router(props: RouterProps) {
   if (!routes) {
     if (NotFound) {
       log.debug("一致するルートがないため notFoundComponent を描画します");
+
       return (
         <RouterContext value={router.context}>
           <ScrollRestorationHandler scrollRestoration={scrollRestoration} />
@@ -228,6 +231,7 @@ export default function Router(props: RouterProps) {
     }
     warnMissingNotFound();
     log.debug("一致するルートがないため null を描画します");
+
     return null;
   }
 

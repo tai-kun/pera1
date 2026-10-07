@@ -24,6 +24,7 @@ describe("useSubmit", () => {
 
     function Comp() {
       doSubmit = useSubmit();
+
       return <span>ok</span>;
     }
 
@@ -69,6 +70,7 @@ describe("useSubmit", () => {
 
     function Comp() {
       doSubmit = useSubmit();
+
       return <span>ok</span>;
     }
 
@@ -114,6 +116,7 @@ describe("useSubmit", () => {
 
     function Comp() {
       doSubmit = useSubmit();
+
       return <span>ok</span>;
     }
 
@@ -164,6 +167,7 @@ describe("useSubmit", () => {
 
     function Comp() {
       doSubmit = useSubmit();
+
       return <span>ok</span>;
     }
 

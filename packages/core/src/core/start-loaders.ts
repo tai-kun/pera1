@@ -305,9 +305,11 @@ export default function startLoaders(
           log.debug("ローダーがリダイレクトを返しました（to: {to}）", {
             to: `${redirectTo.pathname}${redirectTo.search}${redirectTo.hash}`,
           });
+
           return { redirectTo };
         }
       }
+
       return { redirectTo: undefined };
     },
   };

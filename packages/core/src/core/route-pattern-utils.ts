@@ -209,6 +209,7 @@ export default class RoutePatternUtils<const TRoutePattern extends string = stri
    */
   public match(target: string | RoutePatternMatchURL): boolean {
     target = normalizeTarget(target);
+
     return this.pattern.test(target);
   }
 

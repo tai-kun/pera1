@@ -135,6 +135,7 @@ export async function searchPosts(q: string, page: number): Promise<SearchResult
   const totalPages = Math.max(1, Math.ceil(matched.length / PAGE_SIZE));
   const currentPage = Math.min(safePage, totalPages);
   const start = (currentPage - 1) * PAGE_SIZE;
+
   return {
     q: q.trim(),
     page: currentPage,

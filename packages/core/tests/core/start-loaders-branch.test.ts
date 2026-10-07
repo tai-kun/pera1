@@ -11,6 +11,7 @@ describe("startLoaders の分岐網羅", () => {
     let captured: any = null;
     const shouldReload: ShouldReloadFunction = (args) => {
       captured = args;
+
       return false;
     };
     const loader = (() => "data") as unknown as LoaderFunction;
@@ -39,6 +40,7 @@ describe("startLoaders の分岐網羅", () => {
     let captured: any = null;
     const shouldReload: ShouldReloadFunction = (args) => {
       captured = args;
+
       return false;
     };
     const loader = (() => "data") as unknown as LoaderFunction;
@@ -66,6 +68,7 @@ describe("startLoaders の分岐網羅", () => {
     let captured: any = null;
     const shouldReload: ShouldReloadFunction = (args) => {
       captured = args;
+
       return args.defaultShouldReload;
     };
     const loader = (() => "data") as unknown as LoaderFunction;

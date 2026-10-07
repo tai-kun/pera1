@@ -11,6 +11,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (conversationId === undefined) {
     throw new Error("conversationId が指定されていません。");
   }
+
   return { conversationId, conversation: await findConversation(conversationId) };
 }
 

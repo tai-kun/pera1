@@ -80,6 +80,7 @@ describe("Router の分岐網羅", () => {
     const parentLoader = () => "parent-loader";
     function Child() {
       const ctx = useRouteContext() as any;
+
       return (
         <span>
           {String(ctx.action === parentAction)}-{String(ctx.loader === parentLoader)}
@@ -152,6 +153,7 @@ describe("Router の分岐網羅", () => {
     const childLoader = () => "child-loader";
     function Child() {
       const ctx = useRouteContext() as any;
+
       return (
         <span>
           {String(ctx.action === childAction)}-{String(ctx.loader === childLoader)}

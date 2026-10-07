@@ -13,11 +13,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!user) {
     return redirectToLogin(request);
   }
+
   return { user };
 }
 
 export default function DashboardPage() {
   const data = React.use(useLoaderData<typeof loader>());
+
   return (
     <AppLayout>
       <h2>ダッシュボード</h2>

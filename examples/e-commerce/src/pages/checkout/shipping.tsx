@@ -9,6 +9,7 @@ export async function loader() {
     return redirect("/cart");
   }
   const cart = await listCart();
+
   return { cart, shipping: getShipping() };
 }
 

@@ -22,6 +22,7 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
   if (!project) {
     return { projectId, project: undefined, members: [] };
   }
+
   return { projectId, project, members: await listMembers(projectId) };
 }
 

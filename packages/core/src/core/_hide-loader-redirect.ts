@@ -31,5 +31,6 @@ export default function hideLoaderRedirect(raw: NinjaPromise<unknown>): NinjaPro
       resolvers.reject(ex);
     }
   })();
+
   return resolvers.promise;
 }

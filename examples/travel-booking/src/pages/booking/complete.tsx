@@ -25,6 +25,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (booking.status !== "confirmed") {
     return redirect(`/travel/booking/${bookingId}/confirm`);
   }
+
   return { bookingId, booking };
 }
 

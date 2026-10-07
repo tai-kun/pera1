@@ -47,6 +47,7 @@ export function sanitizeRedirectTo(value: string | null | undefined, fallback = 
   if (!hasSafeRedirectPrefix(stripUrlIgnoredChars(decodeRedirectTarget(candidate)).trim())) {
     return fallbackPath;
   }
+
   return candidate;
 }
 
@@ -93,6 +94,7 @@ export function redirectToLogin(
   options?: RedirectToLoginOptions,
 ): RedirectResponse {
   const { pathname, search } = request.url;
+
   return redirect(loginUrlFor(pathname, search, options?.loginPath ?? "/login"));
 }
 
@@ -147,6 +149,7 @@ export function requireRole<TRole extends string>(
   if (!options.roles.includes(user.role)) {
     return redirect(options.forbiddenPath ?? "/");
   }
+
   return null;
 }
 
@@ -167,6 +170,7 @@ function isRawRedirectTarget(value: string): boolean {
       return false;
     }
   }
+
   return true;
 }
 
@@ -183,6 +187,7 @@ function hasSafeRedirectPrefix(value: string): boolean {
     return false;
   }
   const second = value.charCodeAt(1);
+
   return second !== 0x2f && second !== 0x5c;
 }
 
@@ -208,6 +213,7 @@ function decodeRedirectTarget(value: string): string {
     }
     decoded = next;
   }
+
   return decoded;
 }
 
@@ -226,5 +232,6 @@ function stripUrlIgnoredChars(value: string): string {
       normalized += char;
     }
   }
+
   return normalized;
 }

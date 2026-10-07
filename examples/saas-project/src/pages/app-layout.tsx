@@ -12,6 +12,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
+
   return { authenticated: true as const };
 }
 

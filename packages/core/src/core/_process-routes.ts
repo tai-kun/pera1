@@ -21,6 +21,7 @@ function normalizeJoinedPath(path: string): string {
   if (normalized.length > 1 && normalized.endsWith("/")) {
     normalized = normalized.slice(0, -1);
   }
+
   return normalized;
 }
 
@@ -46,6 +47,7 @@ function resolveFullPath(
     if (childPath === "") {
       return "/";
     }
+
     return normalizeJoinedPath(childPath);
   }
 
@@ -112,6 +114,7 @@ function flattenRouteDefinitions<TComponent>(
     }
     flattened.push({ definition, fullPath });
   }
+
   return flattened;
 }
 
@@ -142,6 +145,7 @@ export default function processRoutes<TComponent = any>(
     index: definition.index === true,
     order,
   }));
+
   return (
     entries
       .map(({ definition: route, fullPath, index }) => {

@@ -803,6 +803,7 @@ describe("startLoaders の POST 時の currentUrl", () => {
     let captured: any = null;
     const shouldReload: ShouldReloadFunction = (args) => {
       captured = args;
+
       return true;
     };
     const loader = () => "data";

@@ -22,11 +22,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (forbidden) {
     return forbidden;
   }
+
   return { user };
 }
 
 export default function AdminPage() {
   const data = React.use(useLoaderData<typeof loader>());
+
   return (
     <AppLayout>
       <h2>管理者ページ</h2>

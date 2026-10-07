@@ -11,6 +11,7 @@ export async function loader({ request }: LoaderFunctionArgs) {
   const adultsParam = request.url.searchParams.get("adults") ?? "";
   const adults = Number(adultsParam !== "" ? adultsParam : "1");
   const flights = await searchFlights({ from, to, date });
+
   return {
     from,
     to,

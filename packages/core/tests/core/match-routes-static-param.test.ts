@@ -6,6 +6,7 @@ import matchRoutes from "../../src/core/match-routes.js";
 function matchedPaths(paths: readonly string[], url: string): string[] {
   const routes = processRoutes(paths.map((path) => ({ path })));
   const matched = matchRoutes(routes, new URL("https://example.com" + url));
+
   return matched?.map((r) => r.path) ?? [];
 }
 

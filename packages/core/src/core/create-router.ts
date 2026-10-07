@@ -155,10 +155,12 @@ export default function createRouter<TComponent = any>(
   const snapshot = {
     submit(submitArgs: IEngine.SubmitArgs): void {
       log.debug("submitを受信しました（type: {type}）", { type: submitArgs.type });
+
       return engine.submit(submitArgs);
     },
     navigate(navigateArgs: IEngine.NavigateArgs): void {
       log.debug("navigateを受信しました（type: {type}）", { type: navigateArgs.type });
+
       return engine.navigate(navigateArgs);
     },
     currentEntry: initialState?.entry as HistoryEntry,
@@ -233,6 +235,7 @@ export default function createRouter<TComponent = any>(
     start: startRouterEngine,
     subscribe(cb: () => void): () => void {
       subscribers.add(cb);
+
       return () => {
         subscribers.delete(cb);
       };

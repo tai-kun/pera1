@@ -53,6 +53,7 @@ export default function useScrollRestoration(scrollRestoration?: ScrollRestorati
   React.useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
+
       return;
     }
     if (!scrollRestoration) {

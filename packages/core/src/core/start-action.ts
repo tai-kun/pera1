@@ -90,6 +90,7 @@ export default function startAction(
     log.debug("実行対象のアクションが見つかりません（pathname: {pathname}）", {
       pathname: request.url.pathname,
     });
+
     return null;
   }
 
@@ -128,12 +129,14 @@ export default function startAction(
             log.debug("アクションがリダイレクトを返しました（to: {to}）", {
               to: `${value.pathname}${value.search}${value.hash}`,
             });
+
             return undefined;
 
           default:
             log.debug("アクションが正常に完了しました（urlPath: {urlPath}）", {
               urlPath: matchedUrlPath,
             });
+
             return value;
         }
       })()

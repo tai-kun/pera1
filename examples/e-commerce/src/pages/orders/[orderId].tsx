@@ -8,6 +8,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (orderId === undefined) {
     throw new Error("orderId が指定されていません。");
   }
+
   return { order: await findOrder(orderId) };
 }
 

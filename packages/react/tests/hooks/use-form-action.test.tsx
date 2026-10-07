@@ -17,6 +17,7 @@ describe("useFormAction", () => {
 
     function Comp() {
       const action = useFormAction();
+
       return <span>{action}</span>;
     }
 

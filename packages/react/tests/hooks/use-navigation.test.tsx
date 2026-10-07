@@ -25,6 +25,7 @@ describe("useNavigation", () => {
 
     function Comp() {
       state = useNavigation().state;
+
       return <span>{state}</span>;
     }
 
@@ -76,6 +77,7 @@ describe("useNavigation", () => {
 
     function Comp() {
       state = useNavigation().state;
+
       return <span>{state}</span>;
     }
 
@@ -126,6 +128,7 @@ describe("useNavigation", () => {
 
     function Comp() {
       state = useNavigation().state;
+
       return <span>{state}</span>;
     }
 
@@ -176,6 +179,7 @@ describe("useNavigation", () => {
 
     function Comp() {
       const navigation = useNavigation();
+
       return <span>{navigation.state}</span>;
     }
 

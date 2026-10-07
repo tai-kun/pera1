@@ -16,6 +16,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!booking) {
     return { bookingId, booking: null, passenger: null };
   }
+
   return { bookingId, booking, passenger: getPassengers(bookingId) };
 }
 

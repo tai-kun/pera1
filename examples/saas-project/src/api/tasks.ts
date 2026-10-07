@@ -42,5 +42,6 @@ export async function toggleTask(projectId: string, taskId: string): Promise<Tas
     task.id === taskId ? { ...task, done: !task.done } : task,
   );
   tasksByProject.set(projectId, next);
+
   return next;
 }

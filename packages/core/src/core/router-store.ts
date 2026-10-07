@@ -82,6 +82,7 @@ export function selectActionData(
   if (typeof action !== "function") {
     return undefined;
   }
+
   return snapshot.actionDataStore.get(snapshot.currentEntry.id)?.get(action);
 }
 
@@ -103,5 +104,6 @@ export function selectLoaderData(
   if (typeof loader !== "function") {
     return undefined;
   }
+
   return snapshot.loaderDataStore.get(snapshot.currentEntry.id)?.get(loader);
 }

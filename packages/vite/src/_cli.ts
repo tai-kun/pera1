@@ -157,11 +157,13 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
     }));
   } catch (ex) {
     io.writeError(`${ex instanceof Error ? ex.message : String(ex)}\n\n${helpText}`);
+
     return 1;
   }
 
   if (values.help === true) {
     io.write(helpText);
+
     return 0;
   }
 
@@ -169,16 +171,19 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
 
   if (command === undefined) {
     io.writeError(helpText);
+
     return 1;
   }
 
   if (command !== "typegen") {
     io.writeError(`不明なコマンドです: ${command}\n\n${helpText}`);
+
     return 1;
   }
 
   if (positionals.length > 1) {
     io.writeError(`typegen に引数は指定できません: ${positionals.slice(1).join(" ")}\n`);
+
     return 1;
   }
 
@@ -199,11 +204,13 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
     io.write(
       `ルート型を生成しました（生成: ${result.written.length} 件、削除: ${result.removed.length} 件）。\n`,
     );
+
     return 0;
   } catch (ex) {
     io.writeError(
       `ルート型の生成に失敗しました: ${ex instanceof Error ? ex.message : String(ex)}\n`,
     );
+
     return 1;
   }
 }

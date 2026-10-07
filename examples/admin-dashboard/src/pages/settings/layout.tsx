@@ -7,11 +7,13 @@ export async function loader({ request }: LoaderFunctionArgs) {
   if (!getCurrentUser()) {
     return redirectToLogin(request);
   }
+
   return { authenticated: true as const };
 }
 
 export default function SettingsLayout() {
   const { pathname } = useRoutePath();
+
   return (
     <AppLayout>
       <h2>設定</h2>

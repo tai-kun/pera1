@@ -121,6 +121,7 @@ export default class RoutePath implements ReadonlyRoutePath {
    */
   public get search(): string {
     this.#url.searchParams.sort();
+
     return this.#url.search;
   }
 
@@ -153,6 +154,7 @@ export default class RoutePath implements ReadonlyRoutePath {
    */
   public toString(): string {
     const { hash, search, pathname } = this;
+
     return pathname + search + hash;
   }
 

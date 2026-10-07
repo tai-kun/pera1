@@ -76,11 +76,13 @@ export async function listCart(): Promise<CartSummary> {
   lines.sort((a, b) => a.product.id.localeCompare(b.product.id));
   const count = lines.reduce((sum, line) => sum + line.quantity, 0);
   const total = lines.reduce((sum, line) => sum + line.product.price * line.quantity, 0);
+
   return { lines, count, total };
 }
 
 export function isCartEmptySync(): boolean {
   ensureInitialized();
+
   return quantities.size === 0;
 }
 

@@ -45,5 +45,6 @@ function ActionError({ actionData }: { actionData: ActionData<typeof contactsAct
   if (data && "error" in data) {
     return <p role="alert">{data.error}</p>;
   }
+
   return null;
 }

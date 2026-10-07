@@ -16,6 +16,7 @@ export async function loader({ params }: LoaderFunctionArgs) {
   if (!user) {
     return { username, user: undefined, posts: [] as const };
   }
+
   return { username, user, posts: await listPostsByUser(username) };
 }
 

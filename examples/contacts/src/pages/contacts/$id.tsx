@@ -10,11 +10,13 @@ export async function loader({ params }: Route.LoaderArgs) {
   if (!contact) {
     throw new Error(`連絡先 ${id} は見つかりませんでした。`);
   }
+
   return contact;
 }
 
 export async function action({ params }: Route.ActionArgs) {
   await deleteContact(params["id"]);
+
   return redirect("/contacts");
 }
 

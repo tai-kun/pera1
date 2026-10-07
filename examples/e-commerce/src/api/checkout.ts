@@ -20,6 +20,7 @@ function readStorage<T>(key: string): T | null {
     if (!raw) {
       return null;
     }
+
     return JSON.parse(raw) as T;
   } catch {
     return null;
@@ -31,6 +32,7 @@ function isValidShipping(value: unknown): value is ShippingInfo {
     return false;
   }
   const v = value as Record<string, unknown>;
+
   return (
     typeof v["name"] === "string" &&
     v["name"] !== "" &&
@@ -48,6 +50,7 @@ function isValidPayment(value: unknown): value is PaymentInfo {
     return false;
   }
   const v = value as Record<string, unknown>;
+
   return (
     typeof v["cardNumber"] === "string" &&
     v["cardNumber"] !== "" &&
@@ -60,6 +63,7 @@ function isValidPayment(value: unknown): value is PaymentInfo {
 
 export function getShipping(): ShippingInfo | null {
   const value = readStorage<ShippingInfo>(SHIPPING_KEY);
+
   return isValidShipping(value) ? value : null;
 }
 
@@ -73,6 +77,7 @@ export function setShipping(info: ShippingInfo): void {
 
 export function getPayment(): PaymentInfo | null {
   const value = readStorage<PaymentInfo>(PAYMENT_KEY);
+
   return isValidPayment(value) ? value : null;
 }
 

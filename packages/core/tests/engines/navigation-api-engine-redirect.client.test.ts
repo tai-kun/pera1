@@ -26,6 +26,7 @@ function createMockNavigation(overrides: any = {}) {
     traverseTo: vi.fn<() => void>(),
     ...overrides,
   };
+
   return { navigation, listeners };
 }
 

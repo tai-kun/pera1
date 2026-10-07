@@ -46,5 +46,6 @@ export function expect<const TSchema extends BaseSchema>(
     issues: result.issues,
   });
   tryCaptureStackTrace(error, expect);
+
   throw error;
 }
