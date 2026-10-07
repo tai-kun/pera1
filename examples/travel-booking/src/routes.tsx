@@ -25,7 +25,7 @@ import TravelLayout, { loader as travelLoader } from "./pages/travel/layout.js";
 import ResultsPage, { loader as resultsLoader } from "./pages/travel/results.js";
 import SearchPage, { loader as searchLoader } from "./pages/travel/search.js";
 
-export const routes: readonly RouterRouteDefinition[] = [
+export const ROUTES: readonly RouterRouteDefinition[] = [
   {
     path: "/",
     component: RootLayout,

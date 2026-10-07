@@ -25,7 +25,7 @@ import UserPostsPage, {
 } from "./pages/users/posts.js";
 
 // `children` による明示的ネストで親子対応を構造で表します。
-export const routes: readonly RouterRouteDefinition[] = [
+export const ROUTES: readonly RouterRouteDefinition[] = [
   {
     path: "/",
     component: RootLayout,

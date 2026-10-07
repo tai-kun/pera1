@@ -28,26 +28,26 @@ export type ResolvedPluginOptions = {
 /**
  * ページディレクトリーの既定値です。
  */
-export const defaultDir = "src/pages";
+export const DEFAULT_DIR = "src/pages";
 
 /**
  * ルート型の生成先の既定値です。
  */
-export const defaultTypesDir = ".pera1/types";
+export const DEFAULT_TYPES_DIR = ".pera1/types";
 
 /**
  * ルートとして扱うファイルの glob パターンの既定値です。
  */
-export const defaultInclude: readonly string[] = ["**/*.tsx", "**/*.ts", "**/*.jsx", "**/*.js"];
+export const DEFAULT_INCLUDE: readonly string[] = ["**/*.tsx", "**/*.ts", "**/*.jsx", "**/*.js"];
 
 /**
  * ルートから除外するファイルの glob パターンの既定値です。
  */
-export const defaultExclude: readonly string[] = [];
+export const DEFAULT_EXCLUDE: readonly string[] = [];
 
 /**
  * CLI が `vite.config` からプラグインオプションを読み取るためのシンボルです。
  *
  * パッケージ内の複数のモジュールから参照するため、`Symbol.for` で同一のシンボルを共有します。
  */
-export const pluginOptionsSymbol: unique symbol = Symbol.for("@pera1/vite/plugin-options");
+export const PLUGIN_OPTIONS_SYMBOL: unique symbol = Symbol.for("@pera1/vite/plugin-options");

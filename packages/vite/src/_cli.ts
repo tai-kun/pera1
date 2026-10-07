@@ -6,11 +6,11 @@ import { loadConfigFromFile } from "vite";
 
 import generateTypes from "./_generate-types.js";
 import {
-  defaultDir,
-  defaultExclude,
-  defaultInclude,
-  defaultTypesDir,
-  pluginOptionsSymbol,
+  DEFAULT_DIR,
+  DEFAULT_EXCLUDE,
+  DEFAULT_INCLUDE,
+  DEFAULT_TYPES_DIR,
+  PLUGIN_OPTIONS_SYMBOL,
   type ResolvedPluginOptions,
 } from "./_options.js";
 
@@ -38,7 +38,7 @@ export type CliIo = {
 /**
  * Vite の設定ファイルとして探索するファイル名の一覧です。
  */
-const viteConfigFileNames: readonly string[] = [
+const VITE_CONFIG_FILE_NAMES: readonly string[] = [
   "vite.config.ts",
   "vite.config.mts",
   "vite.config.js",
@@ -47,7 +47,7 @@ const viteConfigFileNames: readonly string[] = [
   "vite.config.cjs",
 ];
 
-const helpText = `pera1-vite - pera1 のファイルベースルーティング用 CLI
+const HELP_TEXT = `pera1-vite - pera1 のファイルベースルーティング用 CLI
 
 使い方:
   pera1-vite typegen [オプション]
@@ -57,10 +57,10 @@ const helpText = `pera1-vite - pera1 のファイルベースルーティング�
 
 オプション:
   --root <path>     プロジェクトルート（既定: カレントディレクトリー）
-  --dir <path>      ページディレクトリー（既定: vite.config の設定、なければ ${defaultDir}）
+  --dir <path>      ページディレクトリー（既定: vite.config の設定、なければ ${DEFAULT_DIR}）
   --include <glob>  ルートとして扱うファイルの glob パターン（複数指定可）
   --exclude <glob>  ルートから除外するファイルの glob パターン（複数指定可、include より優先）
-  --out <path>      型の生成先（既定: vite.config の設定、なければ ${defaultTypesDir}）
+  --out <path>      型の生成先（既定: vite.config の設定、なければ ${DEFAULT_TYPES_DIR}）
   -h, --help        ヘルプを表示します
 `;
 
@@ -93,7 +93,7 @@ function flattenPlugins(plugins: readonly unknown[]): readonly unknown[] {
  * @returns 解決済みのプラグインオプション、または取得できなかった場合は `undefined` です。
  */
 async function loadPluginOptions(root: string): Promise<ResolvedPluginOptions | undefined> {
-  const configFile = viteConfigFileNames
+  const configFile = VITE_CONFIG_FILE_NAMES
     .map((fileName) => path.join(root, fileName))
     .find((filePath) => fs.existsSync(filePath));
 
@@ -111,11 +111,11 @@ async function loadPluginOptions(root: string): Promise<ResolvedPluginOptions | 
     const plugins = flattenPlugins(loaded?.config.plugins ?? []);
 
     for (const plugin of plugins) {
-      if (plugin === null || typeof plugin !== "object" || !(pluginOptionsSymbol in plugin)) {
+      if (plugin === null || typeof plugin !== "object" || !(PLUGIN_OPTIONS_SYMBOL in plugin)) {
         continue;
       }
 
-      return (plugin as { [pluginOptionsSymbol]: ResolvedPluginOptions })[pluginOptionsSymbol];
+      return (plugin as { [PLUGIN_OPTIONS_SYMBOL]: ResolvedPluginOptions })[PLUGIN_OPTIONS_SYMBOL];
     }
   } catch {
     // 設定を読み込めないときは既定値で生成します。
@@ -156,13 +156,13 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
       },
     }));
   } catch (ex) {
-    io.writeError(`${ex instanceof Error ? ex.message : String(ex)}\n\n${helpText}`);
+    io.writeError(`${ex instanceof Error ? ex.message : String(ex)}\n\n${HELP_TEXT}`);
 
     return 1;
   }
 
   if (values.help === true) {
-    io.write(helpText);
+    io.write(HELP_TEXT);
 
     return 0;
   }
@@ -170,13 +170,13 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
   const command = positionals[0];
 
   if (command === undefined) {
-    io.writeError(helpText);
+    io.writeError(HELP_TEXT);
 
     return 1;
   }
 
   if (command !== "typegen") {
-    io.writeError(`不明なコマンドです: ${command}\n\n${helpText}`);
+    io.writeError(`不明なコマンドです: ${command}\n\n${HELP_TEXT}`);
 
     return 1;
   }
@@ -189,10 +189,10 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
 
   const root = path.resolve(io.cwd, values.root ?? ".");
   const pluginOptions = await loadPluginOptions(root);
-  const dir = values.dir ?? pluginOptions?.dir ?? defaultDir;
-  const include = values.include ?? pluginOptions?.include ?? defaultInclude;
-  const exclude = values.exclude ?? pluginOptions?.exclude ?? defaultExclude;
-  const typesDir = values.out ?? pluginOptions?.typesDir ?? defaultTypesDir;
+  const dir = values.dir ?? pluginOptions?.dir ?? DEFAULT_DIR;
+  const include = values.include ?? pluginOptions?.include ?? DEFAULT_INCLUDE;
+  const exclude = values.exclude ?? pluginOptions?.exclude ?? DEFAULT_EXCLUDE;
+  const typesDir = values.out ?? pluginOptions?.typesDir ?? DEFAULT_TYPES_DIR;
 
   try {
     const result = generateTypes({ root, dir, include, exclude, typesDir });

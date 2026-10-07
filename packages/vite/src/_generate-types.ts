@@ -61,23 +61,23 @@ export type GenerateTypesResult = {
  *
  * TypeScript の `rootDirs` は、ルートファイルからの `./+types/...` という相対インポートを型ディレクトリー内の同じ位置へ解決するために使われます。
  */
-const typesDirectoryName = "+types";
+const TYPES_DIRECTORY_NAME = "+types";
 
 /**
  * 型ファイルの拡張子です。
  */
-const typeFileExtension = ".d.ts";
+const TYPE_FILE_EXTENSION = ".d.ts";
 
 /**
  * 生成ディレクトリー自身を git の管理対象外にする `.gitignore` のファイル名です。
  */
-const gitIgnoreFileName = ".gitignore";
+const GIT_IGNORE_FILE_NAME = ".gitignore";
 
 /**
  * `.gitignore` の内容です。
  * ディレクトリー配下のすべてを無視します。
  */
-const gitIgnoreContent = "*\n";
+const GIT_IGNORE_CONTENT = "*\n";
 
 /**
  * `.gitignore` を出力するディレクトリーを決めます。
@@ -122,17 +122,17 @@ function ensureGitIgnore(root: string, typesDirectory: string): void {
     return;
   }
 
-  const gitIgnorePath = path.join(gitIgnoreDirectory, gitIgnoreFileName);
+  const gitIgnorePath = path.join(gitIgnoreDirectory, GIT_IGNORE_FILE_NAME);
   const existing = fs.existsSync(gitIgnorePath)
     ? fs.readFileSync(gitIgnorePath, "utf8")
     : undefined;
 
-  if (existing === gitIgnoreContent) {
+  if (existing === GIT_IGNORE_CONTENT) {
     return;
   }
 
   fs.mkdirSync(gitIgnoreDirectory, { recursive: true });
-  fs.writeFileSync(gitIgnorePath, gitIgnoreContent);
+  fs.writeFileSync(gitIgnorePath, GIT_IGNORE_CONTENT);
 }
 
 /**
@@ -181,8 +181,8 @@ function toTypeFilePath(
   return path.join(
     typesDirectory,
     directory,
-    typesDirectoryName,
-    `${basename}${typeFileExtension}`,
+    TYPES_DIRECTORY_NAME,
+    `${basename}${TYPE_FILE_EXTENSION}`,
   );
 }
 
@@ -257,9 +257,9 @@ function collectExistingTypeFiles(directory: string): readonly string[] {
 
     const entryPath = path.join(directory, entry.name);
 
-    if (entry.name === typesDirectoryName) {
+    if (entry.name === TYPES_DIRECTORY_NAME) {
       for (const file of fs.readdirSync(entryPath, { withFileTypes: true })) {
-        if (file.isFile() && file.name.endsWith(typeFileExtension)) {
+        if (file.isFile() && file.name.endsWith(TYPE_FILE_EXTENSION)) {
           files.push(path.join(entryPath, file.name));
         }
       }

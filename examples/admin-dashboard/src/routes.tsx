@@ -12,7 +12,7 @@ import SecurityPage, { loader as securityLoader } from "./pages/settings/securit
 import UserDetailPage, { loader as userDetailLoader } from "./pages/users/[userId].js";
 import UsersPage, { loader as usersLoader } from "./pages/users/index.js";
 
-export const routes: readonly RouterRouteDefinition[] = [
+export const ROUTES: readonly RouterRouteDefinition[] = [
   {
     path: "/",
     component: RootLayout,

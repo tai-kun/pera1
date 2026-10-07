@@ -16,7 +16,7 @@ import OverviewPage, { loader as overviewLoader } from "./pages/projects/overvie
 import ProjectSettingsPage, { loader as projectSettingsLoader } from "./pages/projects/settings.js";
 import TasksPage, { loader as tasksLoader } from "./pages/projects/tasks.js";
 
-export const routes: readonly RouterRouteDefinition[] = [
+export const ROUTES: readonly RouterRouteDefinition[] = [
   {
     path: "/",
     component: RootLayout,

@@ -29,10 +29,10 @@ const membersByProject = new Map<string, Member[]>([
   ],
 ]);
 
-const fallbackMembers: readonly Member[] = [
+const FALLBACK_MEMBERS: readonly Member[] = [
   { id: "1", name: "Admin", email: "admin@example.com", role: "Owner" },
 ];
 
 export async function listMembers(projectId: string): Promise<Member[]> {
-  return membersByProject.get(projectId) ?? [...fallbackMembers];
+  return membersByProject.get(projectId) ?? [...FALLBACK_MEMBERS];
 }

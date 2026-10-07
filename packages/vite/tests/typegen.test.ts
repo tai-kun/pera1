@@ -6,7 +6,7 @@ import { test } from "vitest";
 
 import run, { type CliIo } from "../src/_cli.js";
 import generateTypes from "../src/_generate-types.js";
-import { defaultExclude, defaultInclude } from "../src/_options.js";
+import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE } from "../src/_options.js";
 import { createTempProject } from "./_temp-project.js";
 
 /**
@@ -42,8 +42,8 @@ test("ルートファイルに対応する型を生成する", ({ expect }) => {
     root,
     dir: "src/pages",
     typesDir: ".pera1/types",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   });
 
   // 検証
@@ -75,8 +75,8 @@ test("生成ルートに自身を git 管理対象外にする .gitignore を出
     root,
     dir: "src/pages",
     typesDir: ".pera1/types",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   });
 
   // 検証
@@ -90,8 +90,8 @@ test("内容が変わっていなければ型を書き換えない", ({ expect }
     root,
     dir: "src/pages",
     typesDir: ".pera1/types",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   };
   generateTypes(args);
 
@@ -113,8 +113,8 @@ test("ルートファイルがなくなった型を削除する", ({ expect }) =
     root,
     dir: "src/pages",
     typesDir: ".pera1/types",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   });
   const removedFile = path.join(root, ".pera1/types/src/pages/+types/about.d.ts");
   fs.rmSync(path.join(root, "src/pages/about.tsx"));
@@ -124,8 +124,8 @@ test("ルートファイルがなくなった型を削除する", ({ expect }) =
     root,
     dir: "src/pages",
     typesDir: ".pera1/types",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   });
 
   // 検証
@@ -144,8 +144,8 @@ test("プロジェクトルートの外にあるルートファイルは警告�
     root,
     dir: "../shared/pages",
     typesDir: ".pera1/types",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   });
 
   // 検証

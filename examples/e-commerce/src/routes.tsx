@@ -13,7 +13,7 @@ import ProductDetailPage, { loader as productDetailLoader } from "./pages/produc
 import ProductsPage, { loader as productsLoader } from "./pages/products/index.js";
 import RootLayout from "./pages/root.js";
 
-export const routes: readonly RouterRouteDefinition[] = [
+export const ROUTES: readonly RouterRouteDefinition[] = [
   {
     path: "/",
     component: RootLayout,

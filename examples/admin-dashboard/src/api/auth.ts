@@ -13,7 +13,7 @@ type StoredUser = User & {
 
 // 簡易認証のためのインメモリーのユーザー DB です。
 // 永続化はしません。
-const users: readonly StoredUser[] = [
+const USERS: readonly StoredUser[] = [
   { id: "1", name: "Admin", email: "admin@example.com", password: "password", role: "admin" },
   { id: "2", name: "Alice", email: "alice@example.com", password: "password", role: "user" },
 ];
@@ -49,7 +49,7 @@ export function getCurrentUser(): User | null {
 }
 
 export async function login(email: string, password: string): Promise<User | undefined> {
-  const found = users.find((user) => user.email === email && user.password === password);
+  const found = USERS.find((user) => user.email === email && user.password === password);
   if (!found) {
     return undefined;
   }

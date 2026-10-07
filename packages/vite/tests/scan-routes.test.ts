@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 
 import { onTestFinished, test } from "vitest";
 
-import { defaultExclude, defaultInclude } from "../src/_options.js";
+import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE } from "../src/_options.js";
 import scanRoutes, { type RouteNode } from "../src/_scan-routes.js";
 
 const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "basic");
@@ -48,8 +48,8 @@ test("ファイル構成からルートのツリーを生成する", ({ expect }
   const result = scanRoutes({
     root: fixtureRoot,
     dir: "src/pages",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   });
 
   // 検証
@@ -90,8 +90,8 @@ test("_layout がないディレクトリーのルートは親の子へ引き上
   const result = scanRoutes({
     root,
     dir: "pages",
-    include: defaultInclude,
-    exclude: defaultExclude,
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
   });
 
   // 検証
@@ -110,7 +110,7 @@ test("include で対象のファイルを絞り込める", ({ expect }) => {
     root,
     dir: "pages",
     include: ["**/*.tsx"],
-    exclude: defaultExclude,
+    exclude: DEFAULT_EXCLUDE,
   });
 
   // 検証
@@ -146,7 +146,7 @@ test("インデックスルートが重複しているとエラーになる", ({
 
   // 実行と検証
   expect(() =>
-    scanRoutes({ root, dir: "pages", include: defaultInclude, exclude: defaultExclude }),
+    scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
   ).toThrow("インデックスルートが重複しています");
 });
 
@@ -159,7 +159,7 @@ test("レイアウトルートが重複しているとエラーになる", ({ ex
 
   // 実行と検証
   expect(() =>
-    scanRoutes({ root, dir: "pages", include: defaultInclude, exclude: defaultExclude }),
+    scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
   ).toThrow("レイアウトルートが重複しています");
 });
 
@@ -172,7 +172,7 @@ test("同じパスになるルートが重複しているとエラーになる",
 
   // 実行と検証
   expect(() =>
-    scanRoutes({ root, dir: "pages", include: defaultInclude, exclude: defaultExclude }),
+    scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
   ).toThrow("同じパスになるルートが重複しています");
 });
 
@@ -182,7 +182,7 @@ test("_index と _layout 以外の _ で始まるファイルはエラーにな�
 
   // 実行と検証
   expect(() =>
-    scanRoutes({ root, dir: "pages", include: defaultInclude, exclude: defaultExclude }),
+    scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
   ).toThrow("ルートとして解釈できないファイルです");
 });
 
@@ -195,7 +195,7 @@ test("パスレスディレクトリーに _layout を置くとエラーにな�
 
   // 実行と検証
   expect(() =>
-    scanRoutes({ root, dir: "pages", include: defaultInclude, exclude: defaultExclude }),
+    scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
   ).toThrow("パスレスディレクトリーには _layout を置けません");
 });
 
@@ -206,6 +206,6 @@ test("ページディレクトリーが存在しないとエラーになる", ({
 
   // 実行と検証
   expect(() =>
-    scanRoutes({ root, dir: "pages", include: defaultInclude, exclude: defaultExclude }),
+    scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
   ).toThrow("ルートディレクトリーが見つかりません");
 });

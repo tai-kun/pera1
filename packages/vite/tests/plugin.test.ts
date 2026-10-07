@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { build, createServer, type ViteDevServer } from "vite";
 import { onTestFinished, test, vi } from "vitest";
 
-import pera1, { virtualRoutesId } from "../src/index.js";
+import pera1, { VIRTUAL_ROUTES_ID } from "../src/index.js";
 import { createTempProject } from "./_temp-project.js";
 
 const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "basic");
@@ -62,10 +62,10 @@ test("仮想モジュール ID を解決する", async ({ expect }) => {
 
   try {
     // 実行
-    const result = await server.pluginContainer.resolveId(virtualRoutesId);
+    const result = await server.pluginContainer.resolveId(VIRTUAL_ROUTES_ID);
 
     // 検証
-    expect(result?.id).toBe(`\0${virtualRoutesId}`);
+    expect(result?.id).toBe(`\0${VIRTUAL_ROUTES_ID}`);
   } finally {
     await server.close();
   }
@@ -77,7 +77,7 @@ test("開発サーバーが仮想モジュールからルート定義を配信�
 
   try {
     // 実行
-    const result = await server.transformRequest(virtualRoutesId);
+    const result = await server.transformRequest(VIRTUAL_ROUTES_ID);
     const code = result?.code ?? "";
 
     // 検証
@@ -128,7 +128,7 @@ test("ページファイルの追加で仮想モジュールを無効化して�
   const server = await createFixtureServer();
 
   try {
-    await server.transformRequest(virtualRoutesId);
+    await server.transformRequest(VIRTUAL_ROUTES_ID);
     const send = vi.spyOn(server.ws, "send").mockImplementation(() => {});
     const invalidate = vi.spyOn(server.moduleGraph, "invalidateModule");
 

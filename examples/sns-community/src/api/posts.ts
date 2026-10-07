@@ -5,7 +5,7 @@ export type Post = {
   readonly createdAt: string;
 };
 
-const posts: readonly Post[] = [
+const POSTS: readonly Post[] = [
   {
     id: "alice-1",
     author: "alice",
@@ -63,7 +63,7 @@ const posts: readonly Post[] = [
 ];
 
 export async function listFeed(): Promise<Post[]> {
-  return [...posts].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
+  return [...POSTS].sort((a, b) => (a.createdAt < b.createdAt ? 1 : -1));
 }
 
 export async function listPostsByUser(username: string): Promise<Post[]> {

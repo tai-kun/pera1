@@ -4,7 +4,7 @@ export type Project = {
   readonly description: string;
 };
 
-const initialProjects: readonly Project[] = [
+const INITIAL_PROJECTS: readonly Project[] = [
   { id: "apollo", name: "Apollo", description: "月面着陸を目指す旗艦プロジェクトです。" },
   { id: "zephyr", name: "Zephyr", description: "軽量な風のように速い Web 体験を届けます。" },
   { id: "orion", name: "Orion", description: "夜空を観測するコミュニティー基盤を育てます。" },
@@ -12,7 +12,7 @@ const initialProjects: readonly Project[] = [
 
 const STORAGE_KEY = "pera1-saas-project:custom-projects";
 
-const projects = new Map<string, Project>(initialProjects.map((project) => [project.id, project]));
+const projects = new Map<string, Project>(INITIAL_PROJECTS.map((project) => [project.id, project]));
 
 /**
  * `localStorage` に保存された追加プロジェクトをメモリーに復元します。
@@ -48,7 +48,7 @@ function restoreCustomProjects(): void {
 function persistCustomProjects(): void {
   try {
     const custom = [...projects.values()].filter(
-      (project) => !initialProjects.some((initial) => initial.id === project.id),
+      (project) => !INITIAL_PROJECTS.some((initial) => initial.id === project.id),
     );
     localStorage.setItem(STORAGE_KEY, JSON.stringify(custom));
   } catch {

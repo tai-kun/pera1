@@ -5,11 +5,11 @@ import type { Plugin } from "vite";
 import generateRoutesModule from "./_generate-routes.js";
 import generateTypes from "./_generate-types.js";
 import {
-  defaultDir,
-  defaultExclude,
-  defaultInclude,
-  defaultTypesDir,
-  pluginOptionsSymbol,
+  DEFAULT_DIR,
+  DEFAULT_EXCLUDE,
+  DEFAULT_INCLUDE,
+  DEFAULT_TYPES_DIR,
+  PLUGIN_OPTIONS_SYMBOL,
   type ResolvedPluginOptions,
 } from "./_options.js";
 import scanRoutes, { type RouteNode } from "./_scan-routes.js";
@@ -99,12 +99,12 @@ function isInDirectory(directoryPath: string, filePath: string): boolean {
  *
  * アプリケーション側では `import { routes } from "virtual:pera1/routes"` として参照します。
  */
-export const virtualRoutesId = "virtual:pera1/routes";
+export const VIRTUAL_ROUTES_ID = "virtual:pera1/routes";
 
 /**
  * Vite が内部で使う、解決済みの仮想モジュール ID です。
  */
-const resolvedVirtualRoutesId = `\0${virtualRoutesId}`;
+const RESOLVED_VIRTUAL_ROUTES_ID = `\0${VIRTUAL_ROUTES_ID}`;
 
 
 /**
@@ -117,10 +117,10 @@ const resolvedVirtualRoutesId = `\0${virtualRoutesId}`;
  * @returns Vite プラグインです。
  */
 export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
-  const dir = options.dir ?? defaultDir;
-  const include = options.include ?? defaultInclude;
-  const exclude = options.exclude ?? defaultExclude;
-  const typesDir = options.typesDir ?? defaultTypesDir;
+  const dir = options.dir ?? DEFAULT_DIR;
+  const include = options.include ?? DEFAULT_INCLUDE;
+  const exclude = options.exclude ?? DEFAULT_EXCLUDE;
+  const typesDir = options.typesDir ?? DEFAULT_TYPES_DIR;
   let root = process.cwd();
   let command: "build" | "serve" = "serve";
 
@@ -165,15 +165,15 @@ export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
     },
 
     resolveId(id) {
-      if (id === virtualRoutesId) {
-        return resolvedVirtualRoutesId;
+      if (id === VIRTUAL_ROUTES_ID) {
+        return RESOLVED_VIRTUAL_ROUTES_ID;
       }
 
       return undefined;
     },
 
     load(id) {
-      if (id !== resolvedVirtualRoutesId) {
+      if (id !== RESOLVED_VIRTUAL_ROUTES_ID) {
         return undefined;
       }
 
@@ -207,7 +207,7 @@ export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
           return;
         }
 
-        const module = server.moduleGraph.getModuleById(resolvedVirtualRoutesId);
+        const module = server.moduleGraph.getModuleById(RESOLVED_VIRTUAL_ROUTES_ID);
         if (module !== undefined) {
           server.moduleGraph.invalidateModule(module);
         }
@@ -228,7 +228,7 @@ export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
   };
 
   // CLI が vite.config からオプションを読み取れるように、解決済みの値をプラグインへ添付します。
-  (plugin as unknown as Record<symbol, unknown>)[pluginOptionsSymbol] = {
+  (plugin as unknown as Record<symbol, unknown>)[PLUGIN_OPTIONS_SYMBOL] = {
     dir,
     include,
     exclude,

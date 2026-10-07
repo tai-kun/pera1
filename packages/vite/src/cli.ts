@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 import run from "./_cli.js";
 
-const io = {
+const IO = {
   cwd: process.cwd(),
   write: (message: string): void => {
     process.stdout.write(message);
@@ -11,7 +11,7 @@ const io = {
   },
 };
 
-run(process.argv.slice(2), io).then(
+run(process.argv.slice(2), IO).then(
   (code) => {
     process.exitCode = code;
   },
