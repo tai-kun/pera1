@@ -142,17 +142,14 @@ async function dashboardLoader({ request }: LoaderFunctionArgs) {
 
 裸パスを正規化したいだけの場合（`/app` → `/app/dashboard` など）は、ローダーに分岐を書く代わりに [`indexRedirect`](/guides/routing#index-redirect) を使います。ローダーでパス名に応じて `redirect()` を返すと、その結果がキャッシュされ、子への遷移時にも再利用されて画面が固まるためです。
 
-描画側では、遷移が間に合わない初回表示などに備えて次のフォールバックを残しておきます。到達するのは一瞬だけのため、`null` を返すだけで十分です。`useEffect` と `navigate` を組み合わせた自前の遷移コードは不要です。
+描画側の分岐は不要です。リダイレクト時は解決を待たせてサスペンスを維持し、コンポーネント側へ `RedirectResponse` を露出させません。
 
 ```tsx
-import { RedirectResponse, useLoaderData } from "@pera1/react";
+import { useLoaderData } from "@pera1/react";
 import { use } from "react";
 
 function DashboardPage() {
   const data = use(useLoaderData<typeof dashboardLoader>());
-  if (data instanceof RedirectResponse) {
-    return null;
-  }
   return <h2>ようこそ、{data.user.name}さん。</h2>;
 }
 ```

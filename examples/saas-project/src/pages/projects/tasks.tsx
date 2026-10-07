@@ -1,9 +1,4 @@
-import {
-  type LoaderFunctionArgs,
-  RedirectResponse,
-  redirectToLogin,
-  useLoaderData,
-} from "@pera1/react";
+import { type LoaderFunctionArgs, redirectToLogin, useLoaderData } from "@pera1/react";
 import * as React from "react";
 
 import { getCurrentUser } from "../../api/auth.js";
@@ -28,22 +23,14 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 }
 
 export default function TasksPage() {
-  const initial = React.use(useLoaderData<typeof loader>());
-  const [tasks, setTasks] = React.useState(
-    initial instanceof RedirectResponse ? [] : initial.tasks,
-  );
-  const data = initial;
+  const data = React.use(useLoaderData<typeof loader>());
+
+  const [tasks, setTasks] = React.useState(data.tasks);
 
   React.useEffect(() => {
-    if (!(data instanceof RedirectResponse)) {
-      setTasks(data.tasks);
-    }
+    setTasks(data.tasks);
   }, [data]);
 
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
   if (!data.project) {
     return (
       <>

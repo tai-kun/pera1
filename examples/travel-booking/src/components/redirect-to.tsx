@@ -8,7 +8,7 @@ export { RedirectResponse };
  *
  * @deprecated loader の `redirect()` はエンジンが自動遷移させるようになったため、
  * 新規のガードではこのコンポーネントは不要です。描画側では
- * `data instanceof RedirectResponse` の場合に `null` を返すフォールバックで十分です。
+ * loader のリダイレクトはコンポーネント側へ露出しないため、描画側の分岐は不要です。
  * 本コンポーネントは、loader を介さない描画側での誘導
  * (`/travel` → `/travel/search` など) と後方互換のために残しています。
  */

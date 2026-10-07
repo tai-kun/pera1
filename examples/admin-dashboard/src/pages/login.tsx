@@ -3,7 +3,6 @@ import {
   type ActionFunctionArgs,
   type LoaderFunctionArgs,
   REDIRECT_TO_PARAM,
-  RedirectResponse,
   redirect,
   sanitizeRedirectTo,
   useActionData,
@@ -43,11 +42,6 @@ export async function action({ request }: ActionFunctionArgs) {
 
 export default function LoginPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
-
   return (
     <>
       <h2>ログイン</h2>

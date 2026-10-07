@@ -1,7 +1,6 @@
 import {
   type LoaderFunctionArgs,
   Outlet,
-  RedirectResponse,
   redirectToLogin,
   useLoaderData,
   useParams,
@@ -30,10 +29,6 @@ export default function ProjectLayout() {
   const params = useParams<"/app/projects/:projectId">();
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
   if (!data.project) {
     return (
       <>

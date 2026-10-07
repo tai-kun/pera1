@@ -17,7 +17,7 @@ test("空のルート配列を渡したとき、空の Map が返される", ({ 
   };
 
   // 実行
-  const result = initLoaders(routes, request);
+  const { dataMap: result } = initLoaders(routes, request);
 
   // 検証
   expect(result).toStrictEqual(new Map());
@@ -43,7 +43,7 @@ test("単一の有効なローダーを渡したとき、ローダーが実行�
   };
 
   // 実行
-  const result = initLoaders(routes, request);
+  const { dataMap: result } = initLoaders(routes, request);
 
   // 検証
   expect(result.size).toStrictEqual(1);
@@ -81,7 +81,7 @@ test("複数の有効なローダーを渡したとき、すべてのローダ�
   };
 
   // 実行
-  const result = initLoaders(routes, request);
+  const { dataMap: result } = initLoaders(routes, request);
 
   // 検証
   expect(Array.from(result.keys())).toStrictEqual([loader1, loader2]);
@@ -146,7 +146,7 @@ test("ローダーが Promise を返すとき、非同期処理が正しくラ�
   };
 
   // 実行
-  const result = initLoaders(routes, request);
+  const { dataMap: result } = initLoaders(routes, request);
 
   // 検証
   const ninjaPromise = result.get(loader)!;
@@ -175,7 +175,7 @@ test("ローダー実行時に同期エラーが投げられたとき、例外�
   };
 
   // 実行
-  const result = initLoaders(routes, request);
+  const { dataMap: result } = initLoaders(routes, request);
 
   // 検証
   expect(result.has(loader)).toStrictEqual(true);
@@ -203,7 +203,7 @@ test("loader が関数ではない要素が含まれるとき、その要素は�
   };
 
   // 実行
-  const result = initLoaders(routes, request);
+  const { dataMap: result } = initLoaders(routes, request);
 
   // 検証
   expect(result.size).toStrictEqual(1);
@@ -236,7 +236,7 @@ test("同一のローダーインスタンスが複数回含まれるとき、Ma
   };
 
   // 実行
-  const result = initLoaders(routes, request);
+  const { dataMap: result } = initLoaders(routes, request);
 
   // 検証
   expect(result.size).toStrictEqual(1);
@@ -285,14 +285,14 @@ describe("initLoaders のエッジケース", () => {
     const testUrl = url("https://example.com/");
 
     // 実行
-    const map = initLoaders(routes, { url: testUrl, signal });
+    const { dataMap: map } = initLoaders(routes, { url: testUrl, signal });
 
     // 検証
     const promise = map.get(loader)!;
     await expect(promise).rejects.toThrow(error);
   });
 
-  test("RedirectResponse を返す loader はそのまま格納される", async ({ expect, signal }) => {
+  test("RedirectResponse は公開マップへ露出しない", async ({ expect, signal }) => {
     // 準備
     const response = new RedirectResponse("/redirect");
     const loader = vi.fn<() => any>(() => response);
@@ -300,11 +300,12 @@ describe("initLoaders のエッジケース", () => {
     const testUrl = url("https://example.com/");
 
     // 実行
-    const map = initLoaders(routes, { url: testUrl, signal });
+    const { dataMap: map, idle } = initLoaders(routes, { url: testUrl, signal });
+    const { redirectTo } = await idle();
 
     // 検証
-    const promise = map.get(loader)!;
-    await expect(promise).resolves.toBe(response);
+    expect(redirectTo).toBe(response);
+    expect(map.get(loader)?.status).toBe("pending");
   });
 
   test("一部の loader が throw しても他に影響しない", async ({ expect, signal }) => {
@@ -322,7 +323,7 @@ describe("initLoaders のエッジケース", () => {
     const testUrl = url("https://example.com/");
 
     // 実行
-    const map = initLoaders(routes, { url: testUrl, signal });
+    const { dataMap: map } = initLoaders(routes, { url: testUrl, signal });
 
     // 検証
     await expect(map.get(okLoader)!).resolves.toBe("ok");
@@ -365,9 +366,29 @@ describe("initLoaders のエッジケース", () => {
     const testUrl = url("https://example.com/");
 
     // 実行
-    const map = initLoaders(routes, { url: testUrl, signal: controller.signal });
+    const { dataMap: map } = initLoaders(routes, { url: testUrl, signal: controller.signal });
 
     // 検証
     expect(map.has(loader)).toBe(true);
+  });
+
+  test("RedirectResponse は公開マップへ露出せず idle() で回収される", async ({
+    expect,
+    signal,
+  }) => {
+    // 準備
+    const redirectResponse = new RedirectResponse("/login");
+    // oxlint-disable-next-line vitest/require-mock-type-parameters
+    const loader = vi.fn(() => redirectResponse);
+    const routes: any[] = [{ loader, params: {} }];
+    const testUrl = url("https://example.com/dashboard");
+
+    // 実行
+    const { dataMap, idle } = initLoaders(routes, { url: testUrl, signal });
+    const { redirectTo } = await idle();
+
+    // 検証
+    expect(redirectTo).toBe(redirectResponse);
+    expect(dataMap.get(loader)?.status).toBe("pending");
   });
 });

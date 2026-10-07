@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  RedirectResponse,
   redirectToLogin,
   useLoaderData,
 } from "@pera1/react";
@@ -18,11 +17,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function SettingsPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
-
   return (
     <>
       <h2>Settings</h2>

@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  RedirectResponse,
   redirect,
   useLoaderData,
   useNavigate,
@@ -21,11 +20,6 @@ export async function loader(_args: LoaderFunctionArgs) {
 export default function ShippingPage() {
   const data = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
-
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
 
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

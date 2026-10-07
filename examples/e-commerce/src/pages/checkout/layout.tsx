@@ -1,7 +1,6 @@
 import {
   type LoaderFunctionArgs,
   Outlet,
-  RedirectResponse,
   redirect,
   useLoaderData,
   useRoutePath,
@@ -21,10 +20,6 @@ export async function loader(_args: LoaderFunctionArgs) {
 export default function CheckoutLayout() {
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
   if (pathname === "/checkout") {
     return <RedirectTo response={redirect("/checkout/shipping")} />;
   }

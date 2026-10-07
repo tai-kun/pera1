@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  RedirectResponse,
   redirectToLogin,
   useLoaderData,
 } from "@pera1/react";
@@ -24,10 +23,6 @@ export async function loader({ params, request }: LoaderFunctionArgs) {
 
 export default function OverviewPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
   if (!data.project) {
     return (
       <>

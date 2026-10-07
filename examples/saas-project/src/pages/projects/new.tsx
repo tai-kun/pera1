@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  RedirectResponse,
   redirectToLogin,
   useLoaderData,
   useNavigate,
@@ -21,11 +20,6 @@ export default function NewProjectPage() {
   const data = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
   const [error, setError] = React.useState<string | null>(null);
-
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();

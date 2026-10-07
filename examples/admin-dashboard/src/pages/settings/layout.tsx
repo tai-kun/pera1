@@ -1,7 +1,6 @@
 import {
   type LoaderFunctionArgs,
   Outlet,
-  RedirectResponse,
   redirectToLogin,
   useLoaderData,
   useRoutePath,
@@ -23,11 +22,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 export default function SettingsLayout() {
   const { pathname } = useRoutePath();
   const data = React.use(useLoaderData<typeof loader>());
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
-
   return (
     <AppLayout>
       <h2>設定</h2>

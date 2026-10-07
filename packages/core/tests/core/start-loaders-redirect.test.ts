@@ -111,10 +111,7 @@ describe("startLoaders のリダイレクト検出", () => {
     expect(redirectTo).toBe(first);
   });
 
-  test("リダイレクト応答はデータストア上に保持され、フォールバックから参照できる", async ({
-    expect,
-    signal,
-  }) => {
+  test("リダイレクト応答はコンポーネント側へ露出しない", async ({ expect, signal }) => {
     // 準備
     const redirectResponse = new RedirectResponse("/login");
     const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(redirectResponse);
@@ -130,12 +127,15 @@ describe("startLoaders のリダイレクト検出", () => {
 
     // 実行
     const started = startLoaders(args);
-    await started.idle();
+    const { redirectTo } = await started.idle();
 
-    // 検証: 後方互換のため、ストア上の値は置き換えられない
+    // 検証: エンジン側では回収される
+    expect(redirectTo).toBe(redirectResponse);
+
+    // 検証: 公開ストアには露出しない
     const stored = dataStore.get("entry-2")?.get(mockLoader);
     expect(stored).toBeDefined();
-    await expect(stored).resolves.toBe(redirectResponse);
+    expect(stored.status).toBe("pending");
   });
 
   test("ローダーが存在しない場合、redirectTo は undefined になる", async ({

@@ -191,6 +191,36 @@ describe("GET 遷移時の loader redirect", () => {
   });
 });
 
+function createStore(): Map<unknown, Map<unknown, unknown>> & {
+  getOrInsertComputed: (
+    key: unknown,
+    insert: () => Map<unknown, unknown>,
+  ) => Map<unknown, unknown>;
+} {
+  const store = new Map() as Map<unknown, Map<unknown, unknown>> & {
+    getOrInsertComputed: (
+      key: unknown,
+      insert: () => Map<unknown, unknown>,
+    ) => Map<unknown, unknown>;
+  };
+
+  store.getOrInsertComputed = (key, insert) => {
+    const existing = store.get(key);
+
+    if (existing) {
+      return existing;
+    }
+
+    const inserted = insert();
+
+    store.set(key, inserted);
+
+    return inserted;
+  };
+
+  return store;
+}
+
 describe("POST 後の loader redirect", () => {
   test("アクション後のローダーが redirect() を返したら自動遷移する", async ({ expect }) => {
     // 準備
@@ -220,8 +250,8 @@ describe("POST 後の loader redirect", () => {
       routes: routes as any,
       update: update as any,
       getSignal: () => new AbortController().signal,
-      actionDataStore: new Map() as any,
-      loaderDataStore: new Map() as any,
+      actionDataStore: createStore() as any,
+      loaderDataStore: createStore() as any,
     });
 
     // 実行

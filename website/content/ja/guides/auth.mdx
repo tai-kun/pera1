@@ -127,4 +127,4 @@ async function adminLoader({ request }: LoaderFunctionArgs) {
 }
 ```
 
-描画側のフォールバックは他のガードと同じです。遷移が間に合わない初回表示に備えて、`data instanceof RedirectResponse` の場合に `null` を返すだけで十分です。詳しくは[データ取得](/guides/data-loading#redirect)を参照してください。
+描画側の分岐は不要です。リダイレクト時はサスペンスを維持し、コンポーネント側へ露出させません。詳しくは[データ取得](/guides/data-loading#redirect)を参照してください。

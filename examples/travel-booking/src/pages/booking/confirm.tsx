@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  RedirectResponse,
   redirect,
   useLoaderData,
   useNavigate,
@@ -35,11 +34,6 @@ export default function ConfirmPage() {
   const data = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
   const [error, setError] = React.useState<string | null>(null);
-
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
 
   if (data.booking === null) {
     return (

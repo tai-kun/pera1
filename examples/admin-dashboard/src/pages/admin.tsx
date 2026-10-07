@@ -1,6 +1,5 @@
 import {
   type LoaderFunctionArgs,
-  RedirectResponse,
   redirectToLogin,
   requireRole,
   useLoaderData,
@@ -28,11 +27,6 @@ export async function loader({ request }: LoaderFunctionArgs) {
 
 export default function AdminPage() {
   const data = React.use(useLoaderData<typeof loader>());
-  if (data instanceof RedirectResponse) {
-    // loader の `redirect()` はエンジンが自動遷移させるため、ここでは何も描画しない。
-    return null;
-  }
-
   return (
     <AppLayout>
       <h2>管理者ページ</h2>

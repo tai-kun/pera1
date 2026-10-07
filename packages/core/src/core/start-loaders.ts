@@ -1,6 +1,7 @@
 import { NinjaPromise } from "ninja-promise";
 
 import log from "../_logger.js";
+import hideLoaderRedirect from "./_hide-loader-redirect.js";
 import unreachable from "./_unreachable.js";
 import { LoaderConditionError } from "./errors.js";
 import type { HistoryEntry } from "./expect-history-entry.js";
@@ -66,18 +67,17 @@ export type StartLoadersOptions = {
  */
 export interface StartedLoaders {
   /**
-   * 現在のフェーズでスケジュールされたすべてのローダーの処理が完了するまで待機し、
-   * リダイレクト要求の有無を回収します。
+   * 現在のフェーズでスケジュールされたすべてのローダーの処理が完了するまで待機します。
    *
-   * いずれかのローダーが `RedirectResponse` (同期値または非同期の解決値) を返した場合、
-   * そのうち最初に検出されたものを `redirectTo` として返します。呼び出し側
-   * (ルーティングエンジン) はこの値を使って自動遷移を行ってください。
+   * いずれかのローダーが `RedirectResponse` を返した場合は最初に検出されたものを `redirectTo` として返します。
    *
-   * なお検出された `RedirectResponse` 自体はデータストア上にそのまま保持されます。
-   * 万一エンジンが遷移しなかった場合でも、コンポーネント側の
-   * `data instanceof RedirectResponse` によるフォールバックが動作します。
+   * 呼び出し側はこの値を使って自動遷移を行ってください。
    *
-   * @returns 処理結果に伴うリダイレクト要求を含むオブジェクトです。
+   * 検出された `RedirectResponse` は公開マップには格納されません。
+   *
+   * コンポーネント側には永遠に解決しないプロミスが渡り、遷移完了までサスペンスを維持します。
+   *
+   * @returns 処理結果に伴うリダイレクト要求を含むオブジェクトを返します。
    */
   idle: () => Promise<{
     redirectTo: RedirectResponse | undefined;
@@ -104,11 +104,13 @@ function areParamsEqual(
 }
 
 /**
- * 画面遷移やデータ更新の発生に伴い、現在マッチしているルートのローダー関数群を精査し、キャッシュの再利用または読み込みを動的に判定、実行する関数です。
+ * 画面遷移やデータ更新の発生に伴い、現在マッチしているルートのローダー関数群を精査する関数です。
  *
- * ローダーが `RedirectResponse` を返した場合はアクションと対称的に扱われ、
- * `idle()` の戻り値 `redirectTo` として回収されます。エンジンはこの値を
- * 使って自動遷移を行います。
+ * キャッシュの再利用または読み込みを動的に判定し、実行します。
+ *
+ * ローダーが `RedirectResponse` を返した場合はコンポーネント側へ露出させません。
+ *
+ * 公開マップには永遠に解決しないプロミスを格納し、`idle()` の戻り値で自動遷移します。
  *
  * @param args ローダーの評価に必要な現旧のルートおよび履歴コンテキストです。
  * @param options 直前のアクション実行コンテキストを含むオプションです。
@@ -153,6 +155,9 @@ export default function startLoaders(
 
   // 今回の実行フェーズで収集、確定させる新しいローダーデータマップを初期化します。
   const currentLoaderDataMap = new Map<LoaderFunction, NinjaPromise<unknown>>();
+
+  const rawPromises: NinjaPromise<unknown>[] = [];
+
   const request = RouteRequest.new("GET", currentEntry.url, signal);
 
   // 現在マッチしているすべてのルートセグメントを個別に精査します。
@@ -174,16 +179,19 @@ export default function startLoaders(
     // 過去に同じローダー関数が実行され、かつそのキャッシュデータが存在するかをチェックします。
     const prevLoaderData = prevLoaderDataMap?.get(currentLoader);
     if (!prevLoaderData) {
-      // 過去のキャッシュが存在しない＝今回新しくマッチした未知のルート階層であると判定し、判定の余地なく新規にローダーを起動します。
+      // 過去のキャッシュが存在しない場合は新規にローダーを起動します。
       log.debug("ローダーを新規起動します（path: {path}）", { path: currentRoute.path });
-      const data = NinjaPromise.try(function executeLoader() {
+
+      const raw = NinjaPromise.try(function executeLoader() {
         return currentLoader({
           params: currentParams,
           request,
         });
       });
-      // ローダーの結果を待機、エラーハンドリングする処理は、この結果を参照するコンポーネントに任せます。
-      currentLoaderDataMap.set(currentLoader, data);
+
+      rawPromises.push(raw);
+
+      currentLoaderDataMap.set(currentLoader, hideLoaderRedirect(raw));
 
       continue;
     }
@@ -226,63 +234,78 @@ export default function startLoaders(
     // `shouldReload` の同期的な実行結果に基づいて処理を分岐します。
     switch (should.status) {
       case "pending": {
-        // shouldReload は仕様上「同期的」に真偽値を返す必要があります（Promise を返してはなりません）。
-        // もし pending であれば LoaderConditionError を生成して拒否状態のプロミスとしてラップします。
+        // `shouldReload` は同期的に真偽値を返す必要があります。
         log.debug("shouldReloadが非同期値を返したためエラーにします（path: {path}）", {
           path: currentRoute.path,
         });
+
         const error = new LoaderConditionError({
           url: request.url.href,
           returnValue: should,
           shouldReload,
         });
+
         data = NinjaPromise.reject(error);
+
         break;
       }
 
-      case "rejected":
-        // shouldReload の実行中に同期的な例外が発生した場合は、そのエラー状態をそのまま引き継ぎ、ハンドリングを画面側に委ねます。
+      case "rejected": {
+        // `shouldReload` の実行中に例外が発生した場合はそのまま引き継ぎます。
         log.debug("shouldReloadの実行中に例外が発生しました（path: {path}）", {
           path: currentRoute.path,
         });
+
         data = should;
+
         break;
+      }
 
       case "fulfilled": {
         const { value } = should;
+
         switch (value) {
-          case true:
+          case true: {
             // 明示的にリロードの指示が出た場合のみ、ローダーを新規に再実行します。
             log.debug("ローダーを再実行します（path: {path}）", { path: currentRoute.path });
-            data = NinjaPromise.try(function executeLoader() {
+
+            const raw = NinjaPromise.try(function executeLoader() {
               return currentLoader({
                 params: currentParams,
                 request,
               });
             });
 
-            break;
+            rawPromises.push(raw);
 
-          case false:
-            // 再読み込みが不要と判定された場合は、前回のキャッシュプロミスをそのまま無加工で引き継ぎます。
+            data = hideLoaderRedirect(raw);
+
+            break;
+          }
+
+          case false: {
+            // 再読み込みが不要と判定された場合は、前回のキャッシュをそのまま引き継ぎます。
             log.debug("ローダーのキャッシュを再利用します（path: {path}）", {
               path: currentRoute.path,
             });
+
             data = prevLoaderData;
 
             break;
+          }
 
           default: {
-            // 戻り値が boolean 型ではなかった場合、仕様不適合としてエラーを割り当てます。
+            // 戻り値が真偽値でない場合は仕様不適合としてエラーを割り当てます。
             log.debug("shouldReloadが真偽値以外を返したためエラーにします（path: {path}）", {
               path: currentRoute.path,
             });
+
             const error = new LoaderConditionError({
               url: request.url.href,
               returnValue: value,
               shouldReload,
             });
-            // エラーハンドリングは、このローダーデータを参照するコンポーネントに任せます。
+
             data = NinjaPromise.reject(error);
           }
         }
@@ -290,8 +313,9 @@ export default function startLoaders(
         break;
       }
 
-      default:
+      default: {
         unreachable(should);
+      }
     }
 
     // 確定したプロミスを今回のマップに登録します。
@@ -308,28 +332,23 @@ export default function startLoaders(
 
   return {
     async idle() {
-      // すべてのローダーの確定を待ちます。拒否されたものがあっても、
-      // リダイレクト検出のために他の結果を走査できるよう `allSettled` で待機します。
-      // ここで待機することで、全ローダーの実行が完了するまでブラウザーのタブには
-      // ローディングスピーナーが表示されます。
-      const results = await Promise.allSettled(currentLoaderDataMap.values());
+      // 全ローダーの確定を待ちます。
+      // 公開マップは隠蔽済みのため、隠蔽前の結果を走査します。
+      const results = await Promise.allSettled(rawPromises);
 
-      // 確定した結果の中から、リダイレクト応答 (`RedirectResponse`) を探します。
-      // 複数が該当する場合は、ルート評価順で最初のものを優先します。
-      let redirectTo: RedirectResponse | undefined;
       for (const result of results) {
         if (result.status === "fulfilled" && result.value instanceof RedirectResponse) {
-          redirectTo = result.value;
+          const redirectTo = result.value;
+
           log.debug("ローダーがリダイレクトを返しました（to: {to}）", {
             to: `${redirectTo.pathname}${redirectTo.search}${redirectTo.hash}`,
           });
-          break;
+
+          return { redirectTo };
         }
       }
 
-      return {
-        redirectTo,
-      };
+      return { redirectTo: undefined };
     },
   };
 }

@@ -60,43 +60,46 @@ export default class NavigationApiEngine implements IEngine {
     this.navigation = navigation_;
     this.subscribedEntryIds = new Set();
     this.navAbortController = null;
-    this.initialRedirectArmed = false;
+    this.initIdleByEntry = new Map();
   }
 
   /**
-   * 初期表示時のローダーが解決した際のリダイレクト監視が有効かどうかを示すフラグです。
+   * 初期ローダーの完了待機処理を履歴エントリーごとに保持します。
    *
-   * `init()` は `start()` (ナビゲーションの購読開始) よりも先に実行されるため、
-   * 初期ローダーの解決を監視するハンドラーは、このフラグが立つまで遷移を行いません。
-   * `start()` 内でフラグを立てると同時に、すでに確定済みの結果を走査します。
+   * `init()` は同期的に公開マップだけを登録し、リダイレクトの監視は `start()` に委ねます。
    */
-  private initialRedirectArmed: boolean;
+  private initIdleByEntry: Map<
+    HistoryEntryId,
+    () => Promise<{ readonly redirectTo: RedirectResponse | undefined }>
+  >;
 
   /**
    * ローダーが返したリダイレクト応答に従って自動遷移します。
    *
-   * アクションの `redirect()` が `precommitHandler` 経由で `controller.redirect()` されるのと対称的に、
-   * ローダーの `redirect()` もエンジンが回収して遷移させるための共通処理です。
+   * アクションの `redirect()` と対称的に、ローダーの `redirect()` もエンジンが回収して遷移させます。
+   *
    * 履歴に余分なエントリーを残さないよう `replace` で遷移します。
    *
    * 次の場合は遷移を行いません。
    *
-   * - 対応するナビゲーションがすでに中断されている場合 (古い遷移の結果による横取りを防ぎます)。
-   * - 現在のエントリーが未確定の場合。
-   * - リダイレクト先が現在の URL と同一の場合 (自己リダイレクトによる無限ループを防ぎます)。
+   * - 対応するナビゲーションがすでに中断されている場合です。
+   * - 現在のエントリーが未確定の場合です。
+   * - リダイレクト先が現在の URL と同一の場合です。
    *
    * @param redirectTo ローダーが返したリダイレクト応答です。
-   * @param signal 対応するナビゲーションの中断シグナルです。省略時は中断チェックを行いません。
+   * @param signal 対応するナビゲーションの中断シグナルです。
    */
   private redirectOnLoaderRedirect(redirectTo: RedirectResponse, signal?: AbortSignal): void {
     if (signal?.aborted) {
       log.debug("中断済みのためローダーのリダイレクトを無視します");
+
       return;
     }
 
     const currentEntry = expectHistoryEntry(this.navigation.currentEntry);
     if (!currentEntry) {
       log.debug("現在のエントリーが未確定のためローダーのリダイレクトを無視します");
+
       return;
     }
 
@@ -105,12 +108,14 @@ export default class NavigationApiEngine implements IEngine {
       log.debug("同一URLへのリダイレクトのため遷移をスキップします（to: {to}）", {
         to: redirectPath,
       });
+
       return;
     }
 
     log.debug("ローダーのリダイレクトに従って遷移します（to: {to}）", {
       to: redirectPath,
     });
+
     this.navigation.navigate(redirectPath, { history: "replace" });
   }
 
@@ -139,29 +144,16 @@ export default class NavigationApiEngine implements IEngine {
     const signal = getSignal();
 
     // 初期表示に必要なすべてのローダーを一斉に並行起動します。
-    const dataMap = initLoaders(currentRoutes, {
+    const initialized = initLoaders(currentRoutes, {
       url: currentEntry.url,
       signal,
     });
 
-    // 起動したローダーの結果（NinjaPromise）のマップを、現在の履歴 ID をキーとしてキャッシュします。
-    loaderDataStore.set(currentEntry.id, dataMap);
+    // 公開マップには `RedirectResponse` が含まれません。
+    // リダイレクトの監視は `start()` が `idle()` 経由で行います。
+    loaderDataStore.set(currentEntry.id, initialized.dataMap);
 
-    // 初期ローダーが `redirect()` を返した場合は、解決を待って自動遷移します。
-    // 直接リンク (`/dashboard` など) での初回表示でもガードを成立させるための監視です。
-    // `start()` までの間に解決した場合は遷移を見送り、`start()` 内の走査に委ねます。
-    for (const data of dataMap.values()) {
-      void Promise.resolve(data).then(
-        (value) => {
-          if (value instanceof RedirectResponse && this.initialRedirectArmed) {
-            this.redirectOnLoaderRedirect(value);
-          }
-        },
-        () => {
-          // ローダーの拒否はコンポーネント側のエラーバウンダリーに委ねるため、ここでは無視します。
-        },
-      );
-    }
+    this.initIdleByEntry.set(currentEntry.id, initialized.idle);
 
     log.debug("初期化が完了しました（url: {url}, 一致数: {matchedCount}）", {
       url: currentEntry.url.href,
@@ -182,21 +174,16 @@ export default class NavigationApiEngine implements IEngine {
   start(args: IEngine.StartArgs): IEngine.StartReturn {
     const { routes, update, getSignal, actionDataStore, loaderDataStore } = args;
 
-    // 初期ローダーのリダイレクト監視を有効化します。以降に解決する初期ローダーの
-    // `redirect()` は `init()` 内のハンドラー経由で自動遷移します。
-    this.initialRedirectArmed = true;
-
-    // `init()` から `start()` までの間にすでに確定していた初期ローダーの
-    // リダイレクトがあれば、ここで遷移します (取りこぼし防止)。
-    const armedEntry = expectHistoryEntry(this.navigation.currentEntry);
-    const armedDataMap = armedEntry && loaderDataStore.get(armedEntry.id);
-    if (armedDataMap) {
-      for (const data of armedDataMap.values()) {
-        if (data.status === "fulfilled" && data.value instanceof RedirectResponse) {
-          this.redirectOnLoaderRedirect(data.value);
-          break;
+    // 初期ローダーが `redirect()` を返した場合は自動遷移します。
+    // 同期確定済みと非同期解決の双方を単一の監視で回収します。
+    const initialEntry = expectHistoryEntry(this.navigation.currentEntry);
+    const initialIdle = initialEntry && this.initIdleByEntry.get(initialEntry.id);
+    if (initialIdle) {
+      void initialIdle().then(({ redirectTo }) => {
+        if (redirectTo) {
+          this.redirectOnLoaderRedirect(redirectTo);
         }
-      }
+      });
     }
 
     /**
@@ -532,11 +519,18 @@ export default class NavigationApiEngine implements IEngine {
         log.debug("破棄された履歴のキャッシュを削除しました（id: {id}）", {
           id: entryId,
         });
+
         this.subscribedEntryIds.delete(entryId);
+
+        this.initIdleByEntry.delete(entryId);
+
         actionDataStore.delete(entryId);
+
         loaderDataStore.delete(entryId);
       };
+
       entry.addEventListener("dispose", handleDispose, { signal });
+
       this.subscribedEntryIds.add(entryId);
     }
 
@@ -554,8 +548,13 @@ export default class NavigationApiEngine implements IEngine {
         log.debug("破棄された履歴のキャッシュを削除しました（id: {id}）", {
           id: currentEntry.id,
         });
+
         this.subscribedEntryIds.delete(currentEntry.id);
+
+        this.initIdleByEntry.delete(currentEntry.id);
+
         actionDataStore.delete(currentEntry.id);
+
         loaderDataStore.delete(currentEntry.id);
       };
       this.navigation.currentEntry!.addEventListener("dispose", handleDispose, { signal });
