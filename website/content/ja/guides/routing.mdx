@@ -7,7 +7,7 @@ description: "パスパターン、詳細度、index ルート、ネストの決
 
 ## ルート定義の形は 2 通りある [#definition-forms]
 
-基本はオブジェクト形式です。`path` が必須で、`index`、`indexRedirect`、`component`、`loader`、`action`、`shouldReload` を任意で指定します。
+基本はオブジェクト形式です。`path` が必須で、`index`、`redirect`、`component`、`loader`、`action`、`shouldReload` を任意で指定します。
 
 ```tsx
 const routes = [
@@ -106,9 +106,9 @@ function ContactsLayout() {
 }
 ```
 
-## 裸パスは `indexRedirect` で誘導する [#index-redirect]
+## 裸パスは `redirect` で誘導する [#index-redirect]
 
-`/app` を開いたら `/app/dashboard` へ送るような、裸パス（子を持たない完全一致の URL）の正規化は、`indexRedirect` に宣言します。描画側でパスを判定して遷移するコードは不要です。
+`/app` を開いたら `/app/dashboard` へ送るような、裸パス（子を持たない完全一致の URL）の正規化は、`redirect` に宣言します。描画側でパスを判定して遷移するコードは不要です。
 
 ```tsx
 const routes = [
@@ -116,7 +116,7 @@ const routes = [
     path: "/app",
     component: AppLayout,
     loader: appLoader,
-    indexRedirect: "/app/dashboard",
+    redirect: "/app/dashboard",
   },
   { path: "/app/dashboard", index: true, component: DashboardPage },
 ];
@@ -133,7 +133,7 @@ const routes = [
 `loader` と併用した場合は、裸パスでも利用者のローダーを先に実行します。未ログイン時のログインページへの誘導のように、ローダーが `RedirectResponse` を返したときはそちらが優先されます。描画側の分岐は不要です。
 
 :::note
-`loader` の中でパス名を分岐して `redirect()` を返す書き方は避けてください。結果が履歴エントリー単位でキャッシュされ、子への遷移時にも再利用されて画面が固まります。`indexRedirect` は裸パスが絡む遷移で必ず再実行し、この再利用を起こしません。
+`loader` の中でパス名を分岐して `redirect()` を返す書き方は避けてください。結果が履歴エントリー単位でキャッシュされ、子への遷移時にも再利用されて画面が固まります。`redirect` は裸パスが絡む遷移で必ず再実行し、この再利用を起こしません。
 :::
 
 ## `children` で親子を明示する（推奨） [#children]

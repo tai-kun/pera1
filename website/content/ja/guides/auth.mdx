@@ -40,7 +40,7 @@ async function appLoader({ request }: LoaderFunctionArgs) {
 }
 ```
 
-裸パスを正規化したいだけの場合（`/app` → `/app/dashboard` など）は、ローダーに分岐を書く代わりに [`indexRedirect`](/guides/routing#index-redirect) を使います。
+裸パスを正規化したいだけの場合（`/app` → `/app/dashboard` など）は、ローダーに分岐を書く代わりに [`redirect`](/guides/routing#index-redirect) を使います。
 
 ## `redirectTo` の受け渡し規約 [#redirect-to]
 

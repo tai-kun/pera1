@@ -140,7 +140,7 @@ async function dashboardLoader({ request }: LoaderFunctionArgs) {
 
 リダイレクトは同期でも非同期でも構いません。GET 遷移・アクション後の再取得・初回表示のいずれでも、ローダーの完了時にエンジンが検出して遷移先へ移動します。履歴に余分なエントリーを残さないよう `replace` で遷移するため、戻るボタンでガード対象のページに戻ってしまうことはありません。
 
-裸パスを正規化したいだけの場合（`/app` → `/app/dashboard` など）は、ローダーに分岐を書く代わりに [`indexRedirect`](/guides/routing#index-redirect) を使います。ローダーでパス名に応じて `redirect()` を返すと、その結果がキャッシュされ、子への遷移時にも再利用されて画面が固まるためです。
+裸パスを正規化したいだけの場合（`/app` → `/app/dashboard` など）は、ローダーに分岐を書く代わりに [`redirect`](/guides/routing#index-redirect) を使います。ローダーでパス名に応じて `redirect()` を返すと、その結果がキャッシュされ、子への遷移時にも再利用されて画面が固まるためです。
 
 描画側の分岐は不要です。リダイレクト時は解決を待たせてサスペンスを維持し、コンポーネント側へ `RedirectResponse` を露出させません。
 

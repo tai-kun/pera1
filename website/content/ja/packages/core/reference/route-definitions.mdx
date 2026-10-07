@@ -26,7 +26,7 @@ description: "ルート定義の 2 形式と、ローダー、アクション、
 type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
   readonly path?: TPath;
   readonly index?: boolean;
-  readonly indexRedirect?: string;
+  readonly redirect?: string;
   readonly action?: ActionFunction<TPath>;
   readonly shouldReload?: ShouldReloadFunction<TPath>;
   readonly loader?: LoaderFunction<TPath>;
@@ -39,14 +39,14 @@ type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
 | --- | --- | --- | --- |
 | `path` | `TPath` | トップレベルでははい、`children` 内ではいいえ | マッチングの対象となるパスパターンです。子で省略時は親パスを継承します。`"/"` 始まりは絶対パス、それ以外は親との相対結合です。 |
 | `index` | `boolean` | いいえ | 親パスに完全一致したときだけ使うインデックスルートにします。 |
-| `indexRedirect` | `string` | いいえ | 裸パスへの遷移を宣言的に誘導するリダイレクト先です。完全一致のときだけ発火し、子パスでは発火しません。`"/"` 始まりは絶対パス、`:id` のようなプレースホルダーはマッチ時の値で埋めます。それ以外は裸パスに対する相対パスとして解決します。 |
+| `redirect` | `string` | いいえ | 裸パスへの遷移を宣言的に誘導するリダイレクト先です。完全一致のときだけ発火し、子パスでは発火しません。`"/"` 始まりは絶対パス、`:id` のようなプレースホルダーはマッチ時の値で埋めます。それ以外は裸パスに対する相対パスとして解決します。 |
 | `action` | `ActionFunction<TPath>` | いいえ | POST 時に実行するデータ更新関数です。 |
 | `shouldReload` | `ShouldReloadFunction<TPath>` | いいえ | ローダーを再実行するかを判定します。 |
 | `loader` | `LoaderFunction<TPath>` | いいえ | 画面に必要なデータを取得する関数です。 |
 | `component` | `TComponent` | いいえ | 描画するコンポーネントです。 |
 | `children` | `RouteDefinition[]` | いいえ | 親子を明示する子ルート定義です。展開時に親パスと結合され、flat 配列と等価になります。 |
 
-`index` を付けなければ、ルートはレイアウトとして働きます。子ルートを前方一致で内包します。`index: true` を付けたルートがマッチするのは、そのパスに完全一致したときだけです。裸パスの誘導は `indexRedirect` に宣言します。詳しくは[ルーティング](/guides/routing#index-redirect)を参照してください。
+`index` を付けなければ、ルートはレイアウトとして働きます。子ルートを前方一致で内包します。`index: true` を付けたルートがマッチするのは、そのパスに完全一致したときだけです。裸パスの誘導は `redirect` に宣言します。詳しくは[ルーティング](/guides/routing#index-redirect)を参照してください。
 
 ## RouteDefinitionModule [#route-definition-module]
 
@@ -78,7 +78,7 @@ type RouteDefinition<TPath extends string = string, TComponent = any> =
 | --- | --- | --- |
 | `path` | `string` | パスパターンです。 |
 | `index` | `boolean` | インデックスルートかどうかです。 |
-| `indexRedirect` | `string \| undefined` | 裸パスへの宣言的誘導の遷移先です。宣言がなければ `undefined` です。 |
+| `redirect` | `string \| undefined` | 裸パスへの宣言的誘導の遷移先です。宣言がなければ `undefined` です。 |
 | `utils` | `RoutePatternUtils` | パターンの解析と生成を行うユーティリティーです。 |
 | `action` | `ActionFunction \| undefined` | データ更新関数です。 |
 | `shouldReload` | `ShouldReloadFunction` | 再取得の判定関数です。 |
@@ -235,7 +235,7 @@ const routes = [
 - `routes` の配列はモジュールスコープに置きます。参照が変わるとルーターが作り直され、キャッシュも失われます。
 - モジュール形式では `component` が `default` より優先されます。
 - `children` は展開時に flat 配列へ正規化されます。`children` なしの定義は従来通り動作します。
-- `indexRedirect` のあるルートには合成ローダーが付きます。裸パスでは `RedirectResponse` を返し、子パスでは利用者のローダー結果を通します。裸パスが絡む遷移では必ず再実行します。
+- `redirect` のあるルートには合成ローダーが付きます。裸パスでは `RedirectResponse` を返し、子パスでは利用者のローダー結果を通します。裸パスが絡む遷移では必ず再実行します。
 - `path` のパターン記法と詳細度のルールは[ルーティング](/guides/routing)にまとめています。
 
 ## 関連 [#related]

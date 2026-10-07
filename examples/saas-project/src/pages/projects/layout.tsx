@@ -41,7 +41,7 @@ export default function ProjectLayout() {
     );
   }
   const base = `/app/projects/${data.project.id}`;
-  // `/app/projects/:projectId` 単体への誘導は `indexRedirect` (routes.tsx) に宣言しています。
+  // `/app/projects/:projectId` 単体への誘導は `redirect` (routes.tsx) に宣言しています。
   const displayName = data.project.name ?? params.projectId;
 
   return (

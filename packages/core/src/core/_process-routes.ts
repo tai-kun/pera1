@@ -1,6 +1,6 @@
 import log from "../_logger.js";
 import compareRoutePaths from "./_compare-route-paths.js";
-import { createIndexRedirectLoader } from "./_index-redirect.js";
+import { createRedirectLoader } from "./_redirect.js";
 import RoutePatternUtils from "./route-pattern-utils.js";
 import type { Route, RouteDefinition } from "./route.types.js";
 
@@ -135,13 +135,13 @@ function flattenRouteDefinitions<TComponent>(
  * 実行内容:
  * - `children` による明示的ネストのフラット化（相対パス結合: 子 `path` が `"/"` 始まりなら絶対、それ以外は親に結合。`index: true` の子やパス省略時は親パスを継承）
  * - 各ルートのパス正規化
- * - `indexRedirect` による裸パス誘導の loader 合成（完全一致時のみ `RedirectResponse` を返し、子マッチ時には発火しない）
+ * - `redirect` による裸パス誘導の loader 合成（完全一致時のみ `RedirectResponse` を返し、子マッチ時には発火しない）
  * - 動的解析用の正規表現コンパイル
  * - 詳細度に基づく優先順位ソート
  *
  * `children` なしの既存 flat 配列は従来通り動作します（100% 後方互換）。
  *
- * `indexRedirect` を持つルートには合成ローダーが付与されます。裸パスでは利用者のローダーを先に実行し、その `RedirectResponse` を優先したうえで誘導先へ遷移させます。子パスでは利用者のローダー結果をそのまま通します。合成 `shouldReload` は裸パスが絡む遷移で必ず再実行し、リダイレクト結果が子遷移時にキャッシュ再利用されるのを防ぎます。
+ * `redirect` を持つルートには合成ローダーが付与されます。裸パスでは利用者のローダーを先に実行し、その `RedirectResponse` を優先したうえで誘導先へ遷移させます。子パスでは利用者のローダー結果をそのまま通します。合成 `shouldReload` は裸パスが絡む遷移で必ず再実行し、リダイレクト結果が子遷移時にキャッシュ再利用されるのを防ぎます。
  *
  * @template TComponent 描画対象となるコンポーネントの型です。React / Solid.js などフレームワークごとの型を指定できます。
  * @param routes ルーティング定義を格納した読み取り専用の配列です。
@@ -160,19 +160,19 @@ export default function processRoutes<TComponent = any>(
           allowChild: !index,
         });
 
-        // `indexRedirect` の宣言があれば、裸パスのみで発火する合成ローダーと再読み込み判定関数を組み立てます。
+        // `redirect` の宣言があれば、裸パスのみで発火する合成ローダーと再読み込み判定関数を組み立てます。
         // `children` との併用も可能で、親レイアウトの前方一致そのものは変えず、実行時に完全一致だけを誘導します。
-        let indexRedirect: string | undefined;
+        let redirect: string | undefined;
         let loader = route.loader;
         let shouldReload = route.shouldReload;
-        if (route.indexRedirect !== undefined) {
-          const composed = createIndexRedirectLoader({
+        if (route.redirect !== undefined) {
+          const composed = createRedirectLoader({
             fullPath,
-            template: route.indexRedirect,
+            template: route.redirect,
             loader,
             shouldReload,
           });
-          indexRedirect = composed.template;
+          redirect = composed.template;
           loader = composed.loader;
           shouldReload = composed.shouldReload;
         }
@@ -180,7 +180,7 @@ export default function processRoutes<TComponent = any>(
         return {
           path: utils.route,
           index,
-          indexRedirect,
+          redirect,
           utils,
           action: route.action,
           loader,
