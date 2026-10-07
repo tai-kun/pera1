@@ -7,12 +7,6 @@ export type Post = {
 
 const POSTS: readonly Post[] = [
   {
-    id: "alice-3",
-    author: "alice",
-    body: "お気に入りの喫茶店でチーズケーキを食べました。",
-    createdAt: "2026-10-05T12:00:00.000Z",
-  },
-  {
     id: "alice-1",
     author: "alice",
     body: "今日はカフェで新しい豆を試しました。香りがとても良いです。",
@@ -59,6 +53,12 @@ const POSTS: readonly Post[] = [
     author: "dave",
     body: "週末ライブのセットリストを予習しています。",
     createdAt: "2026-10-04T18:00:00.000Z",
+  },
+  {
+    id: "alice-3",
+    author: "alice",
+    body: "お気に入りの喫茶店でチーズケーキを食べました。",
+    createdAt: "2026-10-05T12:00:00.000Z",
   },
 ];
 

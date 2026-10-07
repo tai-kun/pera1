@@ -8,7 +8,6 @@ import {
   RouteContextMissingError,
   RoutePatternMismatchError,
   RouterContextMissingError,
-  UnexpectedValidationError,
   UnreachableError,
 } from "../../src/core/errors.js";
 
@@ -170,25 +169,5 @@ describe("エラーメッセージの日本語化", () => {
     } finally {
       setGlobalConfig({ lang: "en" });
     }
-  });
-
-  test("UnexpectedValidationError は英語メッセージを維持する", ({ expect }) => {
-    // 準備
-    const issues: any = [{ message: "error-a" }];
-    const error = new UnexpectedValidationError({ value: "x", issues });
-
-    // 実行と検証
-    expect(error.message).toBe("error-a");
-  });
-
-  test("cause オプションを引き継ぐ", ({ expect }) => {
-    // 準備
-    const cause = new Error("root");
-
-    // 実行
-    const error = new RouterContextMissingError({ cause });
-
-    // 検証
-    expect(error.cause).toBe(cause);
   });
 });

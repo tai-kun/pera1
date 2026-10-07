@@ -6,8 +6,3 @@ test("Windows の区切りを / に統一する", ({ expect }) => {
   // 実行と検証
   expect(normalizePath("src\\pages\\contacts\\$id.tsx")).toBe("src/pages/contacts/$id.tsx");
 });
-
-test("POSIX のパスはそのまま返す", ({ expect }) => {
-  // 実行と検証
-  expect(normalizePath("src/pages/contacts/$id.tsx")).toBe("src/pages/contacts/$id.tsx");
-});

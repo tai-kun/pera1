@@ -336,7 +336,9 @@ function convertDirectory(
   let layout: string | undefined;
   const pages: RouteEntry[] = [];
   const fileSegments = new Map<string, string>();
-  const files = tree.files.toSorted((a, b) => compareFileBasenames(a.basename, b.basename));
+  const files = tree.files.toSorted((a, b) =>
+    a.basename < b.basename ? -1 : a.basename > b.basename ? 1 : 0,
+  );
 
   for (const file of files) {
     switch (file.basename) {
@@ -402,28 +404,6 @@ function convertDirectory(
   nodes.sort(compareRouteNodes);
 
   return layout === undefined ? nodes : [createRouteNode(urlPath, false, layout, nodes)];
-}
-
-/**
- * ファイル名を辞書順で比較します。
- *
- * 同一ディレクトリーのファイルは走査の時点で整列済みのため、実質的には等価判定として働きます。
- * 将来の呼び出し順の変更に備えて、全順序になるよう定義しています。
- *
- * @param a 比較する 1 つ目のファイル名です。
- * @param b 比較する 2 つ目のファイル名です。
- * @returns 並べ替え用の比較結果です。
- */
-export function compareFileBasenames(a: string, b: string): number {
-  if (a < b) {
-    return -1;
-  }
-
-  if (a > b) {
-    return 1;
-  }
-
-  return 0;
 }
 
 /**

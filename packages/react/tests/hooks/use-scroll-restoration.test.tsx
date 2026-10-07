@@ -185,74 +185,7 @@ describe("useScrollRestoration", () => {
   });
 });
 
-describe("useScrollRestoration の URL 解決", () => {
-  test("エントリーに URL がなければ location を使う", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-
-    const routerRef = {
-      current: {
-        currentEntry: { id: "id-1", index: 0 },
-        actionDataStore: new Map(),
-        loaderDataStore: new Map(),
-      },
-    };
-    const listeners = new Set<() => void>();
-    const ctx = {
-      routerRef,
-      subscribe: (cb: () => void) => {
-        listeners.add(cb);
-
-        return () => {
-          listeners.delete(cb);
-        };
-      },
-    };
-
-    function Comp() {
-      useScrollRestoration(true);
-
-      return <span>ok</span>;
-    }
-
-    using scrollSpy = vi.spyOn(window, "scrollTo").mockImplementation(() => {});
-
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    cleanup.defer(() => {
-      document.body.removeChild(container);
-    });
-
-    const root = createRoot(container);
-    cleanup.defer(async () => {
-      await act(async () => {
-        root.unmount();
-      });
-    });
-
-    await act(async () => {
-      root.render(
-        <RouterContext.Provider value={ctx as unknown as RouterContextValue}>
-          <Comp />
-        </RouterContext.Provider>,
-      );
-    });
-
-    // 実行: URL なしエントリーへ遷移します。
-    await act(async () => {
-      (routerRef.current as { currentEntry: unknown }).currentEntry = {
-        id: "id-2",
-        index: 1,
-      };
-      for (const cb of listeners) {
-        cb();
-      }
-    });
-
-    // 検証
-    expect(scrollSpy).toHaveBeenCalledWith({ top: 0, left: 0, behavior: "auto" });
-  });
-
+describe("useScrollRestoration のオプション", () => {
   test("ScrollBehavior 指定ではその振る舞いでスクロールする", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();

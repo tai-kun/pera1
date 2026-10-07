@@ -144,7 +144,7 @@ function ensureGitIgnore(root: string, typesDirectory: string): void {
  */
 function collectRoutePaths(
   nodes: readonly RouteNode[],
-  routePaths: Map<string, string>,
+  routePaths: Map<string, string> = new Map(),
 ): Map<string, string> {
   for (const node of nodes) {
     routePaths.set(node.modulePath, node.path);
@@ -277,7 +277,7 @@ function collectExistingTypeFiles(directory: string): readonly string[] {
  * @param directory 削除を試みる対象のディレクトリーの絶対パスです。
  * @returns ディレクトリーが空だった場合は `true` です。
  */
-export function removeEmptyDirectories(directory: string): boolean {
+function removeEmptyDirectories(directory: string): boolean {
   if (!fs.existsSync(directory)) {
     return true;
   }
@@ -316,7 +316,7 @@ export default function generateTypes(args: GenerateTypesArgs): GenerateTypesRes
   const nodes = scanRoutes(args);
   const typesDirectory = path.resolve(args.root, args.typesDir);
   ensureGitIgnore(args.root, typesDirectory);
-  const routePaths = collectRoutePaths(nodes, new Map());
+  const routePaths = collectRoutePaths(nodes);
   const written: string[] = [];
   const removed: string[] = [];
   const warnings: string[] = [];

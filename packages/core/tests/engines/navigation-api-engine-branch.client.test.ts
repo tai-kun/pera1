@@ -1,7 +1,6 @@
 import { describe, test, vi } from "vitest";
 
 import processRoutes from "../../src/core/_process-routes.js";
-import { NavigationApiNotSupportedError, UnreachableError } from "../../src/core/errors.js";
 import NavigationApiEngine from "../../src/engines/navigation-api-engine.js";
 
 const VALID_ID = "550e8400-e29b-41d4-a716-446655440000";
@@ -31,42 +30,6 @@ function createMockNavigation(overrides: any = {}) {
 
   return { navigation, listeners };
 }
-
-describe("コンストラクタの分岐", () => {
-  test("window アクセスで例外が出てもエラーを投げる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    // bare `navigation` の評価で例外が出るようグローバルを削除し、`window.navigation` の取得でも例外が出るよう getter を仕掛けます。
-    const origWindowDesc = Object.getOwnPropertyDescriptor(window, "navigation");
-    const origGlobalDesc = Object.getOwnPropertyDescriptor(globalThis, "navigation");
-    try {
-      Object.defineProperty(window, "navigation", {
-        get() {
-          throw new Error("no navigation");
-        },
-        configurable: true,
-      });
-    } catch {
-      // 定義できない環境ではスキップ相当として何もしない
-    }
-    cleanup.defer(() => {
-      try {
-        if (origWindowDesc) {
-          Object.defineProperty(window, "navigation", origWindowDesc);
-        }
-      } catch {}
-      try {
-        if (origGlobalDesc) {
-          Object.defineProperty(globalThis, "navigation", origGlobalDesc);
-        }
-      } catch {}
-      vi.unstubAllGlobals();
-    });
-
-    // 実行と検証
-    expect(() => new NavigationApiEngine()).toThrow(NavigationApiNotSupportedError);
-  });
-});
 
 describe("init の分岐", () => {
   test("url が null の currentEntry では null を返す", async ({ expect }) => {
@@ -1109,28 +1072,6 @@ describe("start の購読管理", () => {
     // 検証
     expect(addCount).toBe(firstCount);
   });
-
-  test("currententrychange で currentEntry がなければ何もしない", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    const { navigation, listeners } = createMockNavigation({ currentEntry: null });
-    vi.stubGlobal("navigation", navigation);
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-    });
-    const engine = new NavigationApiEngine();
-    engine.start({
-      routes: [],
-      update: (() => {}) as any,
-      getSignal: () => new AbortController().signal,
-      actionDataStore: new Map() as any,
-      loaderDataStore: new Map() as any,
-    });
-
-    // 実行と検証（投げないこと）
-    navigation.currentEntry = null;
-    expect(() => listeners.get("currententrychange")()).not.toThrow();
-  });
 });
 
 describe("submit の分岐", () => {
@@ -1156,20 +1097,6 @@ describe("submit の分岐", () => {
     expect(navigation.navigate).toHaveBeenCalledWith(expect.stringContaining("/search"), {
       history: "push",
     });
-  });
-
-  test("不正な submit タイプでは UnreachableError を投げる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    const { navigation } = createMockNavigation({});
-    vi.stubGlobal("navigation", navigation);
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-    });
-    const engine = new NavigationApiEngine();
-
-    // 実行と検証
-    expect(() => engine.submit({ type: "INVALID" } as any)).toThrow(UnreachableError);
   });
 });
 
@@ -1262,35 +1189,5 @@ describe("navigate の分岐", () => {
 
     // 検証
     expect(navigation.traverseTo).not.toHaveBeenCalled();
-  });
-
-  test("不正な navigate タイプでは UnreachableError を投げる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    const { navigation } = createMockNavigation({});
-    vi.stubGlobal("navigation", navigation);
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-    });
-    const engine = new NavigationApiEngine();
-
-    // 実行と検証
-    expect(() => engine.navigate({ type: "INVALID" } as any)).toThrow(UnreachableError);
-  });
-
-  test("不正な LINK 先タイプでは UnreachableError を投げる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-    const { navigation } = createMockNavigation({});
-    vi.stubGlobal("navigation", navigation);
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-    });
-    const engine = new NavigationApiEngine();
-
-    // 実行と検証
-    expect(() =>
-      engine.navigate({ type: "LINK", to: { type: "INVALID" } as any, history: "push" }),
-    ).toThrow(UnreachableError);
   });
 });

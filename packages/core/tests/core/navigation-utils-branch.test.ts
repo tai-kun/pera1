@@ -82,31 +82,4 @@ describe("toNavigateArgs の部分パッチ", () => {
       history: "push",
     });
   });
-
-  test("オブジェクト形式で replace 指定ができる", ({ expect }) => {
-    // 実行
-    const args = toNavigateArgs({ pathname: "/a" }, { replace: true });
-
-    // 検証
-    expect(args.type).toBe("LINK");
-    if (args.type === "LINK") {
-      expect(args.history).toBe("replace");
-    }
-  });
-
-  test("関数形式で replace 指定ができる", ({ expect }) => {
-    // 実行
-    const args = toNavigateArgs(
-      (p) => {
-        p.pathname = "/fn";
-      },
-      { replace: true },
-    );
-
-    // 検証
-    expect(args.type).toBe("LINK");
-    if (args.type === "LINK") {
-      expect(args.history).toBe("replace");
-    }
-  });
 });

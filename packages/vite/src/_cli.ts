@@ -4,7 +4,6 @@ import { parseArgs } from "node:util";
 
 import { loadConfigFromFile } from "vite";
 
-import toErrorMessage from "./_error.js";
 import generateTypes from "./_generate-types.js";
 import {
   DEFAULT_DIR,
@@ -157,7 +156,7 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
       },
     }));
   } catch (ex) {
-    io.writeError(`${toErrorMessage(ex)}\n\n${HELP_TEXT}`);
+    io.writeError(`${ex instanceof Error ? ex.message : String(ex)}\n\n${HELP_TEXT}`);
 
     return 1;
   }
@@ -208,7 +207,9 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
 
     return 0;
   } catch (ex) {
-    io.writeError(`ルート型の生成に失敗しました: ${toErrorMessage(ex)}\n`);
+    io.writeError(
+      `ルート型の生成に失敗しました: ${ex instanceof Error ? ex.message : String(ex)}\n`,
+    );
 
     return 1;
   }

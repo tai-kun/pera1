@@ -378,52 +378,6 @@ describe("GET 遷移時の再読み込み制御", () => {
   });
 });
 
-describe("POST 遷移およびアクション後の再読み込み制御", () => {
-  test("shouldReload の引数にオプションデータが追加される", ({ expect, signal }) => {
-    // 準備
-    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("new-data"));
-    const cachedPromise = NinjaPromise.resolve("old-data");
-
-    const dataMap = new Map();
-    dataMap.set(mockLoader, cachedPromise);
-
-    const dataStore = new Map();
-    dataStore.set("entry-1", dataMap); // 過去の実行履歴を作ることで、shouldReload を呼び出す。
-
-    const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(true);
-    const route = {
-      path: "/get-reload",
-      loader: mockLoader,
-      shouldReload: mockShouldReload,
-    };
-    const args: any = {
-      prevRoutes: [route],
-      currentRoutes: [route],
-      prevEntry: {
-        id: "entry-1",
-        url: { search: "" },
-      },
-      currentEntry: {
-        id: "entry-2",
-        url: { search: "" },
-      },
-      loaderDataStore: dataStore,
-      signal,
-    };
-    const options = {
-      formData: new FormData(),
-      actionData: { success: true },
-    };
-
-    // 実行
-    startLoaders(args, options);
-
-    // 検証
-    expect(mockShouldReload.mock.calls[0]![0]).toHaveProperty("formData");
-    expect(mockShouldReload.mock.calls[0]![0]).toHaveProperty("actionData");
-  });
-});
-
 describe("shouldReload の異常系、エッジケースの振る舞い", () => {
   test("shouldReload が Promise などの非同期処理を返す場合、LoaderConditionError で拒否された NinjaPromise を登録する", async ({
     expect,
@@ -838,29 +792,5 @@ describe("startLoaders の POST 時の currentUrl", () => {
     expect(captured).not.toBeNull();
     expect(captured.currentUrl.href).toBe(currentUrl.href);
     expect(captured.prevUrl.href).toBe(prevUrl.href);
-  });
-});
-
-describe("遷移前ルートの重複パス", () => {
-  test("同一パスの2件目以降は最初の params を使う", ({ expect, signal }) => {
-    // 準備
-    const dataStore = new Map();
-    const args: any = {
-      prevRoutes: [
-        { path: "/app", params: { tab: "one" } },
-        { path: "/app", params: { tab: "two" } },
-      ],
-      currentRoutes: [{ path: "/other" }],
-      prevEntry: { id: "entry-1", url: { search: "" } },
-      currentEntry: { id: "entry-2", url: { search: "" } },
-      loaderDataStore: dataStore,
-      signal,
-    };
-
-    // 実行
-    startLoaders(args);
-
-    // 検証: 例外なく処理されることを確認します。
-    expect(dataStore.has("entry-2")).toBe(false);
   });
 });

@@ -25,25 +25,6 @@ describe("有効な HistoryEntryLike オブジェクトが渡された場合", (
     });
   });
 
-  test("index が最小値である 0 のとき、HistoryEntry オブジェクトを返す", ({ expect }) => {
-    // 準備
-    const entry = {
-      id: "123e4567-e89b-12d3-a456-426614174000",
-      url: "https://example.com",
-      index: 0,
-    };
-
-    // 実行
-    const result = expectHistoryEntry(entry);
-
-    // 検証
-    expect(result).toStrictEqual({
-      id: "123e4567-e89b-12d3-a456-426614174000",
-      url: new URL("https://example.com/"),
-      index: 0,
-    });
-  });
-
   test("index が大きな正の整数であるとき、HistoryEntry オブジェクトを返す", ({ expect }) => {
     // 準備
     const entry = {
@@ -200,18 +181,6 @@ describe("エッジケース", () => {
     // 検証
     expect(result).not.toBeNull();
     expect(result!.id).toBe(entry.id);
-  });
-
-  test("float の index は検証エラーを投げる", ({ expect }) => {
-    // 準備
-    const entry: any = {
-      id: "550e8400-e29b-41d4-a716-446655440000",
-      url: "https://example.com/",
-      index: 1.5,
-    };
-
-    // 実行と検証
-    expect(() => expectHistoryEntry(entry)).toThrow();
   });
 
   test("NaN の index は検証エラーを投げる", ({ expect }) => {

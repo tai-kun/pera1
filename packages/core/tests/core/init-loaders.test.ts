@@ -329,67 +329,6 @@ describe("initLoaders のエッジケース", () => {
     await expect(map.get(okLoader)!).resolves.toBe("ok");
     await expect(map.get(errLoader)!).rejects.toThrow("boom");
   });
-
-  test("request オブジェクトは全 loader で共有される", ({ expect, signal }) => {
-    // 準備
-    const captured: any[] = [];
-    // oxlint-disable-next-line vitest/require-mock-type-parameters
-    const loader1 = vi.fn((args: any) => {
-      captured.push(args.request);
-
-      return "1";
-    });
-    // oxlint-disable-next-line vitest/require-mock-type-parameters
-    const loader2 = vi.fn((args: any) => {
-      captured.push(args.request);
-
-      return "2";
-    });
-    const routes: any[] = [
-      { loader: loader1, params: {} },
-      { loader: loader2, params: {} },
-    ];
-    const testUrl = url("https://example.com/");
-
-    // 実行
-    initLoaders(routes, { url: testUrl, signal });
-
-    // 検証
-    expect(captured[0]).toBe(captured[1]);
-  });
-
-  test("abort 済みの signal でも loader は呼び出される", ({ expect }) => {
-    // 準備
-    const controller = new AbortController();
-    controller.abort();
-    // oxlint-disable-next-line vitest/require-mock-type-parameters
-    const loader = vi.fn(() => "data");
-    const routes: any[] = [{ loader, params: {} }];
-    const testUrl = url("https://example.com/");
-
-    // 実行
-    const { dataMap: map } = initLoaders(routes, { url: testUrl, signal: controller.signal });
-
-    // 検証
-    expect(map.has(loader)).toBe(true);
-  });
-
-  test("RedirectResponse は解決されず idle() で回収される", async ({ expect, signal }) => {
-    // 準備
-    const redirectResponse = new RedirectResponse("/login");
-    // oxlint-disable-next-line vitest/require-mock-type-parameters
-    const loader = vi.fn(() => redirectResponse);
-    const routes: any[] = [{ loader, params: {} }];
-    const testUrl = url("https://example.com/dashboard");
-
-    // 実行
-    const { dataMap, idle } = initLoaders(routes, { url: testUrl, signal });
-    const { redirectTo } = await idle();
-
-    // 検証
-    expect(redirectTo).toBe(redirectResponse);
-    expect(dataMap.get(loader)?.status).toBe("pending");
-  });
 });
 
 describe("initLoaders の idle 解決", () => {

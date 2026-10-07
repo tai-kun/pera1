@@ -158,14 +158,7 @@ function applyStaticPriorityFilter<TComponent>(
     }
   }
 
-  // 勝者は除外の対象にならないため、filtered が空になることはありません。
-  // 空配列を返すと呼び出し側の非空タプル契約を破るため、保険として matched を返します。
-  /* v8 ignore next 3 */
-  if (filtered.length === 0) {
-    return matched;
-  }
-
-  return filtered;
+  return filtered.length > 0 ? filtered : matched;
 }
 
 /**

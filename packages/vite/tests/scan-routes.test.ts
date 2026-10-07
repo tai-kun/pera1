@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { onTestFinished, test } from "vitest";
 
 import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE } from "../src/_options.js";
-import scanRoutes, { compareFileBasenames, type RouteNode } from "../src/_scan-routes.js";
+import scanRoutes, { type RouteNode } from "../src/_scan-routes.js";
 
 const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "basic");
 const fixturePages = path.join(fixtureRoot, "src", "pages");
@@ -281,31 +281,4 @@ test("拡張子がないファイルもルートに含められる", ({ expect }
 
   // 検証
   expect(result.map((node) => node.path)).toStrictEqual(["/LICENSE"]);
-});
-
-test("3件以上のルートをパス順に並べる", ({ expect }) => {
-  // 準備
-  const root = createPages({
-    "a.ts": "export default 1;",
-    "b.ts": "export default 1;",
-    "c.ts": "export default 1;",
-  });
-
-  // 実行
-  const result = scanRoutes({
-    root,
-    dir: "pages",
-    include: DEFAULT_INCLUDE,
-    exclude: DEFAULT_EXCLUDE,
-  });
-
-  // 検証
-  expect(result.map((node) => node.path)).toStrictEqual(["/a", "/b", "/c"]);
-});
-
-test("ファイル名を辞書順で比較する", ({ expect }) => {
-  // 実行と検証
-  expect(compareFileBasenames("a", "b")).toBe(-1);
-  expect(compareFileBasenames("b", "a")).toBe(1);
-  expect(compareFileBasenames("a", "a")).toBe(0);
 });

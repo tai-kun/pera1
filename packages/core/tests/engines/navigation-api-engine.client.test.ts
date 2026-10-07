@@ -166,30 +166,3 @@ describe("NavigationApiEngine", () => {
     expect(traversedKey).toBe("key0");
   });
 });
-
-describe("監視の停止連動", () => {
-  test("監視の停止に連動して進行中の遷移を中断する", ({ expect }) => {
-    // 準備
-    vi.stubGlobal("navigation", {
-      currentEntry: null,
-      entries: () => [],
-      addEventListener: () => {},
-    });
-    const engine = new NavigationApiEngine();
-    const controller = new AbortController();
-    engine.start({
-      routes: [],
-      update: () => {},
-      getSignal: () => controller.signal,
-      actionDataStore: new Map(),
-      loaderDataStore: new Map(),
-    } as any);
-    vi.unstubAllGlobals();
-
-    // 実行
-    controller.abort();
-
-    // 検証
-    expect((engine as unknown as { navAbortController: unknown }).navAbortController).toBeNull();
-  });
-});

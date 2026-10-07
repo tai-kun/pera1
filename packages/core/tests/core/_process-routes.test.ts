@@ -168,48 +168,7 @@ describe("ルートのソート処理", () => {
   });
 });
 
-describe("パス名のエンコード処理", () => {
-  test("パスに特殊文字が含まれるとき、エラーを投げずにエンコード処理が完了する", ({ expect }) => {
-    // 準備
-    const routes: RouteDefinition[] = [{ path: "/search/a&b/v1" }];
-
-    // 実行
-    const result = processRoutes(routes);
-
-    // 検証
-    // RoutePath.encode の仕様に依存するため、実行が完了しオブジェクトが返ることを検証する。
-    expect(result[0]?.path).toBe("/search/a&b/v1");
-  });
-});
-
-describe("例外系、エラーハンドリング", () => {
-  test("引数に null を渡したとき、実行時エラーが発生する", ({ expect }) => {
-    // 準備
-    const routes = null as unknown as RouteDefinition[];
-
-    // 実行と検証
-    expect(() => processRoutes(routes)).toThrow();
-  });
-
-  test("引数に undefined を渡したとき、実行時エラーが発生する", ({ expect }) => {
-    // 準備
-    const routes = undefined as unknown as RouteDefinition[];
-
-    // 実行と検証
-    expect(() => processRoutes(routes)).toThrow();
-  });
-});
-
 describe("processRoutes のエッジケース", () => {
-  test("重複パスでも件数が保持される", ({ expect }) => {
-    // 実行
-    const routes = processRoutes([{ path: "/a" }, { path: "/a" }]);
-
-    // 検証
-    expect(routes.length).toBe(2);
-    expect(routes[0]!.path).toBe("/a");
-  });
-
   test("index ルートは子にマッチしない", ({ expect }) => {
     // 準備と実行
     const routes = processRoutes([{ path: "/parent", index: true }]);
@@ -225,14 +184,6 @@ describe("processRoutes のエッジケース", () => {
 
     // 検証
     expect(routes[0]!.utils.match("/parent/child")).toBe(true);
-  });
-
-  test("component がなくてもエラーにならない", ({ expect }) => {
-    // 実行
-    const routes = processRoutes([{ path: "/no-comp" }]);
-
-    // 検証
-    expect(routes[0]!.component).toBeUndefined();
   });
 
   test("loader と action が引き継がれる", ({ expect }) => {

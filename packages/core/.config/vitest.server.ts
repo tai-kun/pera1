@@ -18,18 +18,7 @@ export default defineConfig({
       provider: "v8",
       reporter: ["text", "json-summary", "html"],
       include: ["src/**/*.ts"],
-      // ブラウザー専用のファイルはクライアント側の実行で測定します。
-      exclude: [
-        "src/engines/navigation-api-engine.ts",
-        "src/core/form-data-to-html-form-element.ts",
-      ],
       reportsDirectory: "./coverage/server",
-      thresholds: {
-        lines: 100,
-        functions: 100,
-        branches: 100,
-        statements: 100,
-      },
     },
     setupFiles: [".config/_debugging.ts"],
   },

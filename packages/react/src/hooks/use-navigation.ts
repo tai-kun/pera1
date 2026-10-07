@@ -74,9 +74,6 @@ export default function useNavigation(): Navigation {
       loaderDataStore?: Map<unknown, Map<unknown, PromiseLike<unknown> & { status?: string }>>;
     } | null;
     const currentId = snapshot?.currentEntry?.id;
-    // レンダーとエフェクトの間でエントリーが消えた場合の保険です。
-    // 単一スレッドのテストでは再現できないためカバレッジ対象外にします。
-    /* v8 ignore next 3 */
     if (!currentId) {
       return;
     }
@@ -94,9 +91,6 @@ export default function useNavigation(): Navigation {
         }
       }
     }
-    // レンダー時には pending があったものの、エフェクト実行までに確定した場合の保険です。
-    // 単一スレッドのテストでは再現できないためカバレッジ対象外にします。
-    /* v8 ignore next 3 */
     if (pending.length === 0) {
       return;
     }

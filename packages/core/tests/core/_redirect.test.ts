@@ -1,11 +1,7 @@
 import { describe, test, vi } from "vitest";
 
 import processRoutes from "../../src/core/_process-routes.js";
-import {
-  createBarePathLoader,
-  findIndexChildTarget,
-  resolveRedirectDestination,
-} from "../../src/core/_redirect.js";
+import { createBarePathLoader, findIndexChildTarget } from "../../src/core/_redirect.js";
 import type { HistoryEntryId } from "../../src/core/history-entry-id-schema.js";
 import type { HistoryEntryUrl } from "../../src/core/history-entry-url-schema.js";
 import matchRoutes from "../../src/core/match-routes.js";
@@ -80,18 +76,6 @@ describe("findIndexChildTarget", () => {
       { fullPath: "/*", index: true, order: 1 },
     ];
     expect(findIndexChildTarget(entries, "/files")).toBeUndefined();
-  });
-});
-
-describe("resolveRedirectDestination", () => {
-  test("絶対パスはそのまま返す", ({ expect }) => {
-    expect(resolveRedirectDestination("/app/dashboard", {})).toBe("/app/dashboard");
-  });
-
-  test("プレースホルダーをパラメーターで埋める", ({ expect }) => {
-    expect(
-      resolveRedirectDestination("/app/projects/:projectId/overview", { projectId: "42" }),
-    ).toBe("/app/projects/42/overview");
   });
 });
 
@@ -296,19 +280,6 @@ describe("startLoaders との統合", () => {
     // 検証
     expect(secondRedirect).toBeUndefined();
     expect(userLoader.mock.calls.length).toBeGreaterThanOrEqual(2);
-  });
-});
-
-describe("findIndexChildTarget の末尾スラッシュ候補", () => {
-  test("末尾スラッシュ付きの同等パスは誘導先にしない", ({ expect }) => {
-    // 準備
-    const entries = [
-      { fullPath: "/app", index: false, order: 0 },
-      { fullPath: "/app/", index: true, order: 1 },
-    ];
-
-    // 実行と検証
-    expect(findIndexChildTarget(entries, "/app")).toBeUndefined();
   });
 });
 

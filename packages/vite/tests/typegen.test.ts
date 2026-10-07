@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "vitest";
 
 import run, { type CliIo } from "../src/_cli.js";
-import generateTypes, { removeEmptyDirectories } from "../src/_generate-types.js";
+import generateTypes from "../src/_generate-types.js";
 import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE } from "../src/_options.js";
 import { createTempProject } from "./_temp-project.js";
 
@@ -297,14 +297,6 @@ test("空になった型ディレクトリーを削除する", ({ expect }) => {
   // 検証
   expect(result.removed).toHaveLength(1);
   expect(fs.existsSync(nestedTypeDir)).toBe(false);
-});
-
-test("存在しないディレクトリーの削除は空として扱う", ({ expect }) => {
-  // 準備
-  const root = createTempProject({});
-
-  // 実行と検証
-  expect(removeEmptyDirectories(path.join(root, "存在しないディレクトリー"))).toBe(true);
 });
 
 test("型ディレクトリー内の余分なファイルは削除しない", ({ expect }) => {

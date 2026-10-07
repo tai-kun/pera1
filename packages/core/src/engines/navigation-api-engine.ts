@@ -584,8 +584,6 @@ export default class NavigationApiEngine implements IEngine {
     switch (args.type) {
       case "FORM_DATA": {
         const { action, target } = args;
-        // デバッグ無効時は評価されない遅延コールバックのためカバレッジ対象外にします。
-        /* v8 ignore next 4 */
         log.debug("フォームを送信します（action: {action}）", () => ({
           action,
           fieldCount: [...target.keys()].length,

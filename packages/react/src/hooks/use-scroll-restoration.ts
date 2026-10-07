@@ -59,9 +59,6 @@ export default function useScrollRestoration(scrollRestoration?: ScrollRestorati
     if (!scrollRestoration) {
       return;
     }
-    // ブラウザー以外での実行に備えた保険です。
-    // ブラウザーテストでは window が常に存在するためカバレッジ対象外にします。
-    /* v8 ignore next 3 */
     if (typeof window === "undefined") {
       return;
     }

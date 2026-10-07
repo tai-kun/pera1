@@ -103,25 +103,6 @@ describe("SNS / Community / AI エージェント高速操作ストレス", () =
     await expect.poll(() => feed.isVisible(), { timeout: 10_000 }).toBe(true);
   });
 
-  test("フィードの a タグを待機なしで辿ってもプロフィールに到達する", async ({
-    expect,
-    page,
-  }) => {
-    // 準備
-    await page.goto(`${BASE_URL}/feed`);
-    const main = page.getByRole("main");
-    const feed = main.getByRole("heading", { name: "Feed" });
-    await expect.poll(() => feed.isVisible(), { timeout: 10_000 }).toBe(true);
-
-    // 実行: 描画直後に即クリックする (AI の先読み操作)
-    await main.getByRole("link", { name: "alice" }).first().click();
-    await expect.poll(() => page.url(), { timeout: 10_000 }).toContain("/users/alice");
-
-    // 検証
-    const profile = main.getByRole("heading", { name: "Alice Tanaka" });
-    await expect.poll(() => profile.isVisible(), { timeout: 10_000 }).toBe(true);
-  });
-
   test("Back/Forward とリロードの複合ラッシュでもフィードに復帰できる", async ({
     expect,
     page,

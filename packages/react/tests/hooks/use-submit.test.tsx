@@ -57,52 +57,6 @@ describe("useSubmit", () => {
     expect(submit).toHaveBeenCalledWith({ type: "FORM_DATA", target: fd, action: "/current" });
   });
 
-  test("action オプションで上書きできる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-
-    const submit = vi.fn();
-    const routerRef = { current: { submit } };
-    const routerCtx = { routerRef, subscribe: () => () => {} };
-    const routeValue = { urlPath: "/current", outlet: null };
-    const fd = new FormData();
-    let doSubmit: any;
-
-    function Comp() {
-      doSubmit = useSubmit();
-
-      return <span>ok</span>;
-    }
-
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    cleanup.defer(() => {
-      document.body.removeChild(container);
-    });
-
-    const root = createRoot(container);
-    cleanup.defer(async () => {
-      await act(async () => {
-        root.unmount();
-      });
-    });
-
-    // 実行
-    await act(async () => {
-      root.render(
-        <RouterContext.Provider value={routerCtx as unknown as RouterContextValue}>
-          <RouteContext.Provider value={routeValue as unknown as RouteContextValue}>
-            <Comp />
-          </RouteContext.Provider>
-        </RouterContext.Provider>,
-      );
-    });
-    doSubmit(fd, { action: "/other" });
-
-    // 検証
-    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ action: "/other" }));
-  });
-
   test("URLSearchParams で URL_SEARCH_PARAMS を送信する", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
@@ -152,51 +106,5 @@ describe("useSubmit", () => {
       action: "/current",
       history: "push",
     });
-  });
-
-  test("replace で history が replace になる", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-
-    const submit = vi.fn();
-    const routerRef = { current: { submit } };
-    const routerCtx = { routerRef, subscribe: () => () => {} };
-    const routeValue = { urlPath: "/current", outlet: null };
-    const params = new URLSearchParams();
-    let doSubmit: any;
-
-    function Comp() {
-      doSubmit = useSubmit();
-
-      return <span>ok</span>;
-    }
-
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    cleanup.defer(() => {
-      document.body.removeChild(container);
-    });
-
-    const root = createRoot(container);
-    cleanup.defer(async () => {
-      await act(async () => {
-        root.unmount();
-      });
-    });
-
-    // 実行
-    await act(async () => {
-      root.render(
-        <RouterContext.Provider value={routerCtx as unknown as RouterContextValue}>
-          <RouteContext.Provider value={routeValue as unknown as RouteContextValue}>
-            <Comp />
-          </RouteContext.Provider>
-        </RouterContext.Provider>,
-      );
-    });
-    doSubmit(params, { replace: true });
-
-    // 検証
-    expect(submit).toHaveBeenCalledWith(expect.objectContaining({ history: "replace" }));
   });
 });

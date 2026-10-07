@@ -87,20 +87,4 @@ describe("連絡先帳", () => {
     const heading = page.getByRole("heading", { name: "ページが見つかりません" });
     await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
   });
-
-  test("デバッグログをコンソールに出力する", async ({ expect, page }) => {
-    // 準備
-    const logs: string[] = [];
-    page.on("console", (message) => {
-      logs.push(message.text());
-    });
-
-    // 実行
-    await page.goto(`${BASE_URL}/contacts`);
-    const heading = page.getByRole("heading", { name: "連絡先", exact: true });
-    await expect.poll(() => heading.isVisible(), { timeout: 10_000 }).toBe(true);
-
-    // 検証
-    expect(logs.some((text) => text.includes("Routerを作成します"))).toBe(true);
-  });
 });

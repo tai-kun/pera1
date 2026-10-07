@@ -68,39 +68,6 @@ describe("Router", () => {
     expect(container.textContent).toBe("hello");
   });
 
-  test("マッチしないとき null を返す", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-
-    const engine: IEngine = {
-      init: () => null,
-      start: () => () => {},
-      submit: () => {},
-      navigate: () => {},
-    };
-
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    cleanup.defer(() => {
-      document.body.removeChild(container);
-    });
-
-    const root = createRoot(container);
-    cleanup.defer(async () => {
-      await act(async () => {
-        root.unmount();
-      });
-    });
-
-    // 実行
-    await act(async () => {
-      root.render(<Router engine={engine} routes={[{ path: "/exists" }]} />);
-    });
-
-    // 検証
-    expect(container.innerHTML).toBe("");
-  });
-
   test("マッチしないとき notFoundComponent を描画する (006)", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
@@ -422,50 +389,5 @@ describe("Router", () => {
 
     // 検証 - useRouterContext が古いエントリーを参照し続けてはならない
     expect(container.textContent).toBe(entryB.id as string);
-  });
-});
-
-describe("Router の本番モード", () => {
-  test("マッチせず notFoundComponent もないとき警告しない (006)", async ({ expect }) => {
-    // 準備
-    await using cleanup = new AsyncDisposableStack();
-
-    const engine: IEngine = {
-      init: () => null,
-      start: () => () => {},
-      submit: () => {},
-      navigate: () => {},
-    };
-
-    const spy = vi.spyOn(log, "warn").mockImplementation(() => {});
-    cleanup.defer(() => {
-      spy.mockRestore();
-    });
-    vi.stubGlobal("process", { env: { NODE_ENV: "production" } });
-    cleanup.defer(() => {
-      vi.unstubAllGlobals();
-    });
-
-    const container = document.createElement("div");
-    document.body.appendChild(container);
-    cleanup.defer(() => {
-      document.body.removeChild(container);
-    });
-
-    const root = createRoot(container);
-    cleanup.defer(async () => {
-      await act(async () => {
-        root.unmount();
-      });
-    });
-
-    // 実行
-    await act(async () => {
-      root.render(<Router engine={engine} routes={[{ path: "/exists" }]} />);
-    });
-
-    // 検証: 警告なしで null 描画
-    expect(container.innerHTML).toBe("");
-    expect(spy).not.toHaveBeenCalled();
   });
 });

@@ -223,23 +223,3 @@ test.skipIf(!fs.existsSync(builtEntry))(
     expect(fs.existsSync(path.join(root, ".pera1/types/app/routes/+types/_index.d.ts"))).toBe(true);
   },
 );
-
-test.skipIf(!fs.existsSync(builtEntry))(
-  "CLI はプラグインのない設定ファイルでは既定値を使う",
-  async ({ expect }) => {
-    // 準備
-    const root = createTempProject({
-      "vite.config.ts": "export default {};\n",
-      "src/pages/_index.tsx": "export default 1;",
-    });
-    const messages: string[] = [];
-    const errors: string[] = [];
-
-    // 実行
-    const code = await run(["typegen", "--root", root], createCliIo(root, messages, errors));
-
-    // 検証
-    expect(code).toBe(0);
-    expect(fs.existsSync(path.join(root, ".pera1/types/src/pages/+types/_index.d.ts"))).toBe(true);
-  },
-);

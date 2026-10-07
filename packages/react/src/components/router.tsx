@@ -237,8 +237,6 @@ export default function Router(props: RouterProps) {
     return null;
   }
 
-  // デバッグ無効時は評価されない遅延コールバックのためカバレッジ対象外にします。
-  /* v8 ignore next 3 */
   log.debug("マッチしたルートを描画します（paths: {paths}）", () => ({
     paths: routes.map((r) => r.urlPath).join(" <- "),
   }));

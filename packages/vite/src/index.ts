@@ -2,7 +2,6 @@ import path from "node:path";
 
 import type { Plugin } from "vite";
 
-import toErrorMessage from "./_error.js";
 import generateRoutesModule from "./_generate-routes.js";
 import generateTypes from "./_generate-types.js";
 import {
@@ -136,7 +135,7 @@ export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
         warn(warning);
       }
     } catch (ex) {
-      warn(`ルート型の生成に失敗しました: ${toErrorMessage(ex)}`);
+      warn(`ルート型の生成に失敗しました: ${ex instanceof Error ? ex.message : String(ex)}`);
     }
   }
 

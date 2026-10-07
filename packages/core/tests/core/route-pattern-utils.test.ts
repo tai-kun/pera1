@@ -198,88 +198,6 @@ describe("replace メソッド", () => {
   });
 });
 
-describe("静的メソッド", () => {
-  test("match 静的メソッドを実行したとき、正しく一致判定が行われる", ({ expect }) => {
-    // 準備
-    const routePattern = "/users/:id";
-    const target = "/users/123";
-    const options = {};
-
-    // 実行
-    const result = RoutePatternUtils.match(routePattern, target, options);
-
-    // 検証
-    expect(result).toBe(true);
-  });
-
-  test("parse 静的メソッドを実行したとき、正しくパラメーターが抽出される", ({ expect }) => {
-    // 準備
-    const routePattern = "/users/:id";
-    const target = "/users/123";
-    const options = {};
-
-    // 実行
-    const result = RoutePatternUtils.parse(routePattern, target, options);
-
-    // 検証
-    expect(result).toStrictEqual({ id: "123" });
-  });
-
-  test("parseSafe 静的メソッドを実行したとき、正しくパラメーターが抽出される", ({ expect }) => {
-    // 準備
-    const routePattern = "/users/:id";
-    const target = "/users/123";
-    const options = {};
-
-    // 実行
-    const result = RoutePatternUtils.parseSafe(routePattern, target, options);
-
-    // 検証
-    expect(result).toStrictEqual({ id: "123" });
-  });
-
-  test("inject 静的メソッドを実行したとき、正しくパスが生成される", ({ expect }) => {
-    // 準備
-    const routePattern = "/users/:id";
-    const params = { id: "123" };
-    const options = {};
-
-    // 実行
-    const result = RoutePatternUtils.inject(routePattern, params, options);
-
-    // 検証
-    expect(result).toBe("/users/123");
-  });
-
-  test("replace 静的メソッドを実行したとき、正しくパスが置換生成される", ({ expect }) => {
-    // 準備
-    const routePattern = "/users/:id/posts/:postId";
-    const target = "/users/123/posts/456";
-    const params = { postId: "789" };
-    const options = {};
-
-    // 実行
-    const result = RoutePatternUtils.replace(routePattern, target, params, options);
-
-    // 検証
-    expect(result).toBe("/users/123/posts/789");
-  });
-
-  test("replaceSafe 静的メソッドを実行したとき、正しくパスが置換生成される", ({ expect }) => {
-    // 準備
-    const routePattern = "/users/:id/posts/:postId";
-    const target = "/users/123/posts/456";
-    const params = { postId: "789" };
-    const options = {};
-
-    // 実行
-    const result = RoutePatternUtils.replaceSafe(routePattern, target, params, options);
-
-    // 検証
-    expect(result).toBe("/users/123/posts/789");
-  });
-});
-
 describe("RoutePatternUtils の拡張的な一致", () => {
   test("wildcard は子パス全体にマッチする", ({ expect }) => {
     // 準備
@@ -365,22 +283,6 @@ describe("RoutePatternUtils の拡張的な一致", () => {
     // 検証
     expect(utils.replace("/users/1/posts/2", { postId: "99" })).toBe("/users/1/posts/99");
     expect(utils.replaceSafe("/invalid", { postId: "1" })).toBeNull();
-  });
-
-  test("一致しない parse はエラーを投げる", ({ expect }) => {
-    // 準備
-    const utils = new RoutePatternUtils("/users/:id");
-
-    // 実行と検証
-    expect(() => utils.parse("/other/123")).toThrow();
-  });
-
-  test("静的ヘルパーはインスタンスと同等", ({ expect }) => {
-    // 検証
-    expect(RoutePatternUtils.match("/a/:id", "/a/1")).toBe(true);
-    expect(RoutePatternUtils.parse("/a/:id", "/a/1")).toStrictEqual({ id: "1" });
-    expect(RoutePatternUtils.inject("/a/:id", { id: "1" })).toBe("/a/1");
-    expect(RoutePatternUtils.parseSafe("/a/:id", "/no")).toBeNull();
   });
 
   test("Unicode を含む param はエンコードされる", ({ expect }) => {

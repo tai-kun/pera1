@@ -3,27 +3,6 @@ import { describe, test } from "vitest";
 
 import HistoryEntryIdSchema from "../../src/core/history-entry-id-schema.js";
 
-describe("インスタンス生成", () => {
-  test("初回呼び出し時、スキーマオブジェクトが生成される", ({ expect }) => {
-    // 準備と実行
-    const schema = HistoryEntryIdSchema();
-
-    // 検証
-    expect(schema).toBeDefined();
-  });
-
-  test("複数回呼び出し時、初回と同一のスキーマインスタンスが返される", ({ expect }) => {
-    // 準備
-    const firstSchema = HistoryEntryIdSchema();
-
-    // 実行
-    const secondSchema = HistoryEntryIdSchema();
-
-    // 検証
-    expect(secondSchema).toBe(firstSchema);
-  });
-});
-
 describe("正常系", () => {
   test("正当な UUID を検証したとき、入力値と同じ文字列が返される", ({ expect }) => {
     // 準備

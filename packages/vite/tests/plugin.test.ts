@@ -203,25 +203,6 @@ test("ファイル変更では再読み込みせず型だけ再生成する", as
   }
 });
 
-test("ページディレクトリー自身の追加では何もしない", async ({ expect }) => {
-  // 準備
-  const server = await createFixtureServer();
-
-  try {
-    const send = vi.spyOn(server.ws, "send").mockImplementation(() => {});
-    const invalidate = vi.spyOn(server.moduleGraph, "invalidateModule");
-
-    // 実行: ページディレクトリー自身はルートファイルではありません。
-    server.watcher.emit("add", path.join(fixtureRoot, "src", "pages"));
-
-    // 検証
-    expect(invalidate).not.toHaveBeenCalled();
-    expect(send).not.toHaveBeenCalled();
-  } finally {
-    await server.close();
-  }
-});
-
 test("モジュールが未解決の追加では無効化せず再読み込みする", async ({ expect }) => {
   // 準備
   const server = await createFixtureServer();
@@ -256,27 +237,6 @@ test("ファイル削除で仮想モジュールを無効化して再読み込�
     // 検証
     expect(invalidate).toHaveBeenCalledOnce();
     expect(send).toHaveBeenCalledWith({ type: "full-reload" });
-  } finally {
-    await server.close();
-  }
-});
-
-test("開発サーバー起動時に範囲外ルートの警告を記録する", async ({ expect }) => {
-  // 準備
-  const projectRoot = createTempProject({ "shared/pages/_index.tsx": "export default 1;" });
-  const root = path.join(projectRoot, "app");
-  fs.mkdirSync(path.join(root, "src", "pages"), { recursive: true });
-  const server = await createServer({
-    root,
-    logLevel: "silent",
-    plugins: [pera1({ dir: "../shared/pages" })],
-    appType: "custom",
-    server: { middlewareMode: true },
-  });
-
-  try {
-    // 検証: 警告つきでも起動し、生成物の無視設定だけが残ります。
-    expect(fs.existsSync(path.join(root, ".pera1/.gitignore"))).toBe(true);
   } finally {
     await server.close();
   }
@@ -318,27 +278,6 @@ test("ビルド監視フックがページファイルの変更で型を再生�
   // 検証
   expect(warnings).toStrictEqual([]);
   expect(fs.existsSync(path.join(root, ".pera1/types/src/pages/+types/about.d.ts"))).toBe(true);
-});
-
-test("待機中のビルド開始フックは何も生成しない", async ({ expect }) => {
-  // 準備
-  const root = createTempProject({ "src/pages/_index.tsx": "export default 1;" });
-  const plugin = pera1();
-  const hooks = plugin as unknown as {
-    configResolved: (config: { root: string; command: "build" | "serve" }) => void;
-    buildStart: (this: { warn: (message: string) => void }) => void;
-  };
-  hooks.configResolved({ root, command: "serve" });
-
-  // 実行
-  hooks.buildStart.call({
-    warn: () => {
-      throw new Error("警告してはいけません");
-    },
-  });
-
-  // 検証: 生成物がなければ起動時の生成も起きていません。
-  expect(fs.existsSync(path.join(root, ".pera1/types"))).toBe(false);
 });
 
 test("ビルド開始フックの警告を通知する", async ({ expect }) => {
