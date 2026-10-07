@@ -6,7 +6,7 @@ import { fileURLToPath } from "node:url";
 import { onTestFinished, test } from "vitest";
 
 import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE } from "../src/_options.js";
-import scanRoutes, { type RouteNode } from "../src/_scan-routes.js";
+import scanRoutes, { compareFileBasenames, type RouteNode } from "../src/_scan-routes.js";
 
 const fixtureRoot = path.join(path.dirname(fileURLToPath(import.meta.url)), "fixtures", "basic");
 const fixturePages = path.join(fixtureRoot, "src", "pages");
@@ -208,4 +208,104 @@ test("ページディレクトリーが存在しないとエラーになる", ({
   expect(() =>
     scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
   ).toThrow("ルートディレクトリーが見つかりません");
+});
+
+test("ページディレクトリーがファイルのときはエラーになる", ({ expect }) => {
+  // 準備
+  const root = fs.mkdtempSync(path.join(os.tmpdir(), "pera1-vite-"));
+  onTestFinished(() => fs.rmSync(root, { recursive: true, force: true }));
+  fs.writeFileSync(path.join(root, "pages"), "export default 1;");
+
+  // 実行と検証
+  expect(() =>
+    scanRoutes({ root, dir: "pages", include: DEFAULT_INCLUDE, exclude: DEFAULT_EXCLUDE }),
+  ).toThrow("ルートディレクトリーではありません");
+});
+
+test("拡張子付きの名前のディレクトリーはルートに含めない", ({ expect }) => {
+  // 準備
+  const root = createPages({ "_index.ts": "export default 1;" });
+  fs.mkdirSync(path.join(root, "pages", "archived.tsx"), { recursive: true });
+
+  // 実行
+  const result = scanRoutes({
+    root,
+    dir: "pages",
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
+  });
+
+  // 検証
+  expect(result.map((node) => node.path)).toStrictEqual(["/"]);
+});
+
+test("ページディレクトリーの外を指すincludeはエラーになる", ({ expect }) => {
+  // 準備
+  const root = createPages({ "_index.ts": "export default 1;" });
+  fs.writeFileSync(path.join(root, "outside.tsx"), "export default 1;");
+
+  // 実行と検証
+  expect(() =>
+    scanRoutes({ root, dir: "pages", include: ["../*.tsx"], exclude: DEFAULT_EXCLUDE }),
+  ).toThrow("ページディレクトリーの外を指す include パターンは使えません");
+});
+
+test("同じパスのインデックスルートを先に並べる", ({ expect }) => {
+  // 準備
+  const root = createPages({
+    "admin.tsx": "export default 1;",
+    "admin/_index.tsx": "export default 1;",
+  });
+
+  // 実行
+  const result = scanRoutes({
+    root,
+    dir: "pages",
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
+  });
+
+  // 検証
+  expect(result.map((node) => ({ path: node.path, index: node.index }))).toStrictEqual([
+    { path: "/admin", index: true },
+    { path: "/admin", index: false },
+  ]);
+});
+
+test("拡張子がないファイルもルートに含められる", ({ expect }) => {
+  // 準備
+  const root = createPages({ LICENSE: "MIT" });
+
+  // 実行
+  const result = scanRoutes({ root, dir: "pages", include: ["**/*"], exclude: [] });
+
+  // 検証
+  expect(result.map((node) => node.path)).toStrictEqual(["/LICENSE"]);
+});
+
+test("3件以上のルートをパス順に並べる", ({ expect }) => {
+  // 準備
+  const root = createPages({
+    "a.ts": "export default 1;",
+    "b.ts": "export default 1;",
+    "c.ts": "export default 1;",
+  });
+
+  // 実行
+  const result = scanRoutes({
+    root,
+    dir: "pages",
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
+  });
+
+  // 検証
+  expect(result.map((node) => node.path)).toStrictEqual(["/a", "/b", "/c"]);
+});
+
+test("ファイル名を辞書順で比較する", ({ expect }) => {
+  // 実行と検証
+  expect(compareFileBasenames("a", "b")).toBe(-1);
+  expect(compareFileBasenames("b", "a")).toBe(1);
+  expect(compareFileBasenames("a", "a")).toBe(0);
 });

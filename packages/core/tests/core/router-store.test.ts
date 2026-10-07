@@ -168,3 +168,16 @@ describe("selectNavigationState", () => {
     expect(selectNavigationState(snapshot)).toBe("idle");
   });
 });
+
+describe("selectNavigationState の未初期化", () => {
+  test("エントリーがなければ idle になる", ({ expect }) => {
+    // 準備
+    const snapshot = {
+      actionDataStore: new Map(),
+      loaderDataStore: new Map(),
+    } as any;
+
+    // 実行と検証
+    expect(selectNavigationState(snapshot)).toBe("idle");
+  });
+});

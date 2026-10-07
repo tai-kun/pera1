@@ -173,3 +173,240 @@ test("開発サーバーの起動時とファイル追加時にルート型を�
     await server.close();
   }
 });
+
+test("ファイル変更では再読み込みせず型だけ再生成する", async ({ expect }) => {
+  // 準備
+  const root = createTempProject({ "src/pages/_index.tsx": "export default 1;" });
+  const server = await createServer({
+    root,
+    logLevel: "silent",
+    plugins: [pera1()],
+    appType: "custom",
+    server: { middlewareMode: true },
+  });
+
+  try {
+    const send = vi.spyOn(server.ws, "send").mockImplementation(() => {});
+    const invalidate = vi.spyOn(server.moduleGraph, "invalidateModule");
+
+    // 実行: 変更イベントでは再読み込みしません。
+    const changedFile = path.join(root, "src", "pages", "about.tsx");
+    fs.writeFileSync(changedFile, "export default 1;");
+    server.watcher.emit("change", changedFile);
+
+    // 検証
+    expect(fs.existsSync(path.join(root, ".pera1/types/src/pages/+types/about.d.ts"))).toBe(true);
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  } finally {
+    await server.close();
+  }
+});
+
+test("ページディレクトリー自身の追加では何もしない", async ({ expect }) => {
+  // 準備
+  const server = await createFixtureServer();
+
+  try {
+    const send = vi.spyOn(server.ws, "send").mockImplementation(() => {});
+    const invalidate = vi.spyOn(server.moduleGraph, "invalidateModule");
+
+    // 実行: ページディレクトリー自身はルートファイルではありません。
+    server.watcher.emit("add", path.join(fixtureRoot, "src", "pages"));
+
+    // 検証
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(send).not.toHaveBeenCalled();
+  } finally {
+    await server.close();
+  }
+});
+
+test("モジュールが未解決の追加では無効化せず再読み込みする", async ({ expect }) => {
+  // 準備
+  const server = await createFixtureServer();
+
+  try {
+    const send = vi.spyOn(server.ws, "send").mockImplementation(() => {});
+    const invalidate = vi.spyOn(server.moduleGraph, "invalidateModule");
+
+    // 実行: 仮想モジュールを未取得のまま追加イベントを受けます。
+    server.watcher.emit("add", path.join(fixtureRoot, "src", "pages", "fresh.ts"));
+
+    // 検証
+    expect(invalidate).not.toHaveBeenCalled();
+    expect(send).toHaveBeenCalledWith({ type: "full-reload" });
+  } finally {
+    await server.close();
+  }
+});
+
+test("ファイル削除で仮想モジュールを無効化して再読み込みする", async ({ expect }) => {
+  // 準備
+  const server = await createFixtureServer();
+
+  try {
+    await server.transformRequest(VIRTUAL_ROUTES_ID);
+    const send = vi.spyOn(server.ws, "send").mockImplementation(() => {});
+    const invalidate = vi.spyOn(server.moduleGraph, "invalidateModule");
+
+    // 実行
+    server.watcher.emit("unlink", path.join(fixtureRoot, "src", "pages", "gone.ts"));
+
+    // 検証
+    expect(invalidate).toHaveBeenCalledOnce();
+    expect(send).toHaveBeenCalledWith({ type: "full-reload" });
+  } finally {
+    await server.close();
+  }
+});
+
+test("開発サーバー起動時に範囲外ルートの警告を記録する", async ({ expect }) => {
+  // 準備
+  const projectRoot = createTempProject({ "shared/pages/_index.tsx": "export default 1;" });
+  const root = path.join(projectRoot, "app");
+  fs.mkdirSync(path.join(root, "src", "pages"), { recursive: true });
+  const server = await createServer({
+    root,
+    logLevel: "silent",
+    plugins: [pera1({ dir: "../shared/pages" })],
+    appType: "custom",
+    server: { middlewareMode: true },
+  });
+
+  try {
+    // 検証: 警告つきでも起動し、生成物の無視設定だけが残ります。
+    expect(fs.existsSync(path.join(root, ".pera1/.gitignore"))).toBe(true);
+  } finally {
+    await server.close();
+  }
+});
+
+test("ビルド監視フックがページファイルの変更で型を再生成する", async ({ expect }) => {
+  // 準備
+  const root = createTempProject({ "src/pages/_index.tsx": "export default 1;" });
+  const plugin = pera1();
+  const warnings: string[] = [];
+  const hooks = plugin as unknown as {
+    configResolved: (config: { root: string; command: "build" | "serve" }) => void;
+    buildStart: (this: { warn: (message: string) => void }) => void;
+    watchChange: (this: { warn: (message: string) => void }, id: string) => void;
+  };
+  hooks.configResolved({ root, command: "build" });
+
+  // 実行: ビルド開始時は警告がなければ何も通知しません。
+  hooks.buildStart.call({ warn: (message) => warnings.push(message) });
+
+  // 検証
+  expect(warnings).toStrictEqual([]);
+  expect(fs.existsSync(path.join(root, ".pera1/types/src/pages/+types/_index.d.ts"))).toBe(true);
+
+  // 実行: ページディレクトリーの外の変更では何もしません。
+  hooks.watchChange.call({ warn: (message) => warnings.push(message) }, path.join(root, "other.ts"));
+
+  // 検証
+  expect(warnings).toStrictEqual([]);
+
+  // 実行: ページファイルの変更で型を再生成します。
+  const addedFile = path.join(root, "src", "pages", "about.tsx");
+  fs.writeFileSync(addedFile, "export default 1;");
+  hooks.watchChange.call({ warn: (message) => warnings.push(message) }, addedFile);
+
+  // 検証
+  expect(warnings).toStrictEqual([]);
+  expect(fs.existsSync(path.join(root, ".pera1/types/src/pages/+types/about.d.ts"))).toBe(true);
+});
+
+test("待機中のビルド開始フックは何も生成しない", async ({ expect }) => {
+  // 準備
+  const root = createTempProject({ "src/pages/_index.tsx": "export default 1;" });
+  const plugin = pera1();
+  const hooks = plugin as unknown as {
+    configResolved: (config: { root: string; command: "build" | "serve" }) => void;
+    buildStart: (this: { warn: (message: string) => void }) => void;
+  };
+  hooks.configResolved({ root, command: "serve" });
+
+  // 実行
+  hooks.buildStart.call({
+    warn: () => {
+      throw new Error("警告してはいけません");
+    },
+  });
+
+  // 検証: 生成物がなければ起動時の生成も起きていません。
+  expect(fs.existsSync(path.join(root, ".pera1/types"))).toBe(false);
+});
+
+test("ビルド開始フックの警告を通知する", async ({ expect }) => {
+  // 準備: プロジェクトルートの外にページディレクトリーを置きます。
+  const projectRoot = createTempProject({ "shared/pages/_index.tsx": "export default 1;" });
+  const root = path.join(projectRoot, "app");
+  fs.mkdirSync(path.join(root, "src", "pages"), { recursive: true });
+  const plugin = pera1({ dir: "../shared/pages" });
+  const hooks = plugin as unknown as {
+    configResolved: (config: { root: string; command: "build" | "serve" }) => void;
+    buildStart: (this: { warn: (message: string) => void }) => void;
+  };
+  hooks.configResolved({ root, command: "build" });
+  const warnings: string[] = [];
+
+  // 実行
+  hooks.buildStart.call({
+    warn: (message) => {
+      warnings.push(message);
+    },
+  });
+
+  // 検証
+  expect(warnings).toHaveLength(1);
+});
+
+test("ビルド監視フックの警告を通知する", async ({ expect }) => {
+  // 準備
+  const projectRoot = createTempProject({ "shared/pages/_index.tsx": "export default 1;" });
+  const root = path.join(projectRoot, "app");
+  fs.mkdirSync(path.join(root, "src", "pages"), { recursive: true });
+  const plugin = pera1({ dir: "../shared/pages" });
+  const hooks = plugin as unknown as {
+    configResolved: (config: { root: string; command: "build" | "serve" }) => void;
+    watchChange: (this: { warn: (message: string) => void }, id: string) => void;
+  };
+  hooks.configResolved({ root, command: "build" });
+  const warnings: string[] = [];
+
+  // 実行
+  hooks.watchChange.call(
+    {
+      warn: (message) => {
+        warnings.push(message);
+      },
+    },
+    path.join(projectRoot, "shared", "pages", "_index.tsx"),
+  );
+
+  // 検証
+  expect(warnings).toHaveLength(1);
+});
+
+test("ビルド開始フックの失敗を通知する", async ({ expect }) => {
+  // 準備: ページディレクトリーがないため生成に失敗します。
+  const root = createTempProject({});
+  const plugin = pera1();
+  const hooks = plugin as unknown as {
+    configResolved: (config: { root: string; command: "build" | "serve" }) => void;
+    buildStart: (this: { warn: (message: string) => void }) => void;
+  };
+  hooks.configResolved({ root, command: "build" });
+  const warnings: string[] = [];
+
+  // 実行
+  hooks.buildStart.call({
+    warn: (message) => {
+      warnings.push(message);
+    },
+  });
+
+  // 検証
+  expect(warnings.join("")).toContain("ルート型の生成に失敗しました");
+});

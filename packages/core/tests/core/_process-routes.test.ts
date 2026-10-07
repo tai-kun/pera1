@@ -466,3 +466,29 @@ describe("children による明示的ネストの展開", () => {
     expect(rootMatched.map((r) => r.index)).toStrictEqual([true, false]);
   });
 });
+
+describe("末尾スラッシュの正規化", () => {
+  test("トップレベルの末尾スラッシュを取り除く", ({ expect }) => {
+    // 準備
+    const routes: RouteDefinition[] = [{ path: "/about/" }];
+
+    // 実行
+    const result = processRoutes(routes);
+
+    // 検証
+    expect(result[0]?.path).toBe("/about");
+  });
+});
+
+describe("パス省略時の正規化", () => {
+  test("トップレベルのパス省略はルートパスになる", ({ expect }) => {
+    // 準備
+    const routes: RouteDefinition[] = [{}];
+
+    // 実行
+    const result = processRoutes(routes);
+
+    // 検証
+    expect(result[0]?.path).toBe("/");
+  });
+});

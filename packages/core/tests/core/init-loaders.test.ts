@@ -391,3 +391,20 @@ describe("initLoaders のエッジケース", () => {
     expect(dataMap.get(loader)?.status).toBe("pending");
   });
 });
+
+describe("initLoaders の idle 解決", () => {
+  test("リダイレクトがないときは redirectTo が undefined になる", async ({ expect, signal }) => {
+    // 準備
+    const loader = vi.fn<() => string>(() => "data");
+    const routes: any[] = [{ loader, params: {} }];
+    const testUrl = url("https://example.com/");
+
+    // 実行
+    const { dataMap: map, idle } = initLoaders(routes, { url: testUrl, signal });
+    const { redirectTo } = await idle();
+
+    // 検証
+    expect(redirectTo).toBeUndefined();
+    expect(map.get(loader)?.status).toBe("fulfilled");
+  });
+});

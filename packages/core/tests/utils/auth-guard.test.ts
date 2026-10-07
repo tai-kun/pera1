@@ -217,3 +217,18 @@ describe("requireRole", () => {
     expect(response?.pathname).toBe("/");
   });
 });
+
+describe("requireRole のログインパス指定", () => {
+  test("未認証のときは指定のログインページ誘導を返す", ({ expect }) => {
+    // 準備
+    const request = { url: { pathname: "/admin", search: "" } };
+
+    // 実行
+    const response = requireRole(request, null, { roles: ["admin"], loginPath: "/sign-in" });
+
+    // 検証
+    expect(response).toBeInstanceOf(RedirectResponse);
+    expect(response?.pathname).toBe("/sign-in");
+    expect(response?.search).toContain(`${REDIRECT_TO_PARAM}=${encodeURIComponent("/admin")}`);
+  });
+});

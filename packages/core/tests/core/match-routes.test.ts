@@ -228,3 +228,45 @@ describe("matchRoutes の拡張的な一致", () => {
     expect(matchRoutes(routesB, url)![0]!.path).toBe("/a");
   });
 });
+
+describe("モック経由の内部フォールバック", () => {
+  test("パスが文字列でないモックルートは除外対象にしない", ({ expect }) => {
+    // 準備
+    const routes: any = [
+      {
+        path: 123,
+        utils: {
+          parseSafe: () => ({}),
+          inject: () => "/mock",
+        },
+      },
+    ];
+    const url = new URL("x://y" + "/mock");
+
+    // 実行
+    const result = matchRoutes(routes, url);
+
+    // 検証
+    expect(result?.[0]?.urlPath).toBe("/mock");
+  });
+
+  test("静的照合が例外を投げるパターンは完全一致にしない", ({ expect }) => {
+    // 準備
+    const routes: any = [
+      {
+        path: "(",
+        utils: {
+          parseSafe: () => ({}),
+          inject: () => "/mock",
+        },
+      },
+    ];
+    const url = new URL("x://y" + "/mock");
+
+    // 実行
+    const result = matchRoutes(routes, url);
+
+    // 検証
+    expect(result?.[0]?.urlPath).toBe("/mock");
+  });
+});

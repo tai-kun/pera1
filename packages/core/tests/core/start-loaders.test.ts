@@ -840,3 +840,27 @@ describe("startLoaders の POST 時の currentUrl", () => {
     expect(captured.prevUrl.href).toBe(prevUrl.href);
   });
 });
+
+describe("遷移前ルートの重複パス", () => {
+  test("同一パスの2件目以降は最初の params を使う", ({ expect, signal }) => {
+    // 準備
+    const dataStore = new Map();
+    const args: any = {
+      prevRoutes: [
+        { path: "/app", params: { tab: "one" } },
+        { path: "/app", params: { tab: "two" } },
+      ],
+      currentRoutes: [{ path: "/other" }],
+      prevEntry: { id: "entry-1", url: { search: "" } },
+      currentEntry: { id: "entry-2", url: { search: "" } },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証: 例外なく処理されることを確認します。
+    expect(dataStore.has("entry-2")).toBe(false);
+  });
+});

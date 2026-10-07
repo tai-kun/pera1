@@ -5,7 +5,7 @@ import { fileURLToPath } from "node:url";
 import { test } from "vitest";
 
 import run, { type CliIo } from "../src/_cli.js";
-import generateTypes from "../src/_generate-types.js";
+import generateTypes, { removeEmptyDirectories } from "../src/_generate-types.js";
 import { DEFAULT_EXCLUDE, DEFAULT_INCLUDE } from "../src/_options.js";
 import { createTempProject } from "./_temp-project.js";
 
@@ -253,3 +253,81 @@ test.skipIf(!fs.existsSync(builtEntry))(
     expect(fs.readFileSync(path.join(root, ".custom/.gitignore"), "utf8")).toBe("*\n");
   },
 );
+
+test("型ディレクトリーがプロジェクトルート自身のときはgitignoreを出力しない", ({ expect }) => {
+  // 準備
+  const root = createTempProject({ "src/pages/_index.tsx": "export default 1;" });
+
+  // 実行
+  const result = generateTypes({
+    root,
+    dir: "src/pages",
+    typesDir: ".",
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
+  });
+
+  // 検証
+  expect(result.written).toHaveLength(1);
+  expect(result.warnings).toStrictEqual([]);
+  expect(fs.existsSync(path.join(root, ".gitignore"))).toBe(false);
+});
+
+test("空になった型ディレクトリーを削除する", ({ expect }) => {
+  // 準備
+  const root = createTempProject({
+    "src/pages/_index.tsx": "export default 1;",
+    "src/pages/nested/deep.tsx": "export default 1;",
+  });
+  const args = {
+    root,
+    dir: "src/pages",
+    typesDir: ".pera1/types",
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
+  };
+  generateTypes(args);
+  const nestedTypeDir = path.join(root, ".pera1/types/src/pages/nested");
+  expect(fs.existsSync(nestedTypeDir)).toBe(true);
+  fs.rmSync(path.join(root, "src/pages/nested"), { recursive: true });
+
+  // 実行
+  const result = generateTypes(args);
+
+  // 検証
+  expect(result.removed).toHaveLength(1);
+  expect(fs.existsSync(nestedTypeDir)).toBe(false);
+});
+
+test("存在しないディレクトリーの削除は空として扱う", ({ expect }) => {
+  // 準備
+  const root = createTempProject({});
+
+  // 実行と検証
+  expect(removeEmptyDirectories(path.join(root, "存在しないディレクトリー"))).toBe(true);
+});
+
+test("型ディレクトリー内の余分なファイルは削除しない", ({ expect }) => {
+  // 準備
+  const root = createTempProject({ "src/pages/_index.tsx": "export default 1;" });
+  const args = {
+    root,
+    dir: "src/pages",
+    typesDir: ".pera1/types",
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
+  };
+  generateTypes(args);
+  const typesDir = path.join(root, ".pera1/types/src/pages/+types");
+  fs.writeFileSync(path.join(typesDir, "notes.txt"), "memo");
+  fs.mkdirSync(path.join(typesDir, "extra"), { recursive: true });
+  fs.writeFileSync(path.join(typesDir, "extra", "keep.txt"), "memo");
+
+  // 実行
+  const result = generateTypes(args);
+
+  // 検証
+  expect(result.removed).toStrictEqual([]);
+  expect(fs.existsSync(path.join(typesDir, "notes.txt"))).toBe(true);
+  expect(fs.existsSync(path.join(typesDir, "extra", "keep.txt"))).toBe(true);
+});

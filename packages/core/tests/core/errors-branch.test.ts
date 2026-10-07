@@ -1,4 +1,5 @@
 import { describe, test } from "vitest";
+import { setGlobalConfig } from "valibot";
 
 import { LoaderConditionError, LoaderDataNotFoundError } from "../../src/core/errors.js";
 
@@ -29,5 +30,28 @@ describe("エラーメッセージの分岐網羅", () => {
 
     // 検証
     expect(error.message).toContain("anonymous");
+  });
+});
+
+describe("エラーメッセージの分岐網羅（日本語）", () => {
+  test("getTypeName が空文字のとき unknown になる（日本語）", ({ expect }) => {
+    // 準備
+    setGlobalConfig({ lang: "ja" });
+    try {
+      const weird: any = {};
+      weird.constructor = () => {};
+
+      // 実行
+      const error = new LoaderConditionError({
+        url: "/test",
+        returnValue: weird,
+        shouldReload: () => true,
+      });
+
+      // 検証
+      expect(error.message).toBe("真偽値を期待しましたが、unknown を得ました");
+    } finally {
+      setGlobalConfig({ lang: "en" });
+    }
   });
 });

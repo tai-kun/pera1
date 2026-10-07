@@ -298,3 +298,50 @@ describe("startLoaders との統合", () => {
     expect(userLoader.mock.calls.length).toBeGreaterThanOrEqual(2);
   });
 });
+
+describe("findIndexChildTarget の末尾スラッシュ候補", () => {
+  test("末尾スラッシュ付きの同等パスは誘導先にしない", ({ expect }) => {
+    // 準備
+    const entries = [
+      { fullPath: "/app", index: false, order: 0 },
+      { fullPath: "/app/", index: true, order: 1 },
+    ];
+
+    // 実行と検証
+    expect(findIndexChildTarget(entries, "/app")).toBeUndefined();
+  });
+});
+
+describe("合成 shouldReload の既定値", () => {
+  test("利用者の判定関数がなければ既定値を返す", ({ expect }) => {
+    // 準備
+    const { shouldReload } = createBarePathLoader({
+      fullPath: "/app",
+      target: "/app/dashboard",
+      loader: undefined,
+      shouldReload: undefined,
+    });
+
+    // 実行と検証
+    expect(shouldReload(reloadArgs("/x", "/y", true))).toBe(true);
+    expect(shouldReload(reloadArgs("/x", "/y", false))).toBe(false);
+  });
+});
+
+describe("合成ローダーの対象外パス", () => {
+  test("利用者がなければ undefined を返す", async ({ expect }) => {
+    // 準備
+    const { loader } = createBarePathLoader({
+      fullPath: "/app",
+      target: "/app/dashboard",
+      loader: undefined,
+      shouldReload: undefined,
+    });
+
+    // 実行
+    const data = await loader(loaderArgs("/app/dashboard"));
+
+    // 検証
+    expect(data).toBeUndefined();
+  });
+});
