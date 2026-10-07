@@ -10,9 +10,11 @@ import ContactsLayout, {
   loader as contactsLoader,
 } from "./pages/contacts/layout.js";
 import HomePage from "./pages/index.js";
-import NotFoundPage from "./pages/not-found.js";
 import RootLayout from "./pages/root.js";
 
+// 404 は `main.tsx` の `notFoundComponent` (006 の一次 API) で処理するため、
+// `path: "/*"` の手書きフォールバックは置いていない。明示的な `/*` 定義との
+// 併存も可能で、その場合は `/*` の通常マッチが優先される。
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
@@ -39,9 +41,5 @@ export const routes: readonly RouterRouteDefinition[] = [
     component: ContactPage,
     loader: contactLoader,
     action: deleteContactAction,
-  },
-  {
-    path: "/*",
-    component: NotFoundPage,
   },
 ];

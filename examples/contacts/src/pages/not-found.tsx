@@ -1,13 +1,7 @@
-import { useRouteContext } from "@pera1/react";
-
+// 006: `notFoundComponent` (BrowserRouter の一次 API) として描画される 404 ページです。
+// 未マッチ時に直接描画されるため、`/*` 時代の `outlet` 透過分岐は不要です。
+// 明示的な `path: "/*"` 定義もレガシー手段として併存可能で、その場合は `/*` の通常マッチが優先されます。
 export default function NotFoundPage() {
-  const { outlet } = useRouteContext();
-  // `/*` は既知の URL にも前方一致するため、マッチ鎖の中間に位置することがあります。
-  // その場合は子ツリーへ透過させ、どのルートにも一致しなかったとき（outlet が null）だけ 404 を表示します。
-  if (outlet) {
-    return outlet;
-  }
-
   return (
     <div>
       <h2>ページが見つかりません</h2>

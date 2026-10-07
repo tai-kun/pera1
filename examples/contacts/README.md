@@ -46,7 +46,7 @@ pnpm --filter @pera1/example-contacts preview
 | `/contacts` (`index`) | `ContactsPage`   | なし                                                              |
 | `/contacts`           | `ContactsLayout` | `loader` で一覧取得、`action` で追加後に詳細へ `redirect` します  |
 | `/contacts/:id`       | `ContactPage`    | `loader` で 1 件取得、`action` で削除後に一覧へ `redirect` します |
-| `/*`                  | `NotFoundPage`   | なし                                                              |
+| (未マッチ)              | `NotFoundPage`   | `main.tsx` の `notFoundComponent` (一次 API) で描画します         |
 
 共通レイアウト (`RootLayout`、`ContactsLayout`) は `Outlet` で子ルートを表示します。`RootLayout` では `Suspense` で `loader` の読み込み状態を表示します。
 
@@ -65,7 +65,7 @@ examples/contacts/
     └── pages/ # パス階層に合わせたネスト構成です
         ├── root.tsx # `/` の共通レイアウトです
         ├── index.tsx # `/` の index ページです
-        ├── not-found.tsx # `/*` の 404 ページです
+        ├── not-found.tsx # 未マッチ時の 404 ページです (`notFoundComponent` で描画)
         └── contacts/ # `/contacts` 配下です
             ├── layout.tsx # 見出しと一覧取得・追加の loader / action です
             ├── index.tsx # 一覧と追加フォームです

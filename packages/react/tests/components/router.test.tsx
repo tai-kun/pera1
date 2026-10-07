@@ -100,6 +100,176 @@ describe("Router", () => {
     expect(container.innerHTML).toBe("");
   });
 
+  test("マッチしないとき notFoundComponent を描画する (006)", async ({ expect }) => {
+    // 準備
+    await using cleanup = new AsyncDisposableStack();
+
+    function NotFound() {
+      // `RouterContext` 配下で描画されるため、ルーターのフックが使える。
+      const navigateType = useRouterContext((router) => typeof router.navigate);
+      return <span>{`not-found:${navigateType}`}</span>;
+    }
+
+    const engine: IEngine = {
+      init: () => null,
+      start: () => () => {},
+      submit: () => {},
+      navigate: () => {},
+    };
+
+    const originalWarn = console.warn;
+    const warnings: unknown[][] = [];
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args);
+    };
+    cleanup.defer(() => {
+      console.warn = originalWarn;
+    });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    cleanup.defer(() => {
+      document.body.removeChild(container);
+    });
+
+    const root = createRoot(container);
+    cleanup.defer(async () => {
+      await act(async () => {
+        root.unmount();
+      });
+    });
+
+    // 実行
+    await act(async () => {
+      root.render(
+        <Router
+          engine={engine}
+          routes={[{ path: "/exists" }]}
+          notFoundComponent={NotFound}
+        />,
+      );
+    });
+
+    // 検証
+    expect(container.textContent).toBe("not-found:function");
+    expect(warnings.length).toBe(0);
+  });
+
+  test("マッチがあるとき通常マッチが notFoundComponent より優先される (006)", async ({
+    expect,
+  }) => {
+    // 準備: 明示的な `/*` 定義は通常マッチとして routes に含まれるため、
+    // notFoundComponent があっても使われないことを、一致ありの状態で確認する。
+    await using cleanup = new AsyncDisposableStack();
+
+    function Comp() {
+      return <span>hello</span>;
+    }
+
+    function NotFound() {
+      return <span>not-found</span>;
+    }
+
+    const engine: IEngine = {
+      init: () => ({
+        entry: {
+          id: "550e8400-e29b-41d4-a716-446655440000" as unknown as HistoryEntryId,
+          url: new URL("https://example.com/") as unknown as HistoryEntryUrl,
+          index: 0,
+        },
+        routes: [
+          {
+            path: "/",
+            index: false,
+            utils: new RoutePatternUtils("/"),
+            action: undefined,
+            loader: undefined,
+            component: Comp,
+            shouldReload: () => false,
+            params: {},
+            urlPath: "/",
+          },
+        ],
+      }),
+      start: () => () => {},
+      submit: () => {},
+      navigate: () => {},
+    };
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    cleanup.defer(() => {
+      document.body.removeChild(container);
+    });
+
+    const root = createRoot(container);
+    cleanup.defer(async () => {
+      await act(async () => {
+        root.unmount();
+      });
+    });
+
+    // 実行
+    await act(async () => {
+      root.render(
+        <Router
+          engine={engine}
+          routes={[{ path: "/", component: Comp }]}
+          notFoundComponent={NotFound}
+        />,
+      );
+    });
+
+    // 検証
+    expect(container.textContent).toBe("hello");
+  });
+
+  test("マッチせず notFoundComponent もないとき開発モードで警告する (006)", async ({
+    expect,
+  }) => {
+    // 準備
+    await using cleanup = new AsyncDisposableStack();
+
+    const engine: IEngine = {
+      init: () => null,
+      start: () => () => {},
+      submit: () => {},
+      navigate: () => {},
+    };
+
+    const originalWarn = console.warn;
+    const warnings: unknown[][] = [];
+    console.warn = (...args: unknown[]) => {
+      warnings.push(args);
+    };
+    cleanup.defer(() => {
+      console.warn = originalWarn;
+    });
+
+    const container = document.createElement("div");
+    document.body.appendChild(container);
+    cleanup.defer(() => {
+      document.body.removeChild(container);
+    });
+
+    const root = createRoot(container);
+    cleanup.defer(async () => {
+      await act(async () => {
+        root.unmount();
+      });
+    });
+
+    // 実行
+    await act(async () => {
+      root.render(<Router engine={engine} routes={[{ path: "/exists" }]} />);
+    });
+
+    // 検証: 従来通り null 描画 + 開発警告
+    expect(container.innerHTML).toBe("");
+    expect(warnings.length).toBe(1);
+    expect(String(warnings[0]?.[0])).toContain("notFoundComponent");
+  });
+
   test("ネストしたルートで outlet が機能する", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();

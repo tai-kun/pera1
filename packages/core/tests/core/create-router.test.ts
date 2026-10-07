@@ -84,4 +84,44 @@ describe("createRouter", () => {
     // 検証
     expect(a).toBe(b);
   });
+
+  test("update の3値分岐を区別する (006): 確定・未マッチ・再描画", ({ expect }) => {
+    // 準備: update 関数を回収できるスタブエンジン
+    let update!: IEngine.StartArgs["update"];
+    const engine = createStubEngine();
+    const start = engine.start;
+    engine.start = ((args: IEngine.StartArgs) => {
+      update = args.update;
+      return (start as (args: IEngine.StartArgs) => () => void).call(engine, args);
+    }) as IEngine["start"];
+
+    const routeA = { path: "/a" };
+    const entryA = { id: "a", url: new URL("https://example.com/a") };
+    const entryB = { id: "b", url: new URL("https://example.com/b") };
+    const controller = createRouter({ engine, routes: [] });
+    const stop = controller.start();
+
+    try {
+      // 実行1: マッチありの確定状態
+      update({ entry: entryA, routes: [routeA] } as never);
+      const matched = controller.getRoutes();
+
+      // 実行2: 未マッチ (404 相当) へのリセット
+      update(null);
+      const unmatched = controller.getRoutes();
+
+      // 実行3: 引数なしの再描画 (状態維持)
+      update({ entry: entryB, routes: [routeA] } as never);
+      const beforeRerender = controller.getRoutes();
+      update();
+      const afterRerender = controller.getRoutes();
+
+      // 検証
+      expect(matched).toHaveLength(1);
+      expect(unmatched).toBeUndefined();
+      expect(afterRerender).toBe(beforeRerender);
+    } finally {
+      stop();
+    }
+  });
 });

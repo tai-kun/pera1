@@ -3,7 +3,6 @@ import type { RouterRouteDefinition } from "@pera1/react";
 import AboutPage from "./pages/about.js";
 import CategoryPage, { loader as categoryLoader } from "./pages/categories/[category].js";
 import HomePage from "./pages/index.js";
-import NotFoundPage from "./pages/not-found.js";
 import PostsLayout from "./pages/posts/layout.js";
 import PostDetailPage, { loader as postLoader } from "./pages/posts/[postId].js";
 import PostsPage, { loader as postsLoader } from "./pages/posts/index.js";
@@ -12,7 +11,9 @@ import SearchPage, { loader as searchLoader } from "./pages/search.js";
 
 // `children` による明示的ネストの代表例。`processRoutes` がフラット化の際に
 // 親パスと結合するため、従来の flat 配列と等価にマッチする。
-// `/*` フォールバックは 006 のスコープのため従来通りとする。
+// 404 は `main.tsx` の `notFoundComponent` (006 の一次 API) で処理するため、
+// `path: "/*"` の手書きフォールバックは置いていない。明示的な `/*` 定義との
+// 併存も可能で、その場合は `/*` の通常マッチが優先される。
 export const routes: readonly RouterRouteDefinition[] = [
   {
     path: "/",
@@ -55,9 +56,5 @@ export const routes: readonly RouterRouteDefinition[] = [
         component: AboutPage,
       },
     ],
-  },
-  {
-    path: "/*",
-    component: NotFoundPage,
   },
 ];

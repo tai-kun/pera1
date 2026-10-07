@@ -12,6 +12,15 @@ export type BrowserRouterProps = {
    * アプリケーション全体の画面構造を定義したルート定義の配列です。
    */
   routes: readonly RouterRouteDefinition[];
+
+  /**
+   * どのルートにもマッチしなかったときに描画されるフォールバックコンポーネントです (006)。
+   *
+   * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、
+   * 本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
+   * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
+   */
+  notFoundComponent?: React.ComponentType<{}> | undefined;
 };
 
 /**
@@ -22,11 +31,11 @@ export type BrowserRouterProps = {
  * @param props アプリケーションに組み込むルート定義の配列です。
  */
 export default function BrowserRouter(props: BrowserRouterProps): React.ReactElement {
-  const { routes } = props;
+  const { routes, notFoundComponent } = props;
   const engine = useSingleton(() => {
     log.debug("NavigationApiEngine を作成します");
     return new NavigationApiEngine();
   });
 
-  return <Router engine={engine} routes={routes} />;
+  return <Router engine={engine} routes={routes} notFoundComponent={notFoundComponent} />;
 }

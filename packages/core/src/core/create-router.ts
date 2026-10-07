@@ -172,6 +172,13 @@ export default function createRouter<TComponent = any>(
 
   /**
    * エンジン内部での遷移確定時に、状態を各 UI バインディングへ通知し、マージするための状態更新関数です。
+   *
+   * 3 値分岐 (006。`IEngine.StartArgs["update"]` のオーバーロードに対応):
+   *
+   * - `RouterState`: マッチあり。`currentRoutes` と `currentEntry` を更新します。
+   * - `null`: 未マッチ (404 相当)。`currentRoutes` を `undefined` にリセットします
+   *   (`getRoutes() === undefined` で購読者が検出可能)。`currentEntry` は最後の確定値のままです。
+   * - 引数なし (`undefined`): 現在の状態を維持したまま購読者へ再描画だけを通知します。
    */
   function updateRouter(newState?: RouterState<TComponent> | null): void {
     if (newState !== undefined) {

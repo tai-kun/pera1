@@ -106,7 +106,29 @@ export type RouterProps = {
    * ユーザーがアプリケーションに定義したルート定義の配列です。
    */
   routes: readonly RouterRouteDefinition[];
+
+  /**
+   * どのルートにもマッチしなかったときに描画されるフォールバックコンポーネントです (006)。
+   *
+   * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、
+   * 本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
+   * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
+   */
+  notFoundComponent?: React.ComponentType<{}> | undefined;
 };
+
+/**
+ * 未マッチ (404 相当) かつフォールバック未定義のときに開発モードでのみ警告します。
+ */
+function warnMissingNotFound(): void {
+  if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
+    return;
+  }
+  console.warn(
+    `[pera1] No route matched and "notFoundComponent" is not defined. ` +
+      `The router renders null. Pass "notFoundComponent" to Router/BrowserRouter to show a 404 page.`,
+  );
+}
 
 /**
  * 宣言的なルート定義と命令的なルーティング実行エンジンを仲介し、統合し、アプリケーションの最上位でルーティングのライフサイクルと状態管理を司るプロバイダーコンポーネントです。
@@ -115,7 +137,7 @@ export type RouterProps = {
  * 将来の `@pera1/solid` でも同じコントローラーを再利用できます。
  */
 export default function Router(props: RouterProps) {
-  const { engine, routes: routesProp } = props;
+  const { engine, routes: routesProp, notFoundComponent: NotFound } = props;
 
   // レンダリングをまたいで常に同一参照を維持し、子コンポーネントの不要な再レンダリングを防ぐためにメソッドを呼び出せるように、ルーターコアの外部参照実体を `useRef` で永続的に管理します。
   const routerRef = React.useRef({} as RouterRef["current"]);
@@ -167,9 +189,19 @@ export default function Router(props: RouterProps) {
   // マッチしたルート階層配列をリアクティブに監視します。
   const routes = React.useSyncExternalStore(router.context.subscribe, router.getRoutes);
 
-  // 有効なルートマッチングがない場合は何も描画しません。
+  // 有効なルートマッチングがない場合は 404 フォールバックを描画します。
+  // 明示的な `/*` 定義は通常のマッチとして上記 `routes` に含まれるため、
+  // ここに来るのは真の未マッチ (engine の `update(null)` / `init() === null`) のみです。
   if (!routes) {
-    // TODO(tai-kun): 404 Not Found ページを表示できるようにします。
+    if (NotFound) {
+      log.debug("一致するルートがないため notFoundComponent を描画します");
+      return (
+        <RouterContext value={router.context}>
+          <NotFound />
+        </RouterContext>
+      );
+    }
+    warnMissingNotFound();
     log.debug("一致するルートがないため null を描画します");
     return null;
   }

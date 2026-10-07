@@ -110,29 +110,45 @@ setErrorMessage(
 
 ## 404 を表示する [#not-found]
 
-`Router` はどのルートにもマッチしない場合、`null` を描画します。404 専用の API はないため、もっとも詳細度の低いワイルドカードルートをフォールバックとして定義します。
+どのルートにもマッチしない場合に表示する 404 ページは、`Router` / `BrowserRouter` の `notFoundComponent` に渡します。これが一次 API です。
+
+```tsx
+import { BrowserRouter } from "@pera1/react";
+
+function NotFoundPage() {
+  return (
+    <div>
+      <h2>ページが見つかりません</h2>
+      <p>
+        <a href="/">ホームに戻る</a>
+      </p>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <BrowserRouter routes={routes} notFoundComponent={NotFoundPage} />,
+);
+```
+
+`notFoundComponent` が描画されるのは真の未マッチ (どのルート定義にも一致しない URL) のときだけです。`notFoundComponent` を渡さず、ワイルドカードも定義していない状態で未マッチになると、`Router` は `null` を描画し、開発モードでは警告を出します。
+
+`NotFoundPage` の中では `window.location` を使うと、どの URL で来たかを表示できます。`useRoutePath` は初回表示の未マッチでは履歴エントリーが未確定のため使えない場合があります。
+
+### ワイルドカード (`/*`) はレガシー手段 [#not-found-wildcard]
+
+以前は 404 専用の API がなかったため、もっとも詳細度の低いワイルドカードルートをフォールバックとして定義する回避策を案内していました。
 
 ```tsx
 const routes = [
   { path: "/", index: true, component: HomePage },
   { path: "/", component: RootLayout },
+  // レガシー: 明示的な `/*` 定義。新規コードでは `notFoundComponent` を使ってください。
   { path: "/*", component: NotFoundPage },
 ];
 ```
 
-`/*` はすべての URL にマッチしますが、詳細度が最も低いため、他のルートが優先された残りの URL だけがここに来ます。`NotFoundPage` の中では `useRoutePath` を使うと、どの URL で来たかを表示できます。
-
-```tsx
-function NotFoundPage() {
-  const path = useRoutePath();
-  return (
-    <div>
-      <h2>ページが見つかりません</h2>
-      <p>{path.pathname} は存在しません。</p>
-    </div>
-  );
-}
-```
+`/*` はすべての URL にマッチしますが、詳細度が最も低いため、他のルートが優先された残りの URL だけがここに来ます。明示的な `/*` 定義と `notFoundComponent` の併存も可能で、その場合は `/*` の通常マッチが優先され、`notFoundComponent` は使われません。`/*` を使うとマッチ鎖の中間に位置することがあり、`useRouteContext().outlet` が `null` のときだけ 404 を表示する透過分岐が毎回必要になるため、新規コードでは `notFoundComponent` を推奨します。
 
 ## 環境エラーを起動時に検出する [#detect-early]
 

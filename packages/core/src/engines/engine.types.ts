@@ -87,7 +87,11 @@ export namespace IEngine {
     /**
      * エンジン内部で遷移が確定した際、新しい状態を UI 層に通知して画面の再描画を要求するための更新関数です。
      *
-     * 引数なしの呼び出しは、現在の状態を維持したままの強制再レンダリングを意味します。
+     * 3 値の呼び分けはオーバーロードで型安全に区別されます (006)。
+     *
+     * - 引数なし: 現在の状態を維持したままの強制再レンダリング (例: アクション開始時のローディング反映)。
+     * - `RouterState`: マッチありの確定状態への更新。
+     * - `null`: 未マッチ (404 相当) へのリセット。購読者側は `getRoutes() === undefined` で検出できます。
      */
     update: {
       /**
@@ -98,7 +102,7 @@ export namespace IEngine {
       /**
        * ルーターの状態を更新します。
        *
-       * @param newRouterState 新しいルーターの状態です。
+       * @param newRouterState 新しいルーターの状態です。`null` は未マッチ (404 相当) へのリセットを意味します。
        */
       (newRouterState: RouterState<TComponent> | null): void;
     };

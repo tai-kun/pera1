@@ -4,6 +4,7 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 
 import { routes } from "./routes.js";
+import NotFoundPage from "./pages/not-found.js";
 
 configureSync({
   sinks: {
@@ -20,6 +21,7 @@ configureSync({
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter routes={routes} />
+    {/* 006: 404 は一次 API の `notFoundComponent` で描画する。`/*` の手書きは不要 (併存時は `/*` が優先)。 */}
+    <BrowserRouter routes={routes} notFoundComponent={NotFoundPage} />
   </React.StrictMode>,
 );
