@@ -1,0 +1,58 @@
+---
+title: CLI
+description: "pera1-vite typegen の使い方とオプションをまとめます。"
+---
+
+`@pera1/vite` は `pera1-vite` コマンドを提供します。開発サーバーやビルドでは型が自動で生成されるため、CLI は CI などで型チェックの前に生成したいときに使います。
+
+## 使い方 [#usage]
+
+```sh
+pera1-vite typegen
+```
+
+カレントディレクトリーをプロジェクトルートとして、ルート型を生成します。生成した件数と削除した件数を標準出力へ表示し、成功時は終了コード `0`、失敗時は `1` を返します。
+
+```sh
+$ pera1-vite typegen
+ルート型を生成しました（生成: 6 件、削除: 0 件）。
+```
+
+## オプション [#options]
+
+| オプション         | 説明                                                                                       |
+| ------------------ | ------------------------------------------------------------------------------------------ |
+| `--root <path>`    | プロジェクトルートです。既定はカレントディレクトリーです。                                 |
+| `--dir <path>`     | ページディレクトリーです。既定は `vite.config` の設定、なければ `src/pages` です。         |
+| `--include <glob>` | ルートとして扱うファイルの glob パターンです。複数指定できます。                           |
+| `--exclude <glob>` | ルートから除外するファイルの glob パターンです。複数指定でき、`include` より優先されます。 |
+| `--out <path>`     | 型の生成先です。既定は `vite.config` の設定、なければ `.pera1/types` です。                |
+| `-h`, `--help`     | ヘルプを表示します。                                                                       |
+
+`--dir`、`--include`、`--exclude`、`--out` を省略した場合は、プロジェクトの `vite.config.*` を読み込み、`pera1()` に渡されたオプションを引き継ぎます。設定ファイルを読み込めない場合は既定値を使います。
+
+```sh
+pera1-vite typegen --root . --dir app/routes --include "**/*.tsx" --exclude "**/*.test.tsx"
+```
+
+## package.json への組み込み [#scripts]
+
+型チェックの前に生成するようにしておくと、CI でもエディターと同じ型を参照できます。
+
+```json package.json
+{
+  "scripts": {
+    "typecheck": "pera1-vite typegen && tsc --noEmit",
+    "build": "pera1-vite typegen && tsc --noEmit && vite build"
+  }
+}
+```
+
+:::note
+CLI は `fs.globSync` の `exclude` パターンを使うため、Node.js 22.17 以上が必要です。
+:::
+
+## 関連 [#related]
+
+- [ルート型](/packages/vite/reference/typegen) — 生成される型と tsconfig
+- [プラグインのオプション](/packages/vite/reference/plugin-options) — `pera1()` の設定

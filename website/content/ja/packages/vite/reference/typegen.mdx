@@ -1,0 +1,103 @@
+---
+title: ルート型
+description: "各ルートファイルが import できる Route 型の生成先と、tsconfig の設定をまとめます。"
+---
+
+`@pera1/vite` は、ルートファイルごとに `Route` 名前空間を持つ型定義を生成します。ルートファイルは、同じディレクトリーにある `+types` から型を import できます。
+
+```tsx src/pages/contacts/$id.tsx
+import type { Route } from "./+types/$id";
+
+export async function loader({ params }: Route.LoaderArgs) {
+  // params は { readonly id: string } になります。
+  return findContact(params.id);
+}
+
+export async function action({ params }: Route.ActionArgs) {
+  await deleteContact(params.id);
+  return redirect("/contacts");
+}
+
+export default function ContactPage() {
+  const params = useParams<Route.Path>();
+  // ...
+}
+```
+
+## 生成される型 [#generated-types]
+
+`Route` 名前空間には次の型が含まれます。
+
+| 型                       | 内容                                            |
+| ------------------------ | ----------------------------------------------- |
+| `Route.Path`             | ルートのパスパターンです。例: `"/contacts/:id"` |
+| `Route.Params`           | パスパターンから導出したパラメーターです。      |
+| `Route.LoaderArgs`       | `loader` 関数の引数です。                       |
+| `Route.ActionArgs`       | `action` 関数の引数です。                       |
+| `Route.ShouldReloadArgs` | `shouldReload` 関数の引数です。                 |
+
+`Route.LoaderArgs` と `Route.ActionArgs` は、それぞれ `LoaderFunctionArgs` と `ActionFunctionArgs` に `Route.Path` を渡した型です。パラメーターのキーが `params` に反映されます。
+
+## 生成先 [#output]
+
+型は `typesDir`（既定 `.pera1/types`）の下に、プロジェクトルートからのルートファイルの相対パスを再現して生成されます。
+
+```text
+src/pages/contacts/$id.tsx
+  -> .pera1/types/src/pages/contacts/+types/$id.d.ts
+
+src/pages/contacts/_layout.tsx
+  -> .pera1/types/src/pages/contacts/+types/_layout.d.ts
+```
+
+`_index`、`_layout`、`$.tsx` などの特殊ファイルにも、それぞれのルートパスに対応する型が生成されます。
+
+## tsconfig の設定 [#tsconfig]
+
+TypeScript が `./+types/$id` を生成済みのファイルとして解決できるように、`rootDirs` にプロジェクトルートと型の生成先を指定します。
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "rootDirs": [".", "./.pera1/types"],
+    "types": ["vite/client", "@pera1/vite/client"]
+  },
+  "include": ["src", ".pera1/types"]
+}
+```
+
+`rootDirs` は、ルートファイルからの相対 import を、別のルートディレクトリー内の同じ位置へ解決する仕組みです。生成先を変更した場合は、`rootDirs` と `include` も合わせて変更してください。
+
+## .gitignore [#gitignore]
+
+生成先には、それ以下のファイルをすべて無視する `*` だけの `.gitignore` を出力します。既定では `.pera1/.gitignore` です。リポジトリーの `.gitignore` を編集する必要はありません。
+
+```txt .pera1/.gitignore
+*
+```
+
+`typesDir` を変更した場合、`.gitignore` は生成先の親ディレクトリーに出力されます。親がプロジェクトルートと一致する場合や、プロジェクトの外にある場合は、生成先のディレクトリー自身に出力されます。
+
+## 生成のタイミング [#timing]
+
+- 開発サーバーの起動時と、ページディレクトリーのファイル追加・変更・削除のときに自動で生成します。
+- `vite build` の開始時にも生成します。
+- CI などで型チェックだけを行う場合は、`tsc` の前に [CLI](/packages/vite/reference/cli) を実行してください。
+
+```json package.json
+{
+  "scripts": {
+    "typecheck": "pera1-vite typegen && tsc --noEmit"
+  }
+}
+```
+
+:::note
+生成ファイルは内容が変わったときだけ書き換えます。また、ルートファイルがなくなった型は削除されます。
+:::
+
+## 関連 [#related]
+
+- [CLI](/packages/vite/reference/cli) — `pera1-vite typegen`
+- [ファイルの規約](/packages/vite/reference/file-conventions) — ルートとファイルの対応
+- [RouteDefinition](/packages/core/reference/route-definitions) — 生成されるルート定義の型

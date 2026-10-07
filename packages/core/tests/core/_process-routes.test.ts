@@ -90,6 +90,21 @@ describe("component プロパティーの解決処理", () => {
     // 検証
     expect(result[0]?.component).toStrictEqual(MyComponent);
   });
+
+  test("モジュール形式が名前空間の展開で渡されたとき、default エクスポートの関数が設定される", ({
+    expect,
+  }) => {
+    // 準備
+    const MyComponent = () => "MyComponent";
+    const module = { default: MyComponent, loader: () => "loader" };
+    const routes: RouteDefinition[] = [{ path: "/", ...module }];
+
+    // 実行
+    const result = processRoutes(routes);
+
+    // 検証
+    expect(result[0]?.component).toStrictEqual(MyComponent);
+  });
 });
 
 describe("shouldReload プロパティーの処理", () => {

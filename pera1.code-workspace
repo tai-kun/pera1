@@ -5,12 +5,20 @@
       "path": ".",
     },
     {
-      "name": "core",
+      "name": "@pera1/core",
       "path": "packages/core",
     },
     {
-      "name": "react",
+      "name": "@pera1/react",
       "path": "packages/react",
+    },
+    {
+      "name": "@pera1/vite",
+      "path": "packages/vite",
+    },
+    {
+      "name": "examples",
+      "path": "examples",
     },
     {
       "name": "website",

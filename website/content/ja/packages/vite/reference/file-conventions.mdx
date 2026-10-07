@@ -1,0 +1,113 @@
+---
+title: ファイルの規約
+description: "ファイル名とディレクトリー名がどのように URL のパスへ変換されるかをまとめます。"
+---
+
+ページディレクトリーの構成が、そのままルートのツリーになります。ディレクトリーはパスセグメントになり、特別な名前のファイルがインデックス、レイアウト、パラメーター、ワイルドカードを表します。
+
+## ディレクトリーとファイルの対応 [#mapping]
+
+```text
+src/pages/
+├── _layout.tsx            -> /
+├── _index.tsx             -> / (index)
+├── about.tsx              -> /about
+├── sitemap[.]xml.tsx      -> /sitemap.xml
+├── blog/
+│   ├── _layout.tsx        -> /blog
+│   ├── _index.tsx         -> /blog (index)
+│   ├── $postId.tsx        -> /blog/:postId
+│   └── $.tsx              -> /blog/*
+└── _auth/                 -> URL には現れない
+    ├── login.tsx          -> /login
+    └── signup.tsx         -> /signup
+```
+
+ルート名はファイル名から最後の拡張子を取り除いたものです。`about.tsx` は `/about`、`$postId.tsx` は `:postId` になります。
+
+## 特別なファイル名 [#special-files]
+
+| ファイル           | 生成されるルート  | 説明                                                                 |
+| ------------------ | ----------------- | -------------------------------------------------------------------- |
+| `_index.<拡張子>`  | `{ index: true }` | そのディレクトリーのインデックスルートです。                         |
+| `_layout.<拡張子>` | レイアウトルート  | そのディレクトリーのレイアウトです。同じ階層のルートを子に持ちます。 |
+| `$name.<拡張子>`   | `:name`           | 名前付きパラメーターです。                                           |
+| `$.<拡張子>`       | `*`               | ワイルドカードです。404 画面などに使います。                         |
+| その他の名前       | 名前そのまま      | 通常のルートです。                                                   |
+
+`_layout` は同じ階層のルートをまとめるレイアウトになり、`Outlet` で子を表示します。ルート直下の `_layout.tsx` は `/` のレイアウトになります。
+
+```tsx src/pages/_layout.tsx
+import { Outlet } from "@pera1/react";
+
+export default function RootLayout() {
+  return (
+    <>
+      <header>サイト名</header>
+      <main>
+        <Outlet />
+      </main>
+    </>
+  );
+}
+```
+
+## パスレスディレクトリー [#pathless]
+
+`_` で始まるディレクトリーは URL に現れません。共通の接頭辞を持たないページを整理するために使います。
+
+```text
+src/pages/_auth/login.tsx   -> /login
+src/pages/_auth/signup.tsx  -> /signup
+```
+
+パスレスディレクトリーには `_layout` を置けません。pera1 のレイアウトはパスの前方一致で適用されるため、URL に現れないディレクトリーのレイアウトは範囲を絞れないためです。共通のパスセグメントを持つページにレイアウトを付けたい場合は、通常のディレクトリーに `_layout` を置いてください。
+
+## エスケープ [#escapes]
+
+ファイル名に使えない文字は `[x]` で囲むとリテラルとして扱われます。`sitemap[.]xml.tsx` は `/sitemap.xml` になります。
+
+## ワイルドカードの注意 [#wildcard]
+
+`$.tsx` の `*` は、他のルートがマッチした URL にも前方一致で含まれます。pera1 はマッチしたルートを子から親へ集めるため、`$.tsx` がマッチ鎖の中間に位置することがあります。その場合は `outlet` をそのまま返し、どのルートにも一致しなかったときだけ 404 を表示します。
+
+```tsx src/pages/$.tsx
+import { useRouteContext } from "@pera1/react";
+
+export default function NotFoundPage() {
+  const { outlet } = useRouteContext();
+  if (outlet) {
+    return outlet;
+  }
+
+  return <h2>ページが見つかりません</h2>;
+}
+```
+
+## 対象ファイルの絞り込み [#include-exclude]
+
+対象のファイルは `include` と `exclude` の glob パターンで決まります。どちらもページディレクトリーからの相対パスで評価され、`exclude` が優先されます。
+
+```ts vite.config.ts
+pera1({
+  include: ["**/*.tsx"],
+  exclude: ["**/*.test.tsx", "_components"],
+});
+```
+
+`exclude` にディレクトリー名だけを指定すると、その配下がまとめて除外されます。
+
+## エラーになる構成 [#errors]
+
+次の構成は開発サーバーの起動時や型生成時にエラーになります。
+
+- `_index.tsx` と `_index.ts` のように、同じ名前の特殊ファイルが複数ある。
+- `about.tsx` と `about.jsx` のように、同じパスになるルートが複数ある。
+- `_index` と `_layout` 以外の `_` で始まるファイルがある。
+- パスレスディレクトリーに `_layout` がある。
+
+## 関連 [#related]
+
+- [プラグインのオプション](/packages/vite/reference/plugin-options) — `dir` と `include` / `exclude`
+- [ルーティング](/guides/routing) — パスパターンとマッチングの規則
+- [ルート型](/packages/vite/reference/typegen) — `./+types` から import する型

@@ -56,7 +56,7 @@ import * as contactRoute from "./routes/contact.js";
 const routes = [{ path: "/contacts/:id", ...contactRoute }];
 ```
 
-ES モジュールの名前空間のうち、`Symbol.toStringTag` が `"Module"` を返すものだけがモジュール形式として扱われます。上の例のように、名前空間を展開して渡します。
+ES モジュールの `default` エクスポートが関数のとき、モジュール形式として扱われます。上の例のように、名前空間を展開して渡します。名前空間の展開では `Symbol.toStringTag` は失われますが、判定は `default` エクスポートの有無で行うため問題ありません。
 
 ## RouteDefinition [#route-definition]
 

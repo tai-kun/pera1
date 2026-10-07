@@ -1,0 +1,53 @@
+{
+  "name": "@pera1/vite",
+  "version": "0.0.0",
+  "description": "",
+  "homepage": "https://tai-kun.github.io/pera1",
+  "license": "MIT",
+  "repository": {
+    "url": "https://github.com/tai-kun/pera1",
+    "directory": "packages/vite"
+  },
+  "bin": {
+    "pera1-vite": "./dist/src/cli.js"
+  },
+  "files": [
+    "dist",
+    "src",
+    "client.d.ts",
+    "package.json",
+    "LICENSE",
+    "README.md"
+  ],
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": {
+      "types": "./dist/src/index.d.ts",
+      "default": "./dist/src/index.js"
+    },
+    "./client": {
+      "types": "./client.d.ts"
+    }
+  },
+  "scripts": {
+    "build": "tsc --project ./.config/tsconfig.build.json"
+  },
+  "devDependencies": {
+    "@pera1/core": "workspace:*",
+    "@tsconfig/node24": "24.0.5",
+    "@tsconfig/strictest": "2.0.8",
+    "@types/node": "24.13.6",
+    "@vitest/coverage-v8": "4.1.11",
+    "vite": "^8.0.14",
+    "vitest": "4.1.11"
+  },
+  "peerDependencies": {
+    "@pera1/core": "workspace:*",
+    "vite": "^6.0.0 || ^7.0.0 || ^8.0.0"
+  },
+  "engines": {
+    "node": ">=22.17.0"
+  },
+  "readme": "README.md"
+}

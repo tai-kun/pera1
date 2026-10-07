@@ -1,19 +1,11 @@
-import {
-  type ActionFunctionArgs,
-  type LoaderFunctionArgs,
-  redirect,
-  useLoaderData,
-  useParams,
-} from "@pera1/react";
+import { redirect, useLoaderData, useParams } from "@pera1/react";
 import * as React from "react";
 
 import { deleteContact, findContact } from "../../api/contacts.js";
+import type { Route } from "./+types/$id";
 
-export async function loader({ params }: LoaderFunctionArgs) {
+export async function loader({ params }: Route.LoaderArgs) {
   const id = params["id"];
-  if (id === undefined) {
-    throw new Error("id が指定されていません。");
-  }
   const contact = await findContact(id);
   if (!contact) {
     throw new Error(`連絡先 ${id} は見つかりませんでした。`);
@@ -21,17 +13,13 @@ export async function loader({ params }: LoaderFunctionArgs) {
   return contact;
 }
 
-export async function action({ params }: ActionFunctionArgs) {
-  const id = params["id"];
-  if (id === undefined) {
-    throw new Error("id が指定されていません。");
-  }
-  await deleteContact(id);
+export async function action({ params }: Route.ActionArgs) {
+  await deleteContact(params["id"]);
   return redirect("/contacts");
 }
 
 export default function ContactPage() {
-  const params = useParams<"/contacts/:id">();
+  const params = useParams<Route.Path>();
   const contact = React.use(useLoaderData<typeof loader>());
 
   return (

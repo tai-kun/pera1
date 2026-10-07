@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package-directory: ["packages/core", "packages/react"]
+        package-directory: ["packages/core", "packages/react", "packages/vite"]
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:

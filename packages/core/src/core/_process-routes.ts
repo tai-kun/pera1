@@ -174,12 +174,12 @@ export default function processRoutes<TComponent = any>(
         action: route.action,
         loader,
         // オブジェクト形式またはモジュール形式の双方を評価して描画対象を確定します。
+        // モジュール形式は名前空間の展開 (`{ path, ...module }`) で `Symbol.toStringTag` が
+        // 失われるため、`default` エクスポートの有無そのもので判定します。
         component:
           typeof route.component === "function"
             ? route.component
-            : Symbol.toStringTag in route &&
-                route[Symbol.toStringTag] === "Module" &&
-                typeof route.default === "function"
+            : "default" in route && typeof route.default === "function"
               ? route.default
               : undefined,
         shouldReload: shouldReload || ((args) => args.defaultShouldReload),

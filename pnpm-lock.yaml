@@ -140,6 +140,9 @@ importers:
       '@logtape/logtape':
         specifier: ^2.0.0
         version: 2.3.7
+      '@pera1/vite':
+        specifier: workspace:*
+        version: link:../../packages/vite
       '@types/node':
         specifier: 24.13.6
         version: 24.13.6
@@ -449,6 +452,30 @@ importers:
       valibot:
         specifier: ^1.0.0
         version: 1.5.0(typescript@7.0.2)
+      vite:
+        specifier: ^8.0.14
+        version: 8.3.1(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)
+      vitest:
+        specifier: 4.1.11
+        version: 4.1.11(@types/node@24.13.6)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
+
+  packages/vite:
+    devDependencies:
+      '@pera1/core':
+        specifier: workspace:*
+        version: link:../core
+      '@tsconfig/node24':
+        specifier: 24.0.5
+        version: 24.0.5
+      '@tsconfig/strictest':
+        specifier: 2.0.8
+        version: 2.0.8
+      '@types/node':
+        specifier: 24.13.6
+        version: 24.13.6
+      '@vitest/coverage-v8':
+        specifier: 4.1.11
+        version: 4.1.11(@vitest/browser@4.1.11)(vitest@4.1.11)
       vite:
         specifier: ^8.0.14
         version: 8.3.1(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1)

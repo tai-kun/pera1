@@ -2,7 +2,12 @@
   "name": "pera1-monorepo",
   "version": "0.0.0",
   "private": true,
-  "workspaces": ["packages/core", "packages/react", "website"],
+  "workspaces": [
+    "packages/core",
+    "packages/react",
+    "packages/vite",
+    "website"
+  ],
   "type": "module",
   "devDependencies": {
     "npm-check-updates": "23.1.0",

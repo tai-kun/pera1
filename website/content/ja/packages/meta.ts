@@ -4,5 +4,5 @@ export default defineMeta({
   title: "パッケージ",
   icon: "package",
   order: 3,
-  pages: ["core", "react"],
+  pages: ["core", "react", "vite"],
 });

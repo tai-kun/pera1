@@ -1,9 +1,9 @@
 ---
 title: パッケージ
-description: "pera1 を構成する 2 つのパッケージの役割と、インストールの選び方を示します。"
+description: "pera1 を構成するパッケージの役割と、インストールの選び方を示します。"
 ---
 
-pera1 はフレームワークに依存しないコアと、UI フレームワークごとのバインディングに分かれています。現在提供されているのは React 向けのバインディングだけです。
+pera1 はフレームワークに依存しないコアと、UI フレームワークごとのバインディング、ビルドツール向けのプラグインに分かれています。現在提供されているのは React 向けのバインディングだけです。
 
 <CardGroup cols={2}>
   <Card title="@pera1/core" href="/packages/core" icon="box">
@@ -12,14 +12,23 @@ pera1 はフレームワークに依存しないコアと、UI フレームワ�
   <Card title="@pera1/react" href="/packages/react" icon="atom">
     React 19 向けの `BrowserRouter`、`Outlet`、各種フック。コアを React に接続します。
   </Card>
+  <Card title="@pera1/vite" href="/packages/vite" icon="zap">
+    ファイル構成からルート定義とルート型を生成する Vite プラグインです。
+  </Card>
 </CardGroup>
 
-## どちらをインストールするか [#which]
+## どれをインストールするか [#which]
 
 React アプリでは `@pera1/react` をインストールしてください。`@pera1/core` は依存として自動的に入ります。
 
 ```package-install
 npm i @pera1/react react react-dom valibot
+```
+
+ファイル構成からルートを定義したい場合は、`@pera1/vite` を開発依存として追加します。
+
+```package-install
+npm i -D @pera1/vite
 ```
 
 コアだけを使う場合 (独自の UI バインディングやカスタムエンジンを作る場合) は `@pera1/core` を単独でインストールします。
@@ -36,3 +45,4 @@ npm i @pera1/core valibot
 
 - [@pera1/core の概要](/packages/core)
 - [@pera1/react の概要](/packages/react)
+- [@pera1/vite の概要](/packages/vite)

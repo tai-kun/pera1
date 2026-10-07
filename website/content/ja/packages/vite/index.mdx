@@ -1,0 +1,132 @@
+---
+title: "@pera1/vite"
+description: "ファイルとディレクトリーの構成から、ルート定義とルート型を生成する Vite プラグインです。"
+---
+
+`@pera1/vite` は、`src/pages` 配下のファイル構成をルーティングに変換する Vite プラグインです。ビルド時にルート定義を生成して `virtual:pera1/routes` として提供し、あわせて各ルートファイルが `./+types/<ファイル名>` から import できるルート型を生成します。
+
+ルート定義の配列を手で書く代わりに、ページをファイルとして追加するだけでルートが増えます。ルートの探索は開発サーバーが起動している間も監視され、ファイルの追加・変更・削除に追従します。
+
+## インストール [#install]
+
+```package-install
+npm i -D @pera1/vite
+```
+
+`vite` と `@pera1/core` がピア依存関係です。`@pera1/react` を使っているアプリには `@pera1/core` が依存として入っているため、通常は追加インストールは不要です。`fs.globSync` を使うため Node.js 22.17 以上が必要です。
+
+## セットアップ [#setup]
+
+Vite の設定に `pera1()` を追加します。`react()` など他のプラグインと併用できます。
+
+```ts vite.config.ts
+import pera1 from "@pera1/vite";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [pera1(), react()],
+});
+```
+
+アプリ側では、仮想モジュールから `routes` を読み込んで `BrowserRouter` へ渡します。ルート定義の配列を import する必要はありません。
+
+```tsx src/main.tsx
+import { BrowserRouter } from "@pera1/react";
+import { createRoot } from "react-dom/client";
+import { routes } from "virtual:pera1/routes";
+
+createRoot(document.getElementById("root")!).render(<BrowserRouter routes={routes} />);
+```
+
+仮想モジュールの型を有効にするには、`tsconfig.json` の `types` に `@pera1/vite/client` を追加します。
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "types": ["vite/client", "@pera1/vite/client"]
+  }
+}
+```
+
+## ファイルの規約 [#conventions]
+
+`src/pages` の構成がそのまま URL になります。特別なファイル名は次のとおりです。
+
+| ファイル                   | ルート                             | 説明                                                                      |
+| -------------------------- | ---------------------------------- | ------------------------------------------------------------------------- |
+| `_layout.tsx`              | そのディレクトリーのパス           | レイアウトルートです。同じ階層のルートを子に持ち、`Outlet` で表示します。 |
+| `_index.tsx`               | そのディレクトリーのパス (`index`) | インデックスルートです。                                                  |
+| `$id.tsx`                  | `/:id`                             | 名前付きパラメーターです。                                                |
+| `$.tsx`                    | `/*`                               | ワイルドカードです。404 画面などに使います。                              |
+| その他のファイル           | ファイル名そのまま                 | 通常のルートです。                                                        |
+| `_` で始まるディレクトリー | URL に現れない                     | パスレスディレクトリーです。                                              |
+
+```text
+src/pages/
+├── _layout.tsx            -> /
+├── _index.tsx             -> / (index)
+├── about.tsx              -> /about
+├── sitemap[.]xml.tsx      -> /sitemap.xml
+├── blog/
+│   ├── _layout.tsx        -> /blog
+│   ├── _index.tsx         -> /blog (index)
+│   ├── $postId.tsx        -> /blog/:postId
+│   └── $.tsx              -> /blog/*
+└── _auth/                 -> URL には現れない
+    ├── login.tsx          -> /login
+    └── signup.tsx         -> /signup
+```
+
+対象のファイルは `include` と `exclude` の glob パターンで決まります。詳しくは[ファイルの規約](/packages/vite/reference/file-conventions)を参照してください。
+
+## ルート型 [#typegen]
+
+ルートファイルは、同じ場所にある `+types` ディレクトリーから `Route` を import できます。`Route.Path`、`Route.Params`、`Route.LoaderArgs`、`Route.ActionArgs` などが使えます。
+
+```tsx src/pages/contacts/$id.tsx
+import type { Route } from "./+types/$id";
+
+export async function loader({ params }: Route.LoaderArgs) {
+  // params は { readonly id: string } になります。
+  return findContact(params.id);
+}
+
+export function Component() {
+  const params = useParams<Route.Path>();
+  // ...
+}
+```
+
+型は `.pera1/types` に生成され、`tsconfig.json` の `rootDirs` でルートファイルの隣にあるかのように解決されます。設定と生成の流れは[ルート型](/packages/vite/reference/typegen)で説明しています。
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "rootDirs": [".", "./.pera1/types"]
+  },
+  "include": ["src", ".pera1/types"]
+}
+```
+
+## 型の自動生成と CLI [#cli]
+
+開発サーバーが起動している間は、ファイルの追加・変更・削除を検知して自動で型を再生成します。型チェックだけを行う場合は、`tsc` の前に CLI で生成してください。
+
+```json package.json
+{
+  "scripts": {
+    "typecheck": "pera1-vite typegen && tsc --noEmit"
+  }
+}
+```
+
+生成先には、それ以下のファイルをすべて無視する `.gitignore` も出力されるため、リポジトリーの `.gitignore` を編集する必要はありません。
+
+## 次に読む [#next]
+
+- [プラグインのオプション](/packages/vite/reference/plugin-options)
+- [ファイルの規約](/packages/vite/reference/file-conventions)
+- [ルート型](/packages/vite/reference/typegen)
+- [CLI](/packages/vite/reference/cli)
+- [@pera1/core の概要](/packages/core)

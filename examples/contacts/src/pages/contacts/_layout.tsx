@@ -1,12 +1,13 @@
-import { type ActionFunctionArgs, Outlet, redirect } from "@pera1/react";
+import { Outlet, redirect } from "@pera1/react";
 
 import { createContact, listContacts } from "../../api/contacts.js";
+import type { Route } from "./+types/_layout";
 
 export async function loader() {
   return listContacts();
 }
 
-export async function action({ request }: ActionFunctionArgs) {
+export async function action({ request }: Route.ActionArgs) {
   const name = String(request.formData.get("name") ?? "").trim();
   const email = String(request.formData.get("email") ?? "").trim();
   if (name === "") {

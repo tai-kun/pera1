@@ -269,9 +269,9 @@ export type RouteDefinitionModule<TPath extends string = string, TComponent = an
   readonly default?: TComponent | undefined;
 
   /**
-   * オブジェクトの文字列表現をカスタマイズするための組み込みタグプロパティーです。
+   * ES モジュールの名前空間が持つ組み込みタグプロパティーです。
    *
-   * モジュールオブジェクトとしての識別に使用します。
+   * モジュール形式かどうかの判定は `default` エクスポートの有無で行うため、値そのものは使用しません。
    */
   get [Symbol.toStringTag](): string;
 
