@@ -13,7 +13,7 @@ export default function CartPage() {
   return <CartView initial={initial} />;
 }
 
-function CartView({ initial }: { initial: Awaited<ReturnType<typeof listCart>> }) {
+function CartView({ initial }: { readonly initial: Awaited<ReturnType<typeof listCart>> }) {
   const [summary, setSummary] = React.useState(initial);
   const [cleared, setCleared] = React.useState(false);
 

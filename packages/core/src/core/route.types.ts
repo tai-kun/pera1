@@ -23,12 +23,12 @@ export type ActionFunctionArgs<TRoutePattern extends string = string> = {
   /**
    * 現在の URL パスから抽出されたパラメーターオブジェクトです。
    */
-  params: RouteParams<TRoutePattern>;
+  readonly params: RouteParams<TRoutePattern>;
 
   /**
    * フォームデータなどを内包する、HTTP の POST メソッドに特化したルーティングリクエストオブジェクトです。
    */
-  request: RoutePostRequest;
+  readonly request: RoutePostRequest;
 };
 
 /**
@@ -54,77 +54,77 @@ export type ShouldReloadFunctionArgs<TRoutePattern extends string = string> =
       /**
        * 再読み込みを引き起こした HTTP メソッドの種別です。
        */
-      triggerMethod: "GET";
+      readonly triggerMethod: "GET";
 
       /**
        * 現在の画面に対応する読み取り専用 URL オブジェクトです。
        */
-      currentUrl: ReadonlyURL;
+      readonly currentUrl: ReadonlyURL;
 
       /**
        * 現在の URL から抽出されたパスパラメーターです。
        */
-      currentParams: RouteParams<TRoutePattern>;
+      readonly currentParams: RouteParams<TRoutePattern>;
 
       /**
        * POST リクエストが発生する直前の読み取り専用 URL オブジェクトです。
        */
-      prevUrl: ReadonlyURL;
+      readonly prevUrl: ReadonlyURL;
 
       /**
        * 遷移前の URL から抽出されたパスパラメーターです。
        *
        * 遷移前後でパスが異なる場合があるため、型引数を持たない `RouteParams` を使います。
        */
-      prevParams: RouteParams;
+      readonly prevParams: RouteParams;
 
       /**
        * システムが内部ロジックに基づいて判断した、再読み込み実行の既定の判定フラグです。
        */
-      defaultShouldReload: boolean;
+      readonly defaultShouldReload: boolean;
     }
   | {
       /**
        * 再読み込みを引き起こした HTTP メソッドの種別です。
        */
-      triggerMethod: "POST";
+      readonly triggerMethod: "POST";
 
       /**
        * 現在の画面に対応する読み取り専用 URL オブジェクトです。
        */
-      currentUrl: ReadonlyURL;
+      readonly currentUrl: ReadonlyURL;
 
       /**
        * 現在の URL から抽出されたパスパラメーターです。
        */
-      currentParams: RouteParams<TRoutePattern>;
+      readonly currentParams: RouteParams<TRoutePattern>;
 
       /**
        * POST リクエストが発生する直前の読み取り専用 URL オブジェクトです。
        */
-      prevUrl: ReadonlyURL;
+      readonly prevUrl: ReadonlyURL;
 
       /**
        * 遷移前の URL から抽出されたパスパラメーターです。
        *
        * 遷移前後でパスが異なる場合があるため、型引数を持たない `RouteParams` を使います。
        */
-      prevParams: RouteParams;
+      readonly prevParams: RouteParams;
 
       /**
        * POST リクエストと共に送信された標準のフォームデータオブジェクトです。
        */
-      formData: FormData;
+      readonly formData: FormData;
 
       /**
        * 直前に実行されたアクション関数から返されたデータです。
        */
-      actionData: unknown;
+      readonly actionData: unknown;
 
       /**
        * システムが内部ロジックに基づいて判断した、再読み込み実行の既定の判定フラグです。
        */
-      defaultShouldReload: boolean;
+      readonly defaultShouldReload: boolean;
     };
 
 /**
@@ -148,12 +148,12 @@ export type LoaderFunctionArgs<TRoutePattern extends string = string> = {
   /**
    * 現在の URL パスから抽出されたパラメーターオブジェクトです。
    */
-  params: RouteParams<TRoutePattern>;
+  readonly params: RouteParams<TRoutePattern>;
 
   /**
    * HTTP の GET メソッドに特化したルーティングリクエストオブジェクトです。
    */
-  request: RouteGetRequest;
+  readonly request: RouteGetRequest;
 };
 
 /**

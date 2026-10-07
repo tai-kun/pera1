@@ -123,11 +123,11 @@ function isValidPayment(value: unknown): value is PaymentInfo {
 }
 
 export async function createBooking(input: {
-  from: string;
-  to: string;
-  date: string;
-  adults: number;
-  flightId: string;
+  readonly from: string;
+  readonly to: string;
+  readonly date: string;
+  readonly adults: number;
+  readonly flightId: string;
 }): Promise<Booking> {
   ensureInitialized();
   const flight = await findFlight(input.flightId);

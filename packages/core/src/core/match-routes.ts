@@ -123,9 +123,9 @@ function isStaticSegment(segment: string): boolean {
  * @returns 除外フィルタ適用後のマッチ済みルート配列です。
  */
 function applyStaticPriorityFilter<TComponent>(
-  matched: MatchedRoute<TComponent>[],
+  matched: readonly MatchedRoute<TComponent>[],
   url: ReadonlyURL,
-): MatchedRoute<TComponent>[] {
+): readonly MatchedRoute<TComponent>[] {
   type Entry = {
     readonly route: MatchedRoute<TComponent>;
     readonly segments: readonly string[] | undefined;

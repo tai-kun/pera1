@@ -26,12 +26,12 @@ type ComponentRendererProps = {
   /**
    * レンダリング対象となる、マッチした単一のルート情報です。
    */
-  route: MatchedRoute<React.ComponentType<{}>>;
+  readonly route: MatchedRoute<React.ComponentType<{}>>;
 
   /**
    * このルートの配下に描画されるべき子コンポーネントの要素です。
    */
-  outlet: React.ReactElement<RouteRendererProps, typeof RouteRenderer> | null;
+  readonly outlet: React.ReactElement<RouteRendererProps, typeof RouteRenderer> | null;
 };
 
 /**
@@ -61,12 +61,12 @@ type RouteRendererProps = {
   /**
    * マッチしたルートの階層配列です。
    */
-  routes: readonly MatchedRoute<React.ComponentType<{}>>[];
+  readonly routes: readonly MatchedRoute<React.ComponentType<{}>>[];
 
   /**
    * 現在処理しているルート配列のインデックス（深さ）です。
    */
-  index?: number;
+  readonly index?: number;
 };
 
 /**
@@ -104,12 +104,12 @@ export type RouterProps = {
   /**
    * プラグイン形式で差し込まれる、ルーティングの実装です。
    */
-  engine: IEngine<React.ComponentType<{}>>;
+  readonly engine: IEngine<React.ComponentType<{}>>;
 
   /**
    * ユーザーがアプリケーションに定義したルート定義の配列です。
    */
-  routes: readonly RouterRouteDefinition[];
+  readonly routes: readonly RouterRouteDefinition[];
 
   /**
    * どのルートにもマッチしなかったときに描画されるフォールバックコンポーネントです (006)。
@@ -117,7 +117,7 @@ export type RouterProps = {
    * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
    * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
    */
-  notFoundComponent?: React.ComponentType<{}> | undefined;
+  readonly notFoundComponent?: React.ComponentType<{}> | undefined;
 
   /**
    * 遷移後に先頭へスクロールするかを制御するオプトイン指定です (012)。
@@ -129,7 +129,7 @@ export type RouterProps = {
    * ハッシュ付き遷移と初回表示はブラウザーに任せて何もしません。
    * 戻る・進むでの位置復元までは行いません。
    */
-  scrollRestoration?: ScrollRestorationOption | undefined;
+  readonly scrollRestoration?: ScrollRestorationOption | undefined;
 };
 
 /**

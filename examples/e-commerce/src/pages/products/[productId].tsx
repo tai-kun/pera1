@@ -32,7 +32,7 @@ export default function ProductDetailPage() {
   return <ProductDetailView product={product} productId={params.productId} />;
 }
 
-function ProductDetailView({ product, productId }: { product: Product; productId: string }) {
+function ProductDetailView({ product, productId }: { readonly product: Product; readonly productId: string }) {
   const [added, setAdded] = React.useState(false);
 
   async function handleAddToCart() {

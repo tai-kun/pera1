@@ -40,7 +40,7 @@ function CreateContactForm() {
   );
 }
 
-function ActionError({ actionData }: { actionData: ActionData<typeof contactsAction> }) {
+function ActionError({ actionData }: { readonly actionData: ActionData<typeof contactsAction> }) {
   const data = React.use(actionData);
   if (data && "error" in data) {
     return <p role="alert">{data.error}</p>;

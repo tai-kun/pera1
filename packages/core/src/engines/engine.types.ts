@@ -17,12 +17,12 @@ export type RouterState<TComponent = any> = {
   /**
    * 現在のアクティブな履歴エントリーです。
    */
-  entry: HistoryEntry;
+  readonly entry: HistoryEntry;
 
   /**
    * 現在の URL にマッチしている子から親までの階層的なルートの配列です。
    */
-  routes: readonly [MatchedRoute<TComponent>, ...MatchedRoute<TComponent>[]];
+  readonly routes: readonly [MatchedRoute<TComponent>, ...MatchedRoute<TComponent>[]];
 };
 
 /**
@@ -130,33 +130,33 @@ export namespace IEngine {
         /**
          * HTTP POST メソッドに相当する、マルチパートまたは URL エンコードされたフォームデータの送信です。
          */
-        type: "FORM_DATA";
+        readonly type: "FORM_DATA";
 
         /**
          * 送信する不変のフォームデータ本体です。
          */
-        target: ReadonlyFormData;
+        readonly target: ReadonlyFormData;
 
         /**
          * アクションの送信先となる対象の URL パス文字列です。
          */
-        action: string;
+        readonly action: string;
       }
     | {
         /**
          * HTTP GET メソッドに相当する、URL の検索クエリーの更新送信です。
          */
-        type: "URL_SEARCH_PARAMS";
+        readonly type: "URL_SEARCH_PARAMS";
 
         /**
          * 更新対象となる検索クエリーパラメーターです。
          */
-        target: ReadonlyURLSearchParams;
+        readonly target: ReadonlyURLSearchParams;
 
         /**
          * クエリーの付与先となる対象の URL パス文字列です。
          */
-        action: string;
+        readonly action: string;
 
         /**
          * 履歴スタックへの追加方法を指定します。
@@ -164,7 +164,7 @@ export namespace IEngine {
          * - `"push"`: 履歴エントリーの新規追加です。
          * - `"replace"`: 履歴エントリーの上書きです。
          */
-        history: "replace" | "push";
+        readonly history: "replace" | "push";
       };
 
   /**
@@ -177,36 +177,36 @@ export namespace IEngine {
         /**
          * 明示的なアドレス指定による前方移動です。
          */
-        type: "LINK";
+        readonly type: "LINK";
 
         /**
          * 遷移先のアドレス表現の指定です。
          * 完全なパス文字列か、部分的なパーツの組み合わせかを選択します。
          */
-        to:
+        readonly to:
           | {
               /**
                * URL パスで前方移動する形式です。
                */
-              type: "STATIC";
+              readonly type: "STATIC";
 
               /**
                * URL パスです。
                */
-              path: string;
+              readonly path: string;
             }
           | {
               /**
                * URL の各コンポーネントを関数形式で個別に指定する形式です。
                */
-              type: "DYNAMIC";
+              readonly type: "DYNAMIC";
 
               /**
                * 動的にパッチを適用する関数です。
                *
                * @param path アプリケーション内のルーティングにおけるパスを安全に構築し、解析し、操作するためのオブジェクトです。
                */
-              patch(path: RoutePath): void;
+              readonly patch: (path: RoutePath) => void;
             };
 
         /**
@@ -215,18 +215,18 @@ export namespace IEngine {
          * - `"push"`: 履歴エントリーの新規追加です。
          * - `"replace"`: 履歴エントリーの上書きです。
          */
-        history: "replace" | "push";
+        readonly history: "replace" | "push";
       }
     | {
         /**
          * 履歴スタック内の相対的な位置移動（例: `-1` で 1 つ戻る、`2` で 2 つ進む）です。
          */
-        type: "MOVE";
+        readonly type: "MOVE";
 
         /**
          * 履歴を移動させる差分ステップ数です。
          */
-        delta: number;
+        readonly delta: number;
       };
 }
 

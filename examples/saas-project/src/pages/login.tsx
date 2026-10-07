@@ -80,7 +80,7 @@ function LoginError() {
   return <ActionError actionData={actionData} />;
 }
 
-function ActionError({ actionData }: { actionData: ActionData<typeof action> }) {
+function ActionError({ actionData }: { readonly actionData: ActionData<typeof action> }) {
   const data = React.use(actionData);
   if (data && "error" in data) {
     return <p role="alert">{data.error}</p>;

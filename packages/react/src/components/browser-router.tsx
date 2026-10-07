@@ -12,7 +12,7 @@ export type BrowserRouterProps = {
   /**
    * アプリケーション全体の画面構造を定義したルート定義の配列です。
    */
-  routes: readonly RouterRouteDefinition[];
+  readonly routes: readonly RouterRouteDefinition[];
 
   /**
    * どのルートにもマッチしなかったときに描画されるフォールバックコンポーネントです (006)。
@@ -20,7 +20,7 @@ export type BrowserRouterProps = {
    * 明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、本プロパティーは使われません (後方互換のレガシー手段として併存可能です)。
    * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
    */
-  notFoundComponent?: React.ComponentType<{}> | undefined;
+  readonly notFoundComponent?: React.ComponentType<{}> | undefined;
 
   /**
    * 遷移後に先頭へスクロールするかを制御するオプトイン指定です (012)。
@@ -31,7 +31,7 @@ export type BrowserRouterProps = {
    *
    * ハッシュ付き遷移と初回表示はブラウザーに任せて何もしません。
    */
-  scrollRestoration?: ScrollRestorationOption | undefined;
+  readonly scrollRestoration?: ScrollRestorationOption | undefined;
 };
 
 /**

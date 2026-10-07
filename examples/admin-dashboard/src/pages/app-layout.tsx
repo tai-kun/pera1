@@ -9,7 +9,7 @@ import { getCurrentUser, logout } from "../api/auth.js";
  * ルート定義ではなく各ページがこのコンポーネントで内容を包む方式です。
  * `main` 要素は `RootLayout` 側にひとつだけ置き、ここでは重ねません。
  */
-export default function AppLayout({ children }: { children: ReactNode }) {
+export default function AppLayout({ children }: { readonly children: ReactNode }) {
   const navigate = useNavigate();
   const user = getCurrentUser();
 
