@@ -132,7 +132,7 @@ export const routes = [
 ```tsx src/pages.tsx lineNumbers
 import type { ActionData } from "@pera1/react";
 import { Outlet, useActionData, useLoaderData, useParams } from "@pera1/react";
-import { Suspense, use } from "react";
+import * as React from "react";
 
 import type { contactLoader, contactsLoader, createContactAction } from "./routes.js";
 
@@ -145,9 +145,9 @@ export function RootLayout() {
         </h1>
       </header>
       <main>
-        <Suspense fallback={<p>読み込み中…</p>}>
+        <React.Suspense fallback={<p>読み込み中…</p>}>
           <Outlet />
-        </Suspense>
+        </React.Suspense>
       </main>
     </>
   );
@@ -158,7 +158,7 @@ export function RootLayout() {
 
 ```tsx src/pages.tsx lineNumbers
 export function ContactsPage() {
-  const contacts = use(useLoaderData<typeof contactsLoader>());
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
 
   return (
     <>
@@ -199,7 +199,7 @@ function CreateContactForm() {
 }
 
 function ActionError({ actionData }: { actionData: ActionData<typeof createContactAction> }) {
-  const data = use(actionData);
+  const data = React.use(actionData);
   if (data && "error" in data) {
     return <p role="alert">{data.error}</p>;
   }
@@ -212,7 +212,7 @@ function ActionError({ actionData }: { actionData: ActionData<typeof createConta
 ```tsx src/pages.tsx lineNumbers
 export function ContactPage() {
   const params = useParams<"/contacts/:id">();
-  const contact = use(useLoaderData<typeof contactLoader>());
+  const contact = React.use(useLoaderData<typeof contactLoader>());
 
   return (
     <article>
@@ -265,15 +265,15 @@ export function NotFoundPage() {
 
 ```tsx src/main.tsx lineNumbers
 import { BrowserRouter } from "@pera1/react";
-import { StrictMode } from "react";
+import * as React from "react";
 import { createRoot } from "react-dom/client";
 
 import { routes } from "./routes.js";
 
 createRoot(document.getElementById("root")!).render(
-  <StrictMode>
+  <React.StrictMode>
     <BrowserRouter routes={routes} />
-  </StrictMode>,
+  </React.StrictMode>,
 );
 ```
 

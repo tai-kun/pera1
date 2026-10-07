@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import * as React from "react";
 
 import useRouterContext from "./use-router-context.js";
 
@@ -48,9 +48,9 @@ export default function useScrollRestoration(scrollRestoration?: ScrollRestorati
   );
 
   // 初回マウントのときはディープリンク (`#...` 付きでの直接表示) を壊さないよう何もしません。
-  const isFirstRender = useRef(true);
+  const isFirstRender = React.useRef(true);
 
-  useEffect(() => {
+  React.useEffect(() => {
     if (isFirstRender.current) {
       isFirstRender.current = false;
 

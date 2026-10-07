@@ -11,7 +11,7 @@ pera1 のエラー処理は「投げる場所」と「受け取る場所」が�
 
 ```tsx
 function ContactPage() {
-  const contact = use(useLoaderData<typeof contactLoader>());
+  const contact = React.use(useLoaderData<typeof contactLoader>());
   return <h2>{contact.name}</h2>;
 }
 ```
@@ -23,10 +23,10 @@ function ContactPage() {
 React のエラーバウンダリーをルートの外側に置けば、ローダー、アクション、遅延読み込みの失敗を一箇所で処理できます。
 
 ```tsx
-import { Component, type ReactNode } from "react";
+import * as React from "react";
 
-class AppErrorBoundary extends Component<
-  { children: ReactNode },
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
   { error: unknown }
 > {
   state = { error: null as unknown };

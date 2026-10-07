@@ -50,7 +50,7 @@ const data = selectLoaderData(snapshot, loader);
 
 if (data) {
   // thenable として UI 層の非同期プリミティブに渡す
-  // React なら use(data) が Suspense とエラーバウンダリーにつなぐ
+  // React なら React.use(data) が Suspense とエラーバウンダリーにつなぐ
 }
 ```
 

@@ -31,6 +31,12 @@
       "skillPath": "skills/pc-safety-guard/SKILL.md",
       "computedHash": "fa420cb2b157f777d142d0227fdcc022683874c4ea12a7d198b51574bc159529"
     },
+    "test-audit": {
+      "source": "tai-kun/agent-skills",
+      "sourceType": "github",
+      "skillPath": "skills/test-audit/SKILL.md",
+      "computedHash": "c4f506e5a2a5816c45c7eeabed1622145b7ceec7ed2b4152c2820b3e26d6d923"
+    },
     "vitest": {
       "source": "tai-kun/agent-skills",
       "sourceType": "github",

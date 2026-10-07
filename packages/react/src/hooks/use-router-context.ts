@@ -1,5 +1,5 @@
 import { RouterContextMissingError } from "@pera1/core";
-import { use, useSyncExternalStore } from "react";
+import * as React from "react";
 
 import log from "../_logger.js";
 import RouterContext, { type RouterRef } from "../contexts/router-context.js";
@@ -16,7 +16,7 @@ import RouterContext, { type RouterRef } from "../contexts/router-context.js";
 export default function useRouterContext<TSlice>(
   selector: (router: RouterRef["current"]) => TSlice,
 ): TSlice {
-  const routerContext = use(RouterContext);
+  const routerContext = React.use(RouterContext);
   if (!routerContext) {
     log.debug("RouterContext が見つかりません");
 
@@ -25,5 +25,5 @@ export default function useRouterContext<TSlice>(
 
   const { routerRef, subscribe } = routerContext;
 
-  return useSyncExternalStore(subscribe, () => selector(routerRef.current));
+  return React.useSyncExternalStore(subscribe, () => selector(routerRef.current));
 }

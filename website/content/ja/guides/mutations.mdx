@@ -99,7 +99,7 @@ async function updateContactAction({ request }: ActionFunctionArgs) {
 ```tsx
 import type { ActionData } from "@pera1/react";
 import { useActionData } from "@pera1/react";
-import { use } from "react";
+import * as React from "react";
 
 function ContactForm() {
   const actionData = useActionData<typeof updateContactAction>();
@@ -114,7 +114,7 @@ function ContactForm() {
 }
 
 function ActionError({ actionData }: { actionData: ActionData<typeof updateContactAction> }) {
-  const data = use(actionData);
+  const data = React.use(actionData);
   if (data && "error" in data && data.error) {
     return <p role="alert">{data.error}</p>;
   }

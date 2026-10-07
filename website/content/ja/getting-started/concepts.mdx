@@ -68,7 +68,7 @@ function RootLayout() {
 
 ```tsx
 function ProfilePage() {
-  const user = use(useLoaderData<typeof userLoader>());
+  const user = React.use(useLoaderData<typeof userLoader>());
   return <Profile user={user} />;
 }
 ```

@@ -47,18 +47,18 @@ type LoaderData<TData> = NinjaPromise<FulfilledLoaderData<TData>>;
 
 ```tsx
 import { Outlet, useLoaderData } from "@pera1/react";
-import { Suspense, use } from "react";
+import * as React from "react";
 
 function Layout() {
   return (
-    <Suspense fallback={<p>読み込み中…</p>}>
+    <React.Suspense fallback={<p>読み込み中…</p>}>
       <Outlet />
-    </Suspense>
+    </React.Suspense>
   );
 }
 
 function ContactPage() {
-  const contact = use(useLoaderData<typeof contactLoader>());
+  const contact = React.use(useLoaderData<typeof contactLoader>());
   return <h2>{contact.name}</h2>;
 }
 ```
@@ -88,7 +88,7 @@ const routes = [
 
 function ContactsPage() {
   // /contacts のレイアウトに付けたローダーの結果
-  const contacts = use(useLoaderData<typeof contactsLoader>());
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
   // ...
 }
 ```

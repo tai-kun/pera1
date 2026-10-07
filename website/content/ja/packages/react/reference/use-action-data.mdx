@@ -53,7 +53,7 @@ function ContactForm() {
 }
 
 function ActionError({ actionData }: { actionData: ActionData<typeof updateContactAction> }) {
-  const data = use(actionData);
+  const data = React.use(actionData);
   if (data && "error" in data && data.error) {
     return <p role="alert">{data.error}</p>;
   }
@@ -68,7 +68,7 @@ function ActionError({ actionData }: { actionData: ActionData<typeof updateConta
 アクションが `redirect()` を返した場合、フレームワークは応答を画面に渡さず `undefined` に置き換えます。ただし、非同期アクションが `{ error }` と `RedirectResponse` のユニオンを返す場合、型の上では `RedirectResponse` が残ります。`in` 演算子で絞り込んでから値を読んでください。
 
 ```tsx
-const data = use(actionData);
+const data = React.use(actionData);
 if (data && "error" in data) {
   return <p role="alert">{data.error}</p>;
 }

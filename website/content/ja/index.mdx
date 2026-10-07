@@ -27,7 +27,7 @@ const routes = [
 
 ```tsx
 function ContactPage() {
-  const contact = use(useLoaderData<typeof contactLoader>());
+  const contact = React.use(useLoaderData<typeof contactLoader>());
   return <h2>{contact.name}</h2>;
 }
 ```

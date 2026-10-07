@@ -75,7 +75,7 @@ async function contactLoader({ params }: LoaderFunctionArgs) {
 }
 
 function ContactPage() {
-  const contact = use(useLoaderData<typeof contactLoader>());
+  const contact = React.use(useLoaderData<typeof contactLoader>());
   contact.name; // string
   return <h2>{contact.name}</h2>;
 }
@@ -89,7 +89,7 @@ import type { LoaderData } from "@pera1/react";
 type Contact = { name: string; email: string };
 
 function ContactPage() {
-  const contact = use(useLoaderData<LoaderData<Contact>>());
+  const contact = React.use(useLoaderData<LoaderData<Contact>>());
   // ...
 }
 ```
@@ -113,7 +113,7 @@ async function saveAction({ request }: ActionFunctionArgs) {
 
 ```tsx
 function ActionError({ actionData }: { actionData: ActionData<typeof saveAction> }) {
-  const data = use(actionData);
+  const data = React.use(actionData);
   if (data && "error" in data) {
     return <p role="alert">{data.error}</p>;
   }

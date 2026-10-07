@@ -1,5 +1,5 @@
 import { useNavigate } from "@pera1/react";
-import type { ReactNode } from "react";
+import type * as React from "react";
 
 import { getCurrentUser, logout } from "../api/auth.js";
 
@@ -9,7 +9,7 @@ import { getCurrentUser, logout } from "../api/auth.js";
  * ルート定義ではなく各ページがこのコンポーネントで内容を包む方式です。
  * `main` 要素は `RootLayout` 側にひとつだけ置き、ここでは重ねません。
  */
-export default function AppLayout({ children }: { readonly children: ReactNode }) {
+export default function AppLayout({ children }: { readonly children: React.ReactNode }) {
   const navigate = useNavigate();
   const user = getCurrentUser();
 

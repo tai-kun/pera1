@@ -10,15 +10,15 @@ description: "React.lazy で画面を遅らせて読み込む方法と、Suspens
 `component` は関数か、`default` エクスポートが関数の ES モジュールであることを前提にしています。`React.lazy` が返すのはコンポーネント風のオブジェクトで、関数ではありません。そのまま `component` に渡すと「コンポーネントなし」と判定されます。`React.lazy` を使うときは、`Suspense` で包む小さな関数を用意します。
 
 ```tsx
-import { lazy, Suspense, type ComponentType } from "react";
+import * as React from "react";
 
-function lazyPage(importer: () => Promise<{ default: ComponentType }>) {
-  const Lazy = lazy(importer);
+function lazyPage(importer: () => Promise<{ default: React.ComponentType }>) {
+  const Lazy = React.lazy(importer);
   return function LazyPage() {
     return (
-      <Suspense fallback={<p>読み込み中…</p>}>
+      <React.Suspense fallback={<p>読み込み中…</p>}>
         <Lazy />
-      </Suspense>
+      </React.Suspense>
     );
   };
 }
@@ -44,9 +44,9 @@ function RootLayout() {
     <>
       <Header />
       <main>
-        <Suspense fallback={<p>読み込み中…</p>}>
+        <React.Suspense fallback={<p>読み込み中…</p>}>
           <Outlet />
-        </Suspense>
+        </React.Suspense>
       </main>
     </>
   );
@@ -58,7 +58,7 @@ function RootLayout() {
 遅延コンポーネントがサスペンドすると、最も近い `Suspense` (この場合は `Outlet` を包むもの) がフォールバックを表示します。
 
 ```tsx
-const ReportsPage = lazy(() => import("./pages/reports.js"));
+const ReportsPage = React.lazy(() => import("./pages/reports.js"));
 
 const routes = [
   { path: "/reports", component: () => <ReportsPage /> },

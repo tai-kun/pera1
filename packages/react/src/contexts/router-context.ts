@@ -1,13 +1,12 @@
 import type { RouterSnapshot } from "@pera1/core";
-import { createContext } from "react";
-import type { RefObject } from "react";
+import * as React from "react";
 
 /**
  * ルーターの実体へのアクセスを提供する、読み取り専用の Ref オブジェクトです。
  *
  * 実体（`RouterSnapshot`）は `@pera1/core` の `createRouter` が生成するフレームワーク共通のスナップショットです。
  */
-export type RouterRef = Readonly<RefObject<RouterSnapshot>>;
+export type RouterRef = Readonly<React.RefObject<RouterSnapshot>>;
 
 /**
  * `RouterContext` がコンポーネントツリーの配下に供給するオブジェクトです。
@@ -32,6 +31,6 @@ export type RouterContextValue = {
  *
  * パフォーマンス最適化のためにプロバイダー自体は更新されず、子コンポーネントは `subscribe` と `useSyncExternalStore` を使って必要な部分データだけを購読します。
  */
-const RouterContext = /*#__PURE__*/ createContext<RouterContextValue | null>(null);
+const RouterContext = /*#__PURE__*/ React.createContext<RouterContextValue | null>(null);
 
 export default RouterContext;

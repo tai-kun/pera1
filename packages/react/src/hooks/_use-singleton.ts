@@ -1,4 +1,4 @@
-import { useRef } from "react";
+import * as React from "react";
 
 /**
  * 初期化前であることを判定するための、空の内部専用ユニークオブジェクトです。
@@ -17,7 +17,7 @@ const NIL = {};
 export default function useSingleton<T>(fn: () => T): T {
   // 生成されたオブジェクトをコンポーネントの生存期間中保持するために `useRef` を使用します。
   // 初期値として、未初期化の目印である `NIL` オブジェクトを型アサーションして設定します。
-  const ref = useRef<T>(NIL as T);
+  const ref = React.useRef<T>(NIL as T);
 
   // 参照している中身が `NIL` と同一のオブジェクトのままであれば、一度も初期化されていないと判定します。
   if (ref.current === NIL) {

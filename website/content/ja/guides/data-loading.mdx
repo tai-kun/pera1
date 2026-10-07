@@ -103,18 +103,18 @@ const routes = [
 コンポーネントでは `useLoaderData` で結果を受け取り、`React.use` に渡します。型引数にローダー関数の型を渡すと、解決後の値の型が決まります。
 
 ```tsx
-import { Suspense, use } from "react";
+import * as React from "react";
 
 function ContactPage() {
-  const contact = use(useLoaderData<typeof contactLoader>());
+  const contact = React.use(useLoaderData<typeof contactLoader>());
   return <h2>{contact.name}</h2>;
 }
 
 function Layout() {
   return (
-    <Suspense fallback={<p>読み込み中…</p>}>
+    <React.Suspense fallback={<p>読み込み中…</p>}>
       <Outlet />
-    </Suspense>
+    </React.Suspense>
   );
 }
 ```
@@ -146,10 +146,10 @@ async function dashboardLoader({ request }: LoaderFunctionArgs) {
 
 ```tsx
 import { useLoaderData } from "@pera1/react";
-import { use } from "react";
+import * as React from "react";
 
 function DashboardPage() {
-  const data = use(useLoaderData<typeof dashboardLoader>());
+  const data = React.use(useLoaderData<typeof dashboardLoader>());
   return <h2>ようこそ、{data.user.name}さん。</h2>;
 }
 ```
@@ -169,7 +169,7 @@ function ContactsLayout() {
 
 function ContactsPage() {
   // 親の /contacts に付けたローダーの結果を受け取る
-  const contacts = use(useLoaderData<typeof contactsLoader>());
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
   // ...
 }
 ```

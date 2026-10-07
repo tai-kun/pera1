@@ -56,12 +56,12 @@ const RouterContext: React.Context<RouterContextValue | null>;
 コンテキストを直接読む例です。同じことをする [`useRouteContext`](/packages/react/reference/use-route-context) と [`useRouterContext`](/packages/react/reference/use-router-context) が公開されています。通常はそちらを使ってください。
 
 ```tsx
-import { use } from "react";
+import * as React from "react";
 
 import { RouteContext } from "@pera1/react";
 
 function CurrentPath() {
-  const route = use(RouteContext);
+  const route = React.use(RouteContext);
   if (!route) {
     throw new Error("Router の外で使われました。");
   }
