@@ -70,7 +70,7 @@ jobs:
               target_abs_path="${root_dir}/${target_rel_path}"
 
               echo "${target_rel_path} で内部依存パッケージ ${dep_name} をビルドします"
-              (cd "${target_abs_path}" && npm run build)
+              (cd "${target_abs_path}" && pnpm run build)
               echo
             fi
           done
@@ -78,7 +78,7 @@ jobs:
       - name: "依存関係をインストール（パッケージ）"
         run: |
           if grep -q "playwright" package.json; then
-            npx playwright install --with-deps
+            pnpm exec playwright install --with-deps
           fi
         working-directory: ${{ matrix.package-directory }}
 
@@ -90,7 +90,7 @@ jobs:
         working-directory: ${{ matrix.package-directory }}
 
       - name: "ビルド"
-        run: npm run build
+        run: pnpm run build
         working-directory: ${{ matrix.package-directory }}
 
       - name: "テスト"
@@ -126,24 +126,24 @@ jobs:
           # examples は `@pera1/react`（推移的に `@pera1/core`）に依存し、
           # `contacts` はさらに `@pera1/vite` に依存するため、依存順に明示してビルドします。
           echo "packages/core で内部依存パッケージ @pera1/core をビルドします"
-          (cd packages/core && npm run build)
+          (cd packages/core && pnpm run build)
           echo
           echo "packages/react で内部依存パッケージ @pera1/react をビルドします"
-          (cd packages/react && npm run build)
+          (cd packages/react && pnpm run build)
           echo
           if jq -e '
             ((.dependencies // {}) + (.devDependencies // {}) + (.peerDependencies // {}) + (.optionalDependencies // {}))
             | has("@pera1/vite")
           ' "${{ matrix.package-directory }}/package.json" > /dev/null; then
             echo "packages/vite で内部依存パッケージ @pera1/vite をビルドします"
-            (cd packages/vite && npm run build)
+            (cd packages/vite && pnpm run build)
             echo
           fi
 
       - name: "依存関係をインストール（パッケージ）"
         run: |
           if grep -q "playwright" package.json; then
-            npx playwright install --with-deps
+            pnpm exec playwright install --with-deps
           fi
         working-directory: ${{ matrix.package-directory }}
 
@@ -155,7 +155,7 @@ jobs:
         working-directory: ${{ matrix.package-directory }}
 
       - name: "ビルド"
-        run: npm run build
+        run: pnpm run build
         working-directory: ${{ matrix.package-directory }}
 
       - name: "E2E テスト"

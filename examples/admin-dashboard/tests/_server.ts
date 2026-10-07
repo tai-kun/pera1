@@ -1,3 +1,3 @@
 export const PREVIEW_PORT = 4175;
 
-export const BASE_URL = `http://localhost:${PREVIEW_PORT}`;
+export const BASE_URL = `http://127.0.0.1:${PREVIEW_PORT}`;

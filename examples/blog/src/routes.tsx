@@ -3,6 +3,7 @@ import type { RouterRouteDefinition } from "@pera1/react";
 import AboutPage from "./pages/about.js";
 import CategoryPage, { loader as categoryLoader } from "./pages/categories/[category].js";
 import HomePage from "./pages/index.js";
+import NotFoundPage from "./pages/not-found.js";
 import PostsLayout from "./pages/posts/layout.js";
 import PostDetailPage, { loader as postLoader } from "./pages/posts/[postId].js";
 import PostsPage, { loader as postsLoader } from "./pages/posts/index.js";
@@ -52,5 +53,9 @@ export const routes: readonly RouterRouteDefinition[] = [
         component: AboutPage,
       },
     ],
+  },
+  {
+    path: "/*",
+    component: NotFoundPage,
   },
 ];
