@@ -1,12 +1,12 @@
 {
-  "name": "@pera1/vite",
+  "name": "@pera1/vite-plugin",
   "version": "0.0.0",
   "description": "",
   "homepage": "https://tai-kun.github.io/pera1",
   "license": "MIT",
   "repository": {
     "url": "https://github.com/tai-kun/pera1",
-    "directory": "packages/vite"
+    "directory": "packages/vite-plugin"
   },
   "bin": {
     "pera1-vite": "./dist/src/cli.js"

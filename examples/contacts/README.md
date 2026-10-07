@@ -15,7 +15,7 @@
 - `Vite 8`
 - `@pera1/core` (ルーティング基盤、`redirect` など)
 - `@pera1/react` (`BrowserRouter`、`Outlet`、`useLoaderData` など)
-- `@pera1/vite` (`src/pages` のファイル構成からルート定義を生成)
+- `@pera1/vite-plugin` (`src/pages` のファイル構成からルート定義を生成)
 - `TypeScript` (型チェックのみ、`noEmit`)
 
 ## はじめ方
@@ -38,7 +38,7 @@ pnpm --filter @pera1/example-contacts preview
 
 ## ルーティング
 
-`src/pages` のファイル構成から `@pera1/vite` がルート定義を生成します。`src/main.tsx` では `virtual:pera1/routes` から `routes` を読み込み、`BrowserRouter` へ渡しています。
+`src/pages` のファイル構成から `@pera1/vite-plugin` がルート定義を生成します。`src/main.tsx` では `virtual:pera1/routes` から `routes` を読み込み、`BrowserRouter` へ渡しています。
 
 | ファイル                     | パス                  | コンポーネント   | `loader` / `action`                                               |
 | ---------------------------- | --------------------- | ---------------- | ----------------------------------------------------------------- |
@@ -53,7 +53,7 @@ pnpm --filter @pera1/example-contacts preview
 
 ## ルートの型生成
 
-`@pera1/vite` はルートファイルごとに `.pera1/types/<パス>/+types/<ファイル名>.d.ts` を生成します。ルートファイルは `./+types/<ファイル名>` から `Route` を import でき、`Route.Path`、`Route.Params`、`Route.LoaderArgs`、`Route.ActionArgs` などの型を参照できます。
+`@pera1/vite-plugin` はルートファイルごとに `.pera1/types/<パス>/+types/<ファイル名>.d.ts` を生成します。ルートファイルは `./+types/<ファイル名>` から `Route` を import でき、`Route.Path`、`Route.Params`、`Route.LoaderArgs`、`Route.ActionArgs` などの型を参照できます。
 
 ```tsx
 import type { Route } from "./+types/$id";
@@ -86,7 +86,7 @@ export async function action({ params }: Route.ActionArgs) {
 examples/contacts/
 ├── index.html
 ├── package.json
-├── vite.config.ts # @pera1/vite プラグインを登録します
+├── vite.config.ts # @pera1/vite-plugin プラグインを登録します
 ├── .pera1/ # ルート型の生成先です
 │   ├── .gitignore # 生成物を git 管理対象外にします
 │   └── types/ # rootDirs に指定するディレクトリーです

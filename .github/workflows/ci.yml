@@ -15,7 +15,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        package-directory: ["packages/core", "packages/react", "packages/vite"]
+        package-directory: ["packages/core", "packages/react", "packages/vite-plugin"]
     timeout-minutes: 30
     runs-on: ubuntu-latest
     steps:
@@ -124,7 +124,7 @@ jobs:
       - name: "内部依存パッケージのビルド"
         run: |
           # examples は `@pera1/react`（推移的に `@pera1/core`）に依存し、
-          # `contacts` はさらに `@pera1/vite` に依存するため、依存順に明示してビルドします。
+          # `contacts` はさらに `@pera1/vite-plugin` に依存するため、依存順に明示してビルドします。
           echo "packages/core で内部依存パッケージ @pera1/core をビルドします"
           (cd packages/core && pnpm run build)
           echo
@@ -133,10 +133,10 @@ jobs:
           echo
           if jq -e '
             ((.dependencies // {}) + (.devDependencies // {}) + (.peerDependencies // {}) + (.optionalDependencies // {}))
-            | has("@pera1/vite")
+            | has("@pera1/vite-plugin")
           ' "${{ matrix.package-directory }}/package.json" > /dev/null; then
-            echo "packages/vite で内部依存パッケージ @pera1/vite をビルドします"
-            (cd packages/vite && pnpm run build)
+            echo "packages/vite-plugin で内部依存パッケージ @pera1/vite-plugin をビルドします"
+            (cd packages/vite-plugin && pnpm run build)
             echo
           fi
 

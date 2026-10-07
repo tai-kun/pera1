@@ -1,16 +1,16 @@
 ---
-title: "@pera1/vite"
+title: "@pera1/vite-plugin"
 description: "ファイルとディレクトリーの構成から、ルート定義とルート型を生成する Vite プラグインです。"
 ---
 
-`@pera1/vite` は、`src/pages` 配下のファイル構成をルーティングに変換する Vite プラグインです。ビルド時にルート定義を生成して `virtual:pera1/routes` として提供し、あわせて各ルートファイルが `./+types/<ファイル名>` から import できるルート型を生成します。
+`@pera1/vite-plugin` は、`src/pages` 配下のファイル構成をルーティングに変換する Vite プラグインです。ビルド時にルート定義を生成して `virtual:pera1/routes` として提供し、あわせて各ルートファイルが `./+types/<ファイル名>` から import できるルート型を生成します。
 
 ルート定義の配列を手で書く代わりに、ページをファイルとして追加するだけでルートが増えます。ルートの探索は開発サーバーが起動している間も監視され、ファイルの追加・変更・削除に追従します。
 
 ## インストール [#install]
 
 ```package-install
-npm i -D @pera1/vite
+npm i -D @pera1/vite-plugin
 ```
 
 `vite` と `@pera1/core` がピア依存関係です。`@pera1/react` を使っているアプリには `@pera1/core` が依存として入っているため、通常は追加インストールは不要です。`fs.globSync` を使うため Node.js 22.17 以上が必要です。
@@ -20,7 +20,7 @@ npm i -D @pera1/vite
 Vite の設定に `pera1()` を追加します。`react()` など他のプラグインと併用できます。
 
 ```ts vite.config.ts
-import pera1 from "@pera1/vite";
+import pera1 from "@pera1/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 
@@ -39,12 +39,12 @@ import { routes } from "virtual:pera1/routes";
 createRoot(document.getElementById("root")!).render(<BrowserRouter routes={routes} />);
 ```
 
-仮想モジュールの型を有効にするには、`tsconfig.json` の `types` に `@pera1/vite/client` を追加します。
+仮想モジュールの型を有効にするには、`tsconfig.json` の `types` に `@pera1/vite-plugin/client` を追加します。
 
 ```json tsconfig.json
 {
   "compilerOptions": {
-    "types": ["vite/client", "@pera1/vite/client"]
+    "types": ["vite/client", "@pera1/vite-plugin/client"]
   }
 }
 ```
@@ -78,7 +78,7 @@ src/pages/
     └── signup.tsx         -> /signup
 ```
 
-対象のファイルは `include` と `exclude` の glob パターンで決まります。詳しくは[ファイルの規約](/packages/vite/reference/file-conventions)を参照してください。
+対象のファイルは `include` と `exclude` の glob パターンで決まります。詳しくは[ファイルの規約](/packages/vite-plugin/reference/file-conventions)を参照してください。
 
 ## ルート型 [#typegen]
 
@@ -98,7 +98,7 @@ export function Component() {
 }
 ```
 
-型は `.pera1/types` に生成され、`tsconfig.json` の `rootDirs` でルートファイルの隣にあるかのように解決されます。設定と生成の流れは[ルート型](/packages/vite/reference/typegen)で説明しています。
+型は `.pera1/types` に生成され、`tsconfig.json` の `rootDirs` でルートファイルの隣にあるかのように解決されます。設定と生成の流れは[ルート型](/packages/vite-plugin/reference/typegen)で説明しています。
 
 ```json tsconfig.json
 {
@@ -125,8 +125,8 @@ export function Component() {
 
 ## 次に読む [#next]
 
-- [プラグインのオプション](/packages/vite/reference/plugin-options)
-- [ファイルの規約](/packages/vite/reference/file-conventions)
-- [ルート型](/packages/vite/reference/typegen)
-- [CLI](/packages/vite/reference/cli)
+- [プラグインのオプション](/packages/vite-plugin/reference/plugin-options)
+- [ファイルの規約](/packages/vite-plugin/reference/file-conventions)
+- [ルート型](/packages/vite-plugin/reference/typegen)
+- [CLI](/packages/vite-plugin/reference/cli)
 - [@pera1/core の概要](/packages/core)

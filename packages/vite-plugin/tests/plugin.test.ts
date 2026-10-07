@@ -22,7 +22,7 @@ function createTypesDirectory(): string {
 }
 
 /**
- * フィクスチャーをルートとして、@pera1/vite を適用した開発サーバーを作成します。
+ * フィクスチャーをルートとして、@pera1/vite-plugin を適用した開発サーバーを作成します。
  */
 async function createFixtureServer(): Promise<ViteDevServer> {
   return createServer({

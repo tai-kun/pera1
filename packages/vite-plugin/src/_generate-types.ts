@@ -195,14 +195,14 @@ function toTypeFilePath(
  */
 function generateTypeFileContent(sourcePath: string, routePath: string): string {
   return [
-    "// このファイルは @pera1/vite によって自動生成されます。編集しないでください。",
+    "// このファイルは @pera1/vite-plugin によって自動生成されます。編集しないでください。",
     "",
     "import type {",
     "  ActionFunctionArgs,",
     "  LoaderFunctionArgs,",
     "  RouteParams,",
     "  ShouldReloadFunctionArgs,",
-    '} from "@pera1/vite";',
+    '} from "@pera1/vite-plugin";',
     "",
     "/**",
     ` * \`${sourcePath}\` のルート型です。`,

@@ -22,7 +22,7 @@ export type {
 } from "@pera1/core";
 
 /**
- * `@pera1/vite` プラグインのオプションです。
+ * `@pera1/vite-plugin` プラグインのオプションです。
  */
 export type Pera1VitePluginOptions = {
   /**

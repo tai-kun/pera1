@@ -3,7 +3,7 @@ title: ルート型
 description: "各ルートファイルが import できる Route 型の生成先と、tsconfig の設定をまとめます。"
 ---
 
-`@pera1/vite` は、ルートファイルごとに `Route` 名前空間を持つ型定義を生成します。ルートファイルは、同じディレクトリーにある `+types` から型を import できます。
+`@pera1/vite-plugin` は、ルートファイルごとに `Route` 名前空間を持つ型定義を生成します。ルートファイルは、同じディレクトリーにある `+types` から型を import できます。
 
 ```tsx src/pages/contacts/$id.tsx
 import type { Route } from "./+types/$id";
@@ -60,7 +60,7 @@ TypeScript が `./+types/$id` を生成済みのファイルとして解決で�
 {
   "compilerOptions": {
     "rootDirs": [".", "./.pera1/types"],
-    "types": ["vite/client", "@pera1/vite/client"]
+    "types": ["vite/client", "@pera1/vite-plugin/client"]
   },
   "include": ["src", ".pera1/types"]
 }
@@ -82,7 +82,7 @@ TypeScript が `./+types/$id` を生成済みのファイルとして解決で�
 
 - 開発サーバーの起動時と、ページディレクトリーのファイル追加・変更・削除のときに自動で生成します。
 - `vite build` の開始時にも生成します。
-- CI などで型チェックだけを行う場合は、`tsc` の前に [CLI](/packages/vite/reference/cli) を実行してください。
+- CI などで型チェックだけを行う場合は、`tsc` の前に [CLI](/packages/vite-plugin/reference/cli) を実行してください。
 
 ```json package.json
 {
@@ -98,6 +98,6 @@ TypeScript が `./+types/$id` を生成済みのファイルとして解決で�
 
 ## 関連 [#related]
 
-- [CLI](/packages/vite/reference/cli) — `pera1-vite typegen`
-- [ファイルの規約](/packages/vite/reference/file-conventions) — ルートとファイルの対応
+- [CLI](/packages/vite-plugin/reference/cli) — `pera1-vite typegen`
+- [ファイルの規約](/packages/vite-plugin/reference/file-conventions) — ルートとファイルの対応
 - [RouteDefinition](/packages/core/reference/route-definitions) — 生成されるルート定義の型

@@ -1,8 +1,8 @@
 /**
- * `@pera1/vite` が提供する仮想モジュールの型定義です。
+ * `@pera1/vite-plugin` が提供する仮想モジュールの型定義です。
  *
  * アプリケーションの型チェックで参照するには、`tsconfig.json` の `compilerOptions.types` に
- * `@pera1/vite/client` を追加するか、ソースの先頭で `/// <reference types="@pera1/vite/client" />` を宣言します。
+ * `@pera1/vite-plugin/client` を追加するか、ソースの先頭で `/// <reference types="@pera1/vite-plugin/client" />` を宣言します。
  */
 declare module "virtual:pera1/routes" {
   import type { RouteDefinition } from "@pera1/core";

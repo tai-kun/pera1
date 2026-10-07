@@ -3,10 +3,10 @@ title: プラグインのオプション
 description: "pera1() のオプションと、仮想モジュールが提供する API をまとめます。"
 ---
 
-`@pera1/vite` の既定エクスポートは `pera1()` です。Vite の `plugins` に追加すると、ページディレクトリーの走査、仮想モジュール `virtual:pera1/routes` の提供、ルート型の生成を行います。
+`@pera1/vite-plugin` の既定エクスポートは `pera1()` です。Vite の `plugins` に追加すると、ページディレクトリーの走査、仮想モジュール `virtual:pera1/routes` の提供、ルート型の生成を行います。
 
 ```ts
-import pera1 from "@pera1/vite";
+import pera1 from "@pera1/vite-plugin";
 ```
 
 ## シグネチャ [#signature]
@@ -25,7 +25,7 @@ function pera1(options?: Pera1VitePluginOptions): Plugin;
 | `typesDir` | `string`            | `".pera1/types"`                                 | ルート型の生成先の、プロジェクトルートからの相対パスです。                                     |
 
 ```ts vite.config.ts
-import pera1 from "@pera1/vite";
+import pera1 from "@pera1/vite-plugin";
 import { defineConfig } from "vite";
 
 export default defineConfig({
@@ -58,17 +58,17 @@ import { routes } from "virtual:pera1/routes";
 | `routes`     | `readonly RouteDefinition<string, any>[]` | ファイル構成から生成したルート定義の配列です。 |
 | default      | 同上                                      | `routes` と同じ配列です。                      |
 
-型定義は `@pera1/vite/client` に含まれています。`tsconfig.json` の `types` へ追加するか、ソースの先頭で参照してください。
+型定義は `@pera1/vite-plugin/client` に含まれています。`tsconfig.json` の `types` へ追加するか、ソースの先頭で参照してください。
 
 ```json tsconfig.json
 {
   "compilerOptions": {
-    "types": ["vite/client", "@pera1/vite/client"]
+    "types": ["vite/client", "@pera1/vite-plugin/client"]
   }
 }
 ```
 
-生成したルート定義は、そのまま `BrowserRouter` や `createRouter` に渡せます。詳しいファイルの対応規則は[ファイルの規約](/packages/vite/reference/file-conventions)を参照してください。
+生成したルート定義は、そのまま `BrowserRouter` や `createRouter` に渡せます。詳しいファイルの対応規則は[ファイルの規約](/packages/vite-plugin/reference/file-conventions)を参照してください。
 
 ## 開発サーバーでの動き [#dev-server]
 
@@ -85,6 +85,6 @@ import { routes } from "virtual:pera1/routes";
 
 ## 関連 [#related]
 
-- [ファイルの規約](/packages/vite/reference/file-conventions) — ファイル名とルートの対応
-- [ルート型](/packages/vite/reference/typegen) — `Route` 型の生成と設定
-- [CLI](/packages/vite/reference/cli) — 型生成コマンド
+- [ファイルの規約](/packages/vite-plugin/reference/file-conventions) — ファイル名とルートの対応
+- [ルート型](/packages/vite-plugin/reference/typegen) — `Route` 型の生成と設定
+- [CLI](/packages/vite-plugin/reference/cli) — 型生成コマンド

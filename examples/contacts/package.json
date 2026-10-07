@@ -18,7 +18,7 @@
   },
   "devDependencies": {
     "@logtape/logtape": "^2.0.0",
-    "@pera1/vite": "workspace:*",
+    "@pera1/vite-plugin": "workspace:*",
     "@types/node": "24.13.6",
     "@types/react": "^19.2.15",
     "@types/react-dom": "^19.2.3",

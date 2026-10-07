@@ -140,9 +140,9 @@ importers:
       '@logtape/logtape':
         specifier: ^2.0.0
         version: 2.3.7
-      '@pera1/vite':
+      '@pera1/vite-plugin':
         specifier: workspace:*
-        version: link:../../packages/vite
+        version: link:../../packages/vite-plugin
       '@types/node':
         specifier: 24.13.6
         version: 24.13.6
@@ -459,7 +459,7 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.6)(@vitest/browser-playwright@4.1.11)(@vitest/coverage-v8@4.1.11)(vite@8.3.1(@types/node@24.13.6)(esbuild@0.28.2)(jiti@2.7.0)(yaml@2.9.1))
 
-  packages/vite:
+  packages/vite-plugin:
     devDependencies:
       '@pera1/core':
         specifier: workspace:*

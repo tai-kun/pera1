@@ -1,4 +1,4 @@
-import pera1 from "@pera1/vite";
+import pera1 from "@pera1/vite-plugin";
 import react from "@vitejs/plugin-react";
 import { defineConfig } from "vite";
 

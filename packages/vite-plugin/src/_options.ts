@@ -1,5 +1,5 @@
 /**
- * 解決済みの `@pera1/vite` プラグインオプションです。
+ * 解決済みの `@pera1/vite-plugin` プラグインオプションです。
  */
 export type ResolvedPluginOptions = {
   /**
@@ -50,4 +50,4 @@ export const DEFAULT_EXCLUDE: readonly string[] = [];
  *
  * パッケージ内の複数のモジュールから参照するため、`Symbol.for` で同一のシンボルを共有します。
  */
-export const PLUGIN_OPTIONS_SYMBOL: unique symbol = Symbol.for("@pera1/vite/plugin-options");
+export const PLUGIN_OPTIONS_SYMBOL: unique symbol = Symbol.for("@pera1/vite-plugin/plugin-options");

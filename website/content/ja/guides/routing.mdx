@@ -268,13 +268,13 @@ utils.replace("/contacts/42", { id: "7" }); // "/contacts/7"
 
 ## ファイル構成からルートを定義する [#file-based]
 
-ここまではルート定義の配列を手で書く方法を説明してきました。配列を書かずに、`src/pages` のファイルとディレクトリーの構成からルートを生成することもできます。[@pera1/vite](/packages/vite) を Vite に追加すると、`virtual:pera1/routes` からルート定義を import でき、ルートファイルごとに `Route` 型も生成されます。
+ここまではルート定義の配列を手で書く方法を説明してきました。配列を書かずに、`src/pages` のファイルとディレクトリーの構成からルートを生成することもできます。[@pera1/vite-plugin](/packages/vite-plugin) を Vite に追加すると、`virtual:pera1/routes` からルート定義を import でき、ルートファイルごとに `Route` 型も生成されます。
 
 ```tsx
 import { routes } from "virtual:pera1/routes";
 ```
 
-ファイル名の規約 (`_index`、`_layout`、`$id`、`$.`) と生成の流れは [@pera1/vite の概要](/packages/vite) で説明しています。内部で生成される定義は、このページで説明した配列と同じ形です。
+ファイル名の規約 (`_index`、`_layout`、`$id`、`$.`) と生成の流れは [@pera1/vite-plugin の概要](/packages/vite-plugin) で説明しています。内部で生成される定義は、このページで説明した配列と同じ形です。
 
 ## 次に読む [#next]
 

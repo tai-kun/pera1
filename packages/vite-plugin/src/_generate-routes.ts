@@ -145,7 +145,7 @@ export default function generateRoutesModule(args: GenerateRoutesArgs): string {
   const body = serializeNodes(args.nodes, context, "");
 
   return [
-    "// このファイルは @pera1/vite によって自動生成されます。編集しないでください。",
+    "// このファイルは @pera1/vite-plugin によって自動生成されます。編集しないでください。",
     ...context.imports,
     "",
     `export const routes = ${body};`,

@@ -58,7 +58,7 @@ test("ルートファイルに対応する型を生成する", ({ expect }) => {
     path.join(root, ".pera1/types/src/pages/contacts/+types/$id.d.ts"),
     "utf8",
   );
-  expect(content).toContain('} from "@pera1/vite";');
+  expect(content).toContain('} from "@pera1/vite-plugin";');
   expect(content).toContain('export type Path = "/contacts/:id";');
   expect(content).toContain("export type Params = RouteParams<Path>;");
   expect(content).toContain("export type LoaderArgs = LoaderFunctionArgs<Path>;");

@@ -85,7 +85,7 @@ function flattenPlugins(plugins: readonly unknown[]): readonly unknown[] {
 }
 
 /**
- * `vite.config` を読み込み、`@pera1/vite` プラグインのオプションを取得します。
+ * `vite.config` を読み込み、`@pera1/vite-plugin` プラグインのオプションを取得します。
  *
  * 設定ファイルがない場合や読み込みに失敗した場合は `undefined` を返し、呼び出し側の既定値を使います。
  *

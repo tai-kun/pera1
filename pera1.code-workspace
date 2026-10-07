@@ -13,8 +13,8 @@
       "path": "packages/react",
     },
     {
-      "name": "@pera1/vite",
-      "path": "packages/vite",
+      "name": "@pera1/vite-plugin",
+      "path": "packages/vite-plugin",
     },
     {
       "name": "examples",
