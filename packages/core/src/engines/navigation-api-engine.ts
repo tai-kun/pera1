@@ -205,6 +205,10 @@ export default class NavigationApiEngine implements IEngine {
     const handleNavigate = (event: NavigateEvent): void => {
       // 処理すべきでない通常のブラウザー固有のナビゲーション（ハッシュ変更、ファイルのダウンロードなど）は、標準の挙動を妨げないようにインターセプトせず即座にスルーします。
       // 参照: https://developer.mozilla.org/docs/Web/API/Navigation_API#handling_a_navigation_using_intercept
+      // 012: スクロールとフォーカスも既定ではブラウザー任せです。`intercept()` に
+      // `scroll` / `focusReset` 指定を渡さないため、ブラウザーの標準動作が保たれます。
+      // 先頭へのスクロールが必要な場合は `@pera1/react` の `scrollRestoration`
+      // プロパティー (`useScrollRestoration`) をオプトインで使ってください。
       if (
         !event.isTrusted ||
         !event.canIntercept ||

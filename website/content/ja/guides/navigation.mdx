@@ -141,6 +141,79 @@ function CurrentLocation() {
 
 `#section` だけが変わるリンクはインターセプトされず、ブラウザーが標準のスクロールを行います。`useNavigate` でハッシュを変えると、遷移自体はインターセプトされますが、スクロール位置の制御はブラウザーに任されます。
 
+## 遷移中の表示 [#pending]
+
+遷移の進行状況は `useNavigation` で宣言的に取得できます。戻り値の `state` は `"idle"`、`"loading"` (GET でローダー実行中)、`"submitting"` (POST でアクション実行中) のいずれかです。エンジンがアクション開始時に再描画を通知する仕組みを利用しており、ローダーの完了後はフックが自発的に `"idle"` へ戻します。
+
+```tsx
+import { useNavigation } from "@pera1/react";
+
+function PendingBar() {
+  const navigation = useNavigation();
+  if (navigation.state === "idle") {
+    return null;
+  }
+  return <p role="status">{navigation.state === "submitting" ? "送信中…" : "読み込み中…"}</p>;
+}
+```
+
+`Suspense` のフォールバックと役割が異なります。フォールバックは遅延データの「穴埋め表示」、こちらは遷移全体の「進行中表示」です。`Suspense` の内側に置くとフォールバックに置き換えられて見えなくなるため、必ず `Suspense` の外側 (レイアウト側) に置いてください。粒度の指針は次のとおりです。
+
+- ページ全体の切替: レイアウト直下の粗い `<Suspense fallback>` で穴埋めします。
+- 一覧の一部など区画の遅延: その区画だけを小さな `<Suspense>` で包み、画面のちらつきを抑えます。
+- 遷移全体の進行表示: `useNavigation` を `Suspense` の外側で使います。
+
+## スクロール復元 [#scroll-restoration]
+
+既定はブラウザー任せです。`NavigationApiEngine` は `intercept()` に `scroll` / `focusReset` 指定を渡さず、ハッシュ変化・ダウンロード・リロードをスルーするため、スクロールとフォーカスはブラウザーの標準動作のままです。
+
+先頭へのスクロールが必要な場合は、オプトインで有効化します。
+
+```tsx
+<BrowserRouter routes={routes} scrollRestoration />
+```
+
+`scrollRestoration` は `Router` と `BrowserRouter` のプロパティーで、`true` または `ScrollBehavior` (`"auto"`、`"instant"`、`"smooth"`) を受け付けます。履歴エントリーが変わるたびに先頭へスクロールします。ハッシュ付き URL と初回表示はブラウザーに任せて何もしません。戻る・進むでの位置復元までは行いません。細かい制御が必要な場合は、同じ動作をする `useScrollRestoration(true)` フックをレイアウト内で直接使ってください。
+
+```tsx
+import { useScrollRestoration } from "@pera1/react";
+
+function AppLayout() {
+  useScrollRestoration(true);
+  return <Outlet />;
+}
+```
+
+## フォーカス管理 [#focus]
+
+遷移後のフォーカス移動もブラウザー任せが既定です。タブ遷移やページネーションではフォーカスが `body` に残り、キーボード利用者が迷子になります。推奨パターンは、見出しに `tabIndex={-1}` を付けてプログラムからフォーカス可能にし、表示内容が変わるたびに見出しへ移動することです。初回表示ではフォーカスを奪いません。
+
+```tsx
+function SearchPage() {
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const isFirstRender = React.useRef(true);
+
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+  }, [q, page]);
+
+  return (
+    <section aria-labelledby="search-heading">
+      <h3 id="search-heading" ref={headingRef} tabIndex={-1}>
+        検索
+      </h3>
+      {/* ... */}
+    </section>
+  );
+}
+```
+
+`blog` の検索ページ (`examples/blog/src/pages/search.tsx`) が実例です。結果の件数表示には `aria-live="polite"` を付けて、読み上げにも変化を知らせます。
+
 ## 履歴の仕組み [#history]
 
 各遷移は Navigation API の履歴エントリーを作り、pera1 はエントリーごとにデータを保持します。「戻る」で前のエントリーに戻ると、同じ URL のローダー結果がキャッシュから復元されます。再取得が必要かどうかは[データ取得](/guides/data-loading)の `shouldReload` で制御します。

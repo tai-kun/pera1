@@ -23,6 +23,8 @@ function Router(props: RouterProps): React.ReactElement | null;
 | --- | --- | --- | --- |
 | `engine` | `IEngine<React.ComponentType<{}>>` | はい | ルーティングを実行するエンジンです。 |
 | `routes` | `readonly RouterRouteDefinition[]` | はい | アプリケーションのルート定義です。 |
+| `notFoundComponent` | `React.ComponentType<{}> \| undefined` | いいえ | 未マッチ時に描画するフォールバックです。 |
+| `scrollRestoration` | `boolean \| ScrollBehavior \| undefined` | いいえ | 遷移後に先頭へスクロールするオプトイン指定です。省略時はブラウザー任せです。 |
 
 ## ルート定義の型 [#route-definition]
 

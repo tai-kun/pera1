@@ -22,6 +22,7 @@ configureSync({
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
     {/* 006: 404 は一次 API の `notFoundComponent` で描画する。`/*` の手書きは不要 (併存時は `/*` が優先)。 */}
-    <BrowserRouter routes={routes} notFoundComponent={NotFoundPage} />
+    {/* 012: `scrollRestoration` はオプトインの先頭スクロール。省略時はブラウザー任せ。 */}
+    <BrowserRouter routes={routes} notFoundComponent={NotFoundPage} scrollRestoration />
   </React.StrictMode>,
 );

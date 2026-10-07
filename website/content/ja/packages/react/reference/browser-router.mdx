@@ -20,6 +20,8 @@ function BrowserRouter(props: BrowserRouterProps): React.ReactElement;
 | プロパティ | 型 | 必須 | 説明 |
 | --- | --- | --- | --- |
 | `routes` | `readonly RouterRouteDefinition[]` | はい | アプリケーションのルート定義です。 |
+| `notFoundComponent` | `React.ComponentType<{}> \| undefined` | いいえ | どのルートにもマッチしなかったときに描画するフォールバックです。 |
+| `scrollRestoration` | `boolean \| ScrollBehavior \| undefined` | いいえ | 遷移後に先頭へスクロールするオプトイン指定です。省略時はブラウザー任せです。 |
 
 ルート定義の型は [Router](/packages/react/reference/router#route-definition) で説明しています。
 
@@ -59,6 +61,8 @@ createRoot(document.getElementById("root")!).render(
 
 - `routes` はモジュールスコープなどに置き、レンダリングのたびに作り直さないでください。参照が変わると `Router` がルーターを作り直し、ローダーのキャッシュも失われます。
 - 内部リンクに専用コンポーネントはありません。通常の `<a>` と `<form>` が Navigation API を通じてルーターに届きます。
+- `scrollRestoration` を付けると遷移後に先頭へスクロールします。ハッシュ付き遷移と初回表示はブラウザーに任せます。詳細は[ナビゲーション](/guides/navigation#scroll-restoration)を参照してください。
+- 遷移中の表示は [`useNavigation`](/guides/navigation#pending) を `Suspense` の外側で使います。
 
 ## 関連 [#related]
 

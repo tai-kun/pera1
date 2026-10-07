@@ -14,6 +14,9 @@ import RouterContext, {
   type RouterRef,
   type RouterContextValue,
 } from "../contexts/router-context.js";
+import useScrollRestoration, {
+  type ScrollRestorationOption,
+} from "../hooks/use-scroll-restoration.js";
 
 /**
  * `ComponentRenderer` コンポーネントに渡されるプロパティーの型定義です。
@@ -115,6 +118,18 @@ export type RouterProps = {
    * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
    */
   notFoundComponent?: React.ComponentType<{}> | undefined;
+
+  /**
+   * 遷移後に先頭へスクロールするかを制御するオプトイン指定です (012)。
+   *
+   * - 省略・`false`: 何もしません (既定のブラウザー任せ)。
+   * - `true`: 先頭へスクロールします (`behavior: "auto"`)。
+   * - `ScrollBehavior`: 指定した振る舞いで先頭へスクロールします。
+   *
+   * ハッシュ付き遷移と初回表示はブラウザーに任せて何もしません。
+   * 戻る・進むでの位置復元までは行いません。
+   */
+  scrollRestoration?: ScrollRestorationOption | undefined;
 };
 
 /**
@@ -131,13 +146,25 @@ function warnMissingNotFound(): void {
 }
 
 /**
+ * `scrollRestoration` プロパティーを `RouterContext` 配下で有効化するための内部コンポーネントです。
+ *
+ * フックが `RouterContext` を必要とするため、`Router` 自身ではなく配下の子として呼びます。
+ */
+function ScrollRestorationHandler(props: {
+  readonly scrollRestoration: ScrollRestorationOption | undefined;
+}): null {
+  useScrollRestoration(props.scrollRestoration);
+  return null;
+}
+
+/**
  * 宣言的なルート定義と命令的なルーティング実行エンジンを仲介し、統合し、アプリケーションの最上位でルーティングのライフサイクルと状態管理を司るプロバイダーコンポーネントです。
  *
  * 状態管理の実体は `@pera1/core` の `createRouter` に委譲しており、本コンポーネントは React へのバインディングのみを担当します。
  * 将来の `@pera1/solid` でも同じコントローラーを再利用できます。
  */
 export default function Router(props: RouterProps) {
-  const { engine, routes: routesProp, notFoundComponent: NotFound } = props;
+  const { engine, routes: routesProp, notFoundComponent: NotFound, scrollRestoration } = props;
 
   // レンダリングをまたいで常に同一参照を維持し、子コンポーネントの不要な再レンダリングを防ぐためにメソッドを呼び出せるように、ルーターコアの外部参照実体を `useRef` で永続的に管理します。
   const routerRef = React.useRef({} as RouterRef["current"]);
@@ -197,6 +224,7 @@ export default function Router(props: RouterProps) {
       log.debug("一致するルートがないため notFoundComponent を描画します");
       return (
         <RouterContext value={router.context}>
+          <ScrollRestorationHandler scrollRestoration={scrollRestoration} />
           <NotFound />
         </RouterContext>
       );
@@ -212,6 +240,7 @@ export default function Router(props: RouterProps) {
 
   return (
     <RouterContext value={router.context}>
+      <ScrollRestorationHandler scrollRestoration={scrollRestoration} />
       {/* マッチしたルート配列は詳細度の高い「子 -> 親」の順で並んでいるため、React のネストレイアウト構造に適合させるために `.toReversed()` で「親 -> 子」の順に反転させてからレンダラーへ渡します。*/}
       <RouteRenderer routes={routes.toReversed()} />
     </RouterContext>

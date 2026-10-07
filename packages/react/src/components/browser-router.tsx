@@ -2,6 +2,7 @@ import { NavigationApiEngine } from "@pera1/core";
 
 import log from "../_logger.js";
 import useSingleton from "../hooks/_use-singleton.js";
+import type { ScrollRestorationOption } from "../hooks/use-scroll-restoration.js";
 import Router, { type RouterRouteDefinition } from "./router.jsx";
 
 /**
@@ -21,6 +22,17 @@ export type BrowserRouterProps = {
    * どちらもない場合は従来通り `null` を描画し、開発モードでは警告を出します。
    */
   notFoundComponent?: React.ComponentType<{}> | undefined;
+
+  /**
+   * 遷移後に先頭へスクロールするかを制御するオプトイン指定です (012)。
+   *
+   * - 省略・`false`: 何もしません (既定のブラウザー任せ)。
+   * - `true`: 先頭へスクロールします (`behavior: "auto"`)。
+   * - `ScrollBehavior`: 指定した振る舞いで先頭へスクロールします。
+   *
+   * ハッシュ付き遷移と初回表示はブラウザーに任せて何もしません。
+   */
+  scrollRestoration?: ScrollRestorationOption | undefined;
 };
 
 /**
@@ -31,11 +43,18 @@ export type BrowserRouterProps = {
  * @param props アプリケーションに組み込むルート定義の配列です。
  */
 export default function BrowserRouter(props: BrowserRouterProps): React.ReactElement {
-  const { routes, notFoundComponent } = props;
+  const { routes, notFoundComponent, scrollRestoration } = props;
   const engine = useSingleton(() => {
     log.debug("NavigationApiEngine を作成します");
     return new NavigationApiEngine();
   });
 
-  return <Router engine={engine} routes={routes} notFoundComponent={notFoundComponent} />;
+  return (
+    <Router
+      engine={engine}
+      routes={routes}
+      notFoundComponent={notFoundComponent}
+      scrollRestoration={scrollRestoration}
+    />
+  );
 }

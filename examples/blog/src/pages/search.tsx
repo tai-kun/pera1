@@ -17,6 +17,22 @@ export default function SearchPage() {
   const { q, page, total, totalPages, posts } = React.use(useLoaderData<typeof loader>());
   const navigate = useNavigate();
 
+  // 遷移後のフォーカス管理の推奨パターン (012):
+  // 見出しに `tabIndex={-1}` を付けてプログラムからフォーカス可能にし、
+  // 検索条件 (`q` / `page`) が変わるたびに見出しへ移動します。
+  // タブ遷移やページネーションではフォーカスが body に残ると
+  // キーボード利用者が迷子になるため、この移動で現在位置を知らせます。
+  // 初回表示ではフォーカスを奪わないよう何もしません。
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const isFirstRender = React.useRef(true);
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+  }, [q, page]);
+
   function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
     const formData = new FormData(event.currentTarget);
@@ -27,8 +43,10 @@ export default function SearchPage() {
   const encodedQ = encodeURIComponent(q);
 
   return (
-    <section>
-      <h3>検索</h3>
+    <section aria-labelledby="search-heading">
+      <h3 id="search-heading" ref={headingRef} tabIndex={-1}>
+        検索
+      </h3>
       <form role="search" onSubmit={handleSubmit}>
         <label>
           キーワード
@@ -36,7 +54,7 @@ export default function SearchPage() {
         </label>
         <button type="submit">検索</button>
       </form>
-      <p>
+      <p aria-live="polite">
         キーワード「{q}」の検索結果: 全 {total} 件 (ページ {page} / {totalPages})
       </p>
       {posts.length === 0 ? (
@@ -50,7 +68,7 @@ export default function SearchPage() {
           ))}
         </ul>
       )}
-      <nav>
+      <nav aria-label="検索結果のページ送り">
         {page > 1 ? <a href={`/search?q=${encodedQ}&page=${page - 1}`}>前のページ</a> : null}
         {page > 1 && page < totalPages ? " | " : null}
         {page < totalPages ? <a href={`/search?q=${encodedQ}&page=${page + 1}`}>次のページ</a> : null}

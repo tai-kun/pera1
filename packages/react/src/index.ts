@@ -33,6 +33,9 @@ export { default as useLoaderData } from "./hooks/use-loader-data.js";
 export type * from "./hooks/use-navigate.js";
 export { default as useNavigate } from "./hooks/use-navigate.js";
 
+export type * from "./hooks/use-navigation.js";
+export { default as useNavigation } from "./hooks/use-navigation.js";
+
 export type * from "./hooks/use-params.js";
 export { default as useParams } from "./hooks/use-params.js";
 
@@ -44,6 +47,9 @@ export { default as useRoutePath } from "./hooks/use-route-path.js";
 
 export type * from "./hooks/use-router-context.js";
 export { default as useRouterContext } from "./hooks/use-router-context.js";
+
+export type * from "./hooks/use-scroll-restoration.js";
+export { default as useScrollRestoration } from "./hooks/use-scroll-restoration.js";
 
 export type * from "./hooks/use-submit.js";
 export { default as useSubmit } from "./hooks/use-submit.js";
