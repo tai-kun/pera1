@@ -138,11 +138,11 @@ export default function startAction(
         }
       })()
         .then((value) => proxy.resolve(value))
-        .catch((reason) => {
+        .catch((ex) => {
           log.debug("アクションが失敗しました（urlPath: {urlPath}）", {
             urlPath: matchedUrlPath,
           });
-          proxy.reject(reason);
+          proxy.reject(ex);
         }); // 例外が発生した場合はそのまま下流へ伝播させます。
 
       break;

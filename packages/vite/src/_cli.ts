@@ -155,8 +155,8 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
         help: { type: "boolean", short: "h" },
       },
     }));
-  } catch (error) {
-    io.writeError(`${error instanceof Error ? error.message : String(error)}\n\n${helpText}`);
+  } catch (ex) {
+    io.writeError(`${ex instanceof Error ? ex.message : String(ex)}\n\n${helpText}`);
     return 1;
   }
 
@@ -200,9 +200,9 @@ export default async function run(argv: readonly string[], io: CliIo): Promise<n
       `ルート型を生成しました（生成: ${result.written.length} 件、削除: ${result.removed.length} 件）。\n`,
     );
     return 0;
-  } catch (error) {
+  } catch (ex) {
     io.writeError(
-      `ルート型の生成に失敗しました: ${error instanceof Error ? error.message : String(error)}\n`,
+      `ルート型の生成に失敗しました: ${ex instanceof Error ? ex.message : String(ex)}\n`,
     );
     return 1;
   }

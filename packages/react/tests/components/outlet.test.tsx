@@ -109,8 +109,8 @@ describe("Outlet", () => {
       await act(async () => {
         root.render(<Outlet />);
       });
-    } catch (e) {
-      error = e;
+    } catch (ex) {
+      error = ex;
     }
     expect(error).toBeInstanceOf(RouteContextMissingError);
   });

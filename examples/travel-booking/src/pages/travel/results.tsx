@@ -31,8 +31,8 @@ export default function ResultsPage() {
     try {
       const booking = await createBooking({ from, to, date, adults, flightId });
       navigate(`/travel/booking/${booking.id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "予約の作成に失敗しました。");
+    } catch (ex) {
+      setError(ex instanceof Error ? ex.message : "予約の作成に失敗しました。");
     }
   }
 

@@ -27,8 +27,8 @@ export default function hideLoaderRedirect(raw: NinjaPromise<unknown>): NinjaPro
       if (!(value instanceof RedirectResponse)) {
         resolvers.resolve(value);
       }
-    } catch (reason) {
-      resolvers.reject(reason);
+    } catch (ex) {
+      resolvers.reject(ex);
     }
   })();
   return resolvers.promise;

@@ -31,8 +31,8 @@ export default function ConfirmPage() {
     try {
       const order = await createOrder();
       navigate(`/orders/${order.id}`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "注文の作成に失敗しました。");
+    } catch (ex) {
+      setError(ex instanceof Error ? ex.message : "注文の作成に失敗しました。");
     }
   }
 

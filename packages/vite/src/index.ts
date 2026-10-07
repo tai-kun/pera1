@@ -134,9 +134,9 @@ export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
       for (const warning of result.warnings) {
         warn(warning);
       }
-    } catch (error) {
+    } catch (ex) {
       warn(
-        `ルート型の生成に失敗しました: ${error instanceof Error ? error.message : String(error)}`,
+        `ルート型の生成に失敗しました: ${ex instanceof Error ? ex.message : String(ex)}`,
       );
     }
   }

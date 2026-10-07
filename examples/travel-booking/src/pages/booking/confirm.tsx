@@ -55,8 +55,8 @@ export default function ConfirmPage() {
     try {
       const confirmed = await confirmBooking(bookingId);
       navigate(`/travel/booking/${confirmed.id}/complete`);
-    } catch (e) {
-      setError(e instanceof Error ? e.message : "予約の確定に失敗しました。");
+    } catch (ex) {
+      setError(ex instanceof Error ? ex.message : "予約の確定に失敗しました。");
     }
   }
 

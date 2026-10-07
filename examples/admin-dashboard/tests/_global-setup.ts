@@ -38,9 +38,9 @@ export default async function setup(): Promise<() => Promise<void>> {
 
   try {
     await waitForPort(PREVIEW_PORT, 30_000);
-  } catch (error) {
+  } catch (ex) {
     server.kill();
-    throw error;
+    throw ex;
   }
 
   console.log(`プレビューサーバーを起動しました (${BASE_URL})。`);

@@ -112,9 +112,9 @@ import { ErrorBase } from "@pera1/core";
 
 try {
   runTask();
-} catch (error) {
-  if (error instanceof ErrorBase) {
-    console.error(error.meta);
+} catch (ex) {
+  if (ex instanceof ErrorBase) {
+    console.error(ex.meta);
   }
 }
 ```

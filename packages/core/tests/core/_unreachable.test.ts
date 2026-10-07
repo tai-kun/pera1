@@ -18,10 +18,10 @@ describe("unreachable", () => {
     expect(() => unreachable(value as never)).toThrow(UnreachableError);
     try {
       unreachable(value as never);
-    } catch (error) {
+    } catch (ex) {
       // 検証
-      expect(error).toBeInstanceOf(UnreachableError);
-      expect((error as UnreachableError).meta).toStrictEqual({ value });
+      expect(ex).toBeInstanceOf(UnreachableError);
+      expect((ex as UnreachableError).meta).toStrictEqual({ value });
     }
   });
 
@@ -32,9 +32,9 @@ describe("unreachable", () => {
     // 実行
     try {
       unreachable(value);
-    } catch (error) {
+    } catch (ex) {
       // 検証
-      expect((error as UnreachableError).meta).toStrictEqual({ value: 123 });
+      expect((ex as UnreachableError).meta).toStrictEqual({ value: 123 });
     }
   });
 });
