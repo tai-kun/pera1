@@ -135,9 +135,7 @@ export default function pera1(options: Pera1VitePluginOptions = {}): Plugin {
         warn(warning);
       }
     } catch (ex) {
-      warn(
-        `ルート型の生成に失敗しました: ${ex instanceof Error ? ex.message : String(ex)}`,
-      );
+      warn(`ルート型の生成に失敗しました: ${ex instanceof Error ? ex.message : String(ex)}`);
     }
   }
 
