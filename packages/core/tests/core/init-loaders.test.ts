@@ -372,10 +372,7 @@ describe("initLoaders のエッジケース", () => {
     expect(map.has(loader)).toBe(true);
   });
 
-  test("RedirectResponse は解決されず idle() で回収される", async ({
-    expect,
-    signal,
-  }) => {
+  test("RedirectResponse は解決されず idle() で回収される", async ({ expect, signal }) => {
     // 準備
     const redirectResponse = new RedirectResponse("/login");
     // oxlint-disable-next-line vitest/require-mock-type-parameters

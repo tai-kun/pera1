@@ -1,11 +1,11 @@
 import { describe, test, vi } from "vitest";
 
+import processRoutes from "../../src/core/_process-routes.js";
 import {
   createBarePathLoader,
   findIndexChildTarget,
   resolveRedirectDestination,
 } from "../../src/core/_redirect.js";
-import processRoutes from "../../src/core/_process-routes.js";
 import type { HistoryEntryId } from "../../src/core/history-entry-id-schema.js";
 import type { HistoryEntryUrl } from "../../src/core/history-entry-url-schema.js";
 import matchRoutes from "../../src/core/match-routes.js";

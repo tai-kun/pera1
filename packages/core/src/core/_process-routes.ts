@@ -70,17 +70,13 @@ function resolveFullPath(
  * @param definition 検証対象のルート定義です。
  * @param fullPath 解決済みの完全パス文字列です。
  */
-function warnIfIndexHasChildren(
-  definition: RouteDefinition<string, any>,
-  fullPath: string,
-): void {
+function warnIfIndexHasChildren(definition: RouteDefinition<string, any>, fullPath: string): void {
   const children = definition.children;
   if (definition.index === true && Array.isArray(children) && children.length > 0) {
-    if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
-      return;
-    }
-
-    log.warn("index ルートは children を持てません（path: {path}）。children は無視して展開を継続します。", { path: fullPath });
+    log.warn(
+      "index ルートは children を持てません（path: {path}）。children は無視して展開を継続します。",
+      { path: fullPath },
+    );
   }
 }
 
@@ -104,7 +100,7 @@ type FlattenedEntry<TComponent> = {
  */
 function flattenRouteDefinitions<TComponent>(
   definitions: readonly RouteDefinition<string, TComponent>[],
-  parentPath: string | undefined = undefined,
+  parentPath?: string,
 ): FlattenedEntry<TComponent>[] {
   const flattened: FlattenedEntry<TComponent>[] = [];
   for (const definition of definitions) {
@@ -146,43 +142,45 @@ export default function processRoutes<TComponent = any>(
     index: definition.index === true,
     order,
   }));
-  return entries
-    .map(({ definition: route, fullPath, index }) => {
-      const utils = new RoutePatternUtils(fullPath, {
-        // インデックスルートでないときは子ルートへの前方一致を有効にします。
-        allowChild: !index,
-      });
-      // 裸パス誘導の対象を子の index から自動決定します。
-      // 前方一致そのものは変えず、実行時に完全一致だけを誘導します。
-      let loader = route.loader;
-      let shouldReload = route.shouldReload;
-      if (!index) {
-        const target = findIndexChildTarget(entries, fullPath);
-        if (target !== undefined) {
-          const composed = createBarePathLoader({ fullPath, target, loader, shouldReload });
-          loader = composed.loader;
-          shouldReload = composed.shouldReload;
+  return (
+    entries
+      .map(({ definition: route, fullPath, index }) => {
+        const utils = new RoutePatternUtils(fullPath, {
+          // インデックスルートでないときは子ルートへの前方一致を有効にします。
+          allowChild: !index,
+        });
+        // 裸パス誘導の対象を子の index から自動決定します。
+        // 前方一致そのものは変えず、実行時に完全一致だけを誘導します。
+        let loader = route.loader;
+        let shouldReload = route.shouldReload;
+        if (!index) {
+          const target = findIndexChildTarget(entries, fullPath);
+          if (target !== undefined) {
+            const composed = createBarePathLoader({ fullPath, target, loader, shouldReload });
+            loader = composed.loader;
+            shouldReload = composed.shouldReload;
+          }
         }
-      }
 
-      return {
-        path: utils.route,
-        index,
-        utils,
-        action: route.action,
-        loader,
-        // オブジェクト形式またはモジュール形式の双方を評価して描画対象を確定します。
-        // モジュール形式は名前空間の展開 (`{ path, ...module }`) で `Symbol.toStringTag` が
-        // 失われるため、`default` エクスポートの有無そのもので判定します。
-        component:
-          typeof route.component === "function"
-            ? route.component
-            : "default" in route && typeof route.default === "function"
-              ? route.default
-              : undefined,
-        shouldReload: shouldReload || ((args) => args.defaultShouldReload),
-      };
-    })
-    // 詳細度が高い順にソートします。
-    .sort((a, b) => compareRoutePaths(a.path, b.path));
+        return {
+          path: utils.route,
+          index,
+          utils,
+          action: route.action,
+          loader,
+          // オブジェクト形式またはモジュール形式の双方を評価して描画対象を確定します。
+          // モジュール形式は名前空間の展開 (`{ path, ...module }`) で `Symbol.toStringTag` が
+          // 失われるため、`default` エクスポートの有無そのもので判定します。
+          component:
+            typeof route.component === "function"
+              ? route.component
+              : "default" in route && typeof route.default === "function"
+                ? route.default
+                : undefined,
+          shouldReload: shouldReload || ((args) => args.defaultShouldReload),
+        };
+      })
+      // 詳細度が高い順にソートします。
+      .sort((a, b) => compareRoutePaths(a.path, b.path))
+  );
 }

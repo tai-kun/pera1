@@ -89,10 +89,10 @@ describe("createRouter", () => {
     // 準備: update 関数を回収できるスタブエンジン
     let update!: IEngine.StartArgs["update"];
     const engine = createStubEngine();
-    const start = engine.start;
+    const start = engine.start.bind(engine);
     engine.start = ((args: IEngine.StartArgs) => {
       update = args.update;
-      return (start as (args: IEngine.StartArgs) => () => void).call(engine, args);
+      return (start as (args: IEngine.StartArgs) => () => void)(args);
     }) as IEngine["start"];
 
     const routeA = { path: "/a" };

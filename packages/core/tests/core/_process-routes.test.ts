@@ -377,8 +377,12 @@ describe("children による明示的ネストの展開", () => {
     ];
 
     // 実行
-    const flatPaths = processRoutes(flat).map((r) => `${r.path} index=${r.index}`).sort();
-    const nestedPaths = processRoutes(nested).map((r) => `${r.path} index=${r.index}`).sort();
+    const flatPaths = processRoutes(flat)
+      .map((r) => `${r.path} index=${r.index}`)
+      .sort();
+    const nestedPaths = processRoutes(nested)
+      .map((r) => `${r.path} index=${r.index}`)
+      .sort();
 
     // 検証
     expect(nestedPaths).toStrictEqual(flatPaths);
@@ -407,9 +411,7 @@ describe("children による明示的ネストの展開", () => {
 
     try {
       // 実行
-      const result = processRoutes([
-        { path: "/a", index: true, children: [{ path: "b" }] },
-      ]);
+      const result = processRoutes([{ path: "/a", index: true, children: [{ path: "b" }] }]);
 
       // 検証
       expect(spy).toHaveBeenCalledTimes(1);
@@ -438,7 +440,10 @@ describe("children による明示的ネストの展開", () => {
           {
             path: "posts",
             component,
-            children: [{ index: true, component }, { path: ":postId", component }],
+            children: [
+              { index: true, component },
+              { path: ":postId", component },
+            ],
           },
         ],
       },
@@ -449,9 +454,7 @@ describe("children による明示的ネストの展開", () => {
     // 実行と検証: 複数の URL でマッチ順 (子→親) が完全に一致する。
     for (const pathname of ["/", "/posts", "/posts/42"]) {
       const url = new URL("https://example.com" + pathname);
-      const flatMatched = matchRoutes(flatRoutes, url)?.map(
-        (r) => `${r.path} index=${r.index}`,
-      );
+      const flatMatched = matchRoutes(flatRoutes, url)?.map((r) => `${r.path} index=${r.index}`);
       const nestedMatched = matchRoutes(nestedRoutes, url)?.map(
         (r) => `${r.path} index=${r.index}`,
       );

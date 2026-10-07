@@ -272,10 +272,7 @@ describe("GET 遷移時の再読み込み制御", () => {
     expect(mockLoader).toHaveBeenCalledTimes(1);
   });
 
-  test("同一パターンで params 値が同じなら既定値は false のままである", ({
-    expect,
-    signal,
-  }) => {
+  test("同一パターンで params 値が同じなら既定値は false のままである", ({ expect, signal }) => {
     // 準備
     const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("new-data"));
     const cachedPromise = NinjaPromise.resolve("old-data");
@@ -325,10 +322,7 @@ describe("GET 遷移時の再読み込み制御", () => {
     expect(storedPromise).toBe(cachedPromise);
   });
 
-  test("子の params 変化では静的な親ルートの既定値は false のままである", ({
-    expect,
-    signal,
-  }) => {
+  test("子の params 変化では静的な親ルートの既定値は false のままである", ({ expect, signal }) => {
     // 準備
     const parentLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("parent"));
     const childLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("child-new"));

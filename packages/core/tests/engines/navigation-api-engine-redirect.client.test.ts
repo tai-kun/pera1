@@ -192,10 +192,7 @@ describe("GET 遷移時の loader redirect", () => {
 });
 
 function createStore(): Map<unknown, Map<unknown, unknown>> & {
-  getOrInsertComputed: (
-    key: unknown,
-    insert: () => Map<unknown, unknown>,
-  ) => Map<unknown, unknown>;
+  getOrInsertComputed: (key: unknown, insert: () => Map<unknown, unknown>) => Map<unknown, unknown>;
 } {
   const store = new Map() as Map<unknown, Map<unknown, unknown>> & {
     getOrInsertComputed: (
@@ -204,14 +201,14 @@ function createStore(): Map<unknown, Map<unknown, unknown>> & {
     ) => Map<unknown, unknown>;
   };
 
-  store.getOrInsertComputed = (key, insert) => {
+  store.getOrInsertComputed = (key: unknown, insert: (key: unknown) => Map<unknown, unknown>) => {
     const existing = store.get(key);
 
     if (existing) {
       return existing;
     }
 
-    const inserted = insert();
+    const inserted = insert(key);
 
     store.set(key, inserted);
 

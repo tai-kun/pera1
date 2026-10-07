@@ -139,11 +139,7 @@ describe("Router", () => {
     // 実行
     await act(async () => {
       root.render(
-        <Router
-          engine={engine}
-          routes={[{ path: "/exists" }]}
-          notFoundComponent={NotFound}
-        />,
+        <Router engine={engine} routes={[{ path: "/exists" }]} notFoundComponent={NotFound} />,
       );
     });
 
@@ -220,9 +216,7 @@ describe("Router", () => {
     expect(container.textContent).toBe("hello");
   });
 
-  test("マッチせず notFoundComponent もないとき開発モードで警告する (006)", async ({
-    expect,
-  }) => {
+  test("マッチせず notFoundComponent もないとき開発モードで警告する (006)", async ({ expect }) => {
     // 準備
     await using cleanup = new AsyncDisposableStack();
 
@@ -259,7 +253,7 @@ describe("Router", () => {
     // 検証: 従来通り null 描画 + 開発警告
     expect(container.innerHTML).toBe("");
     expect(spy).toHaveBeenCalledTimes(1);
-    expect(String(warnings[0]?.[0])).toContain("notFoundComponent");
+    expect(String(spy.mock.calls[0]?.[0])).toContain("notFoundComponent");
   });
 
   test("ネストしたルートで outlet が機能する", async ({ expect }) => {

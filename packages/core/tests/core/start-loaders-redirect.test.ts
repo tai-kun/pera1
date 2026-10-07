@@ -36,9 +36,7 @@ describe("startLoaders のリダイレクト検出", () => {
   }) => {
     // 準備
     const redirectResponse = new RedirectResponse("/login");
-    const mockLoader = vi
-      .fn<LoaderFunction>()
-      .mockReturnValue(Promise.resolve(redirectResponse));
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve(redirectResponse));
     const dataStore = new Map();
     const args: any = {
       prevRoutes: [],
@@ -57,10 +55,7 @@ describe("startLoaders のリダイレクト検出", () => {
     expect(redirectTo).toBe(redirectResponse);
   });
 
-  test("通常のデータを返す場合、redirectTo は undefined になる", async ({
-    expect,
-    signal,
-  }) => {
+  test("通常のデータを返す場合、redirectTo は undefined になる", async ({ expect, signal }) => {
     // 準備
     const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve({ user: "alice" }));
     const dataStore = new Map();
@@ -138,10 +133,7 @@ describe("startLoaders のリダイレクト検出", () => {
     expect(stored!.status).toBe("pending");
   });
 
-  test("ローダーが存在しない場合、redirectTo は undefined になる", async ({
-    expect,
-    signal,
-  }) => {
+  test("ローダーが存在しない場合、redirectTo は undefined になる", async ({ expect, signal }) => {
     // 準備
     const dataStore = new Map();
     const args: any = {

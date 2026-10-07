@@ -162,7 +162,8 @@ describe("useNavigation", () => {
     function loader() {
       return "ok";
     }
-    const { promise, resolve } = NinjaPromise.withResolvers<string>();
+    const resolvers = NinjaPromise.withResolvers<string>();
+    const promise = resolvers.promise;
     const entryId = "550e8400-e29b-41d4-a716-446655440000";
     const routerRef = {
       current: {
@@ -202,7 +203,7 @@ describe("useNavigation", () => {
 
     // 実行 - ローダーを解決し、フックの自発的な再描画を待つ
     await act(async () => {
-      resolve("ok");
+      resolvers.resolve("ok");
       await promise;
       // `Promise.allSettled` の後続タスクを流す
       await Promise.resolve();

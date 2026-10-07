@@ -33,9 +33,7 @@ export type ScrollRestorationOption = boolean | ScrollBehavior;
  * @param scrollRestoration 有効化フラグまたは `ScrollBehavior` です。
  * 省略・`false` では何もしません。
  */
-export default function useScrollRestoration(
-  scrollRestoration?: ScrollRestorationOption | undefined,
-): void {
+export default function useScrollRestoration(scrollRestoration?: ScrollRestorationOption): void {
   // `useSyncExternalStore` の `getSnapshot` はキャッシュされた値を返す必要があるため、プリミティブな ID と href を別々に購読します (オブジェクト生成は無限ループの原因になります)。
   const entryId = useRouterContext(
     (router) =>

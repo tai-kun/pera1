@@ -159,11 +159,9 @@ export default function startLoaders(
 
   // 現在マッチしているすべてのルートセグメントを個別に精査します。
   for (const currentRoute of currentRoutes) {
-    const {
-      loader: currentLoader,
-      params: currentParams = {},
-      shouldReload,
-    } = currentRoute;
+    const { loader: currentLoader, shouldReload } = currentRoute;
+    // `params` は型上必須ですが、未定義の偽装ルートに備えて空で補います。
+    const currentParams = currentRoute.params ?? {};
     const prevParams: RouteParams = prevParamsByPath.get(currentRoute.path) ?? {};
     // ローダー関数が定義されていないルートセグメントはスキップします。
     if (typeof currentLoader !== "function") {

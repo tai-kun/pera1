@@ -25,7 +25,7 @@ function createRouterCtx(entry: { id: string; url: URL; index: number }) {
     },
   };
   const notify = () => {
-    for (const cb of [...listeners]) {
+    for (const cb of listeners) {
       cb();
     }
   };

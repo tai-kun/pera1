@@ -1,6 +1,6 @@
 import type { ReadonlyURL } from "./readonly-url.types.js";
-import type { Route, RouteParams } from "./route.types.js";
 import RoutePatternUtils from "./route-pattern-utils.js";
+import type { Route, RouteParams } from "./route.types.js";
 
 /**
  * URL とのマッチングが確認されたルート情報です。
@@ -134,8 +134,7 @@ function applyStaticPriorityFilter<TComponent>(
   };
 
   const entries: Entry[] = matched.map((route) => {
-    const pattern =
-      typeof route.path === "string" ? route.path : (route.utils as any)?.route;
+    const pattern = typeof route.path === "string" ? route.path : (route.utils as any)?.route;
     if (typeof pattern !== "string") {
       return { route, segments: undefined, exact: false, wildcard: false };
     }

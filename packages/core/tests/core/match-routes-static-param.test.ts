@@ -102,10 +102,9 @@ describe("static と param の兄弟競合 (issue 005)", () => {
         ],
       },
     ]);
-    const staticMatched = matchRoutes(
-      routes,
-      new URL("https://example.com/app/projects/new"),
-    )?.map((r) => r.path);
+    const staticMatched = matchRoutes(routes, new URL("https://example.com/app/projects/new"))?.map(
+      (r) => r.path,
+    );
     const paramMatched = matchRoutes(
       routes,
       new URL("https://example.com/app/projects/123/tasks"),

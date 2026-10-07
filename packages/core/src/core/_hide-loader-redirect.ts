@@ -20,16 +20,16 @@ export default function hideLoaderRedirect(raw: NinjaPromise<unknown>): NinjaPro
     return raw;
   }
 
-  const { promise, resolve, reject } = NinjaPromise.withResolvers<unknown>();
+  const resolvers = NinjaPromise.withResolvers<unknown>();
   void (async () => {
     try {
       const value = await raw;
       if (!(value instanceof RedirectResponse)) {
-        resolve(value);
+        resolvers.resolve(value);
       }
     } catch (reason) {
-      reject(reason);
+      resolvers.reject(reason);
     }
   })();
-  return promise;
+  return resolvers.promise;
 }

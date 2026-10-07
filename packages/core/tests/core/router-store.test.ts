@@ -1,7 +1,11 @@
 import { NinjaPromise } from "ninja-promise";
 import { describe, test } from "vitest";
 
-import { selectActionData, selectLoaderData, selectNavigationState } from "../../src/core/router-store.js";
+import {
+  selectActionData,
+  selectLoaderData,
+  selectNavigationState,
+} from "../../src/core/router-store.js";
 
 describe("selectActionData", () => {
   test("対応するデータを取得できる", ({ expect }) => {

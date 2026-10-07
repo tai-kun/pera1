@@ -1,3 +1,4 @@
+/// <reference types="node" />
 import type {
   IEngine,
   MatchedRoute,
@@ -139,7 +140,9 @@ function warnMissingNotFound(): void {
     return;
   }
 
-  log.warn("一致するルートがなく notFoundComponent も未定義です。404 画面を表示するには Router に notFoundComponent を渡してください。");
+  log.warn(
+    "一致するルートがなく notFoundComponent も未定義です。404 画面を表示するには Router に notFoundComponent を渡してください。",
+  );
 }
 
 /**
