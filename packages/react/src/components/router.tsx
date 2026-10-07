@@ -133,16 +133,14 @@ export type RouterProps = {
 };
 
 /**
- * 未マッチ (404 相当) かつフォールバック未定義のときに開発モードでのみ警告します。
+ * 未マッチかつフォールバック未定義のときに開発モードでのみ警告します。
  */
 function warnMissingNotFound(): void {
   if (typeof process !== "undefined" && process.env?.["NODE_ENV"] === "production") {
     return;
   }
-  console.warn(
-    `[pera1] No route matched and "notFoundComponent" is not defined. ` +
-      `The router renders null. Pass "notFoundComponent" to Router/BrowserRouter to show a 404 page.`,
-  );
+
+  log.warn("一致するルートがなく notFoundComponent も未定義です。404 画面を表示するには Router に notFoundComponent を渡してください。");
 }
 
 /**

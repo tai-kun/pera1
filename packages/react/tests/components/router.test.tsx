@@ -4,8 +4,9 @@ import { RoutePatternUtils } from "@pera1/core";
 import type { IEngine } from "@pera1/core";
 import { act } from "react";
 import { createRoot } from "react-dom/client";
-import { describe, test } from "vitest";
+import { describe, test, vi } from "vitest";
 
+import log from "../../src/_logger.js";
 import Outlet from "../../src/components/outlet.jsx";
 import Router from "../../src/components/router.jsx";
 import useRouterContext from "../../src/hooks/use-router-context.js";
@@ -117,13 +118,9 @@ describe("Router", () => {
       navigate: () => {},
     };
 
-    const originalWarn = console.warn;
-    const warnings: unknown[][] = [];
-    console.warn = (...args: unknown[]) => {
-      warnings.push(args);
-    };
+    const spy = vi.spyOn(log, "warn").mockImplementation(() => {});
     cleanup.defer(() => {
-      console.warn = originalWarn;
+      spy.mockRestore();
     });
 
     const container = document.createElement("div");
@@ -152,7 +149,7 @@ describe("Router", () => {
 
     // 検証
     expect(container.textContent).toBe("not-found:function");
-    expect(warnings.length).toBe(0);
+    expect(spy).not.toHaveBeenCalled();
   });
 
   test("マッチがあるとき通常マッチが notFoundComponent より優先される (006)", async ({
@@ -237,13 +234,9 @@ describe("Router", () => {
       navigate: () => {},
     };
 
-    const originalWarn = console.warn;
-    const warnings: unknown[][] = [];
-    console.warn = (...args: unknown[]) => {
-      warnings.push(args);
-    };
+    const spy = vi.spyOn(log, "warn").mockImplementation(() => {});
     cleanup.defer(() => {
-      console.warn = originalWarn;
+      spy.mockRestore();
     });
 
     const container = document.createElement("div");
@@ -266,7 +259,7 @@ describe("Router", () => {
 
     // 検証: 従来通り null 描画 + 開発警告
     expect(container.innerHTML).toBe("");
-    expect(warnings.length).toBe(1);
+    expect(spy).toHaveBeenCalledTimes(1);
     expect(String(warnings[0]?.[0])).toContain("notFoundComponent");
   });
 
