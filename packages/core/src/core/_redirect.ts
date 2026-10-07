@@ -161,6 +161,7 @@ export function resolveRedirectDestination(template: string, params: RouteParams
 export function createBarePathLoader(args: CreateBarePathLoaderArgs): CreatedBarePathLoader {
   const { fullPath, target, loader: userLoader, shouldReload: userShouldReload } = args;
   const exact = new RoutePatternUtils(fullPath);
+
   async function loader(loaderArgs: LoaderFunctionArgs): Promise<unknown> {
     if (!exact.match(loaderArgs.request.url)) {
       return typeof userLoader === "function" ? await userLoader(loaderArgs) : undefined;
@@ -173,6 +174,7 @@ export function createBarePathLoader(args: CreateBarePathLoaderArgs): CreatedBar
     }
     return new RedirectResponse(resolveRedirectDestination(target, loaderArgs.params));
   }
+
   function shouldReload(reloadArgs: ShouldReloadFunctionArgs): boolean {
     if (exact.match(reloadArgs.prevUrl) || exact.match(reloadArgs.currentUrl)) {
       return true;
@@ -182,5 +184,6 @@ export function createBarePathLoader(args: CreateBarePathLoaderArgs): CreatedBar
     }
     return reloadArgs.defaultShouldReload;
   }
+
   return { loader, shouldReload };
 }

@@ -16,7 +16,6 @@ export default function hideLoaderRedirect(raw: NinjaPromise<unknown>): NinjaPro
   if (raw.status === "fulfilled") {
     return raw.value instanceof RedirectResponse ? new NinjaPromise<never>(() => {}) : raw;
   }
-
   if (raw.status === "rejected") {
     return raw;
   }

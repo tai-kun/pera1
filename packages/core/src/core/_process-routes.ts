@@ -166,6 +166,7 @@ export default function processRoutes<TComponent = any>(
           shouldReload = composed.shouldReload;
         }
       }
+
       return {
         path: utils.route,
         index,

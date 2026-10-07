@@ -149,7 +149,7 @@ export default class NavigationApiEngine implements IEngine {
       signal,
     });
 
-    // 公開マップには `RedirectResponse` が含まれません。
+    // 公開マップには解決されないプロミスが格納されます。
     // リダイレクトの監視は `start()` が `idle()` 経由で行います。
     loaderDataStore.set(currentEntry.id, initialized.dataMap);
 

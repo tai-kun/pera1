@@ -61,6 +61,7 @@ export default function initLoaders(
   const rawPromises: NinjaPromise<unknown>[] = [];
   // マッチしたすべてのローダーで共有可能なリクエストオブジェクトを 1 つだけ作成します。
   const req = RouteRequest.new("GET", request.url, request.signal);
+
   for (const { loader, params } of routes) {
     if (typeof loader !== "function") {
       continue;
@@ -74,6 +75,7 @@ export default function initLoaders(
     rawPromises.push(raw);
     dataMap.set(loader, hideLoaderRedirect(raw));
   }
+
   log.debug("初期ローダーを起動しました（url: {url}, 件数: {count}）", {
     url: request.url.href,
     count: dataMap.size,

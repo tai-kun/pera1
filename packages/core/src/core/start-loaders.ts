@@ -147,12 +147,14 @@ export default function startLoaders(
       prevParamsByPath.set(prevRoute.path, prevRoute.params ?? {});
     }
   }
+
   // 遷移前の履歴 ID に紐づくローダーデータのキャッシュマップをストアから取得します。
   const prevLoaderDataMap: ReadonlyMap<LoaderFunction, NinjaPromise<unknown>> | undefined =
     loaderDataStore.get(prevEntry.id);
   const currentLoaderDataMap = new Map<LoaderFunction, NinjaPromise<unknown>>();
   const rawPromises: NinjaPromise<unknown>[] = [];
   const request = RouteRequest.new("GET", currentEntry.url, signal);
+
   // 現在マッチしているすべてのルートセグメントを個別に精査します。
   for (const currentRoute of currentRoutes) {
     const {
@@ -284,6 +286,7 @@ export default function startLoaders(
     // 確定したプロミスを今回のマップに登録します。
     currentLoaderDataMap.set(currentLoader, data);
   }
+
   // 今回の実行フェーズで収集したローダーデータが存在する場合はグローバルなキャッシュストアへマージします。
   if (currentLoaderDataMap.size > 0) {
     loaderDataStore.set(
@@ -291,6 +294,7 @@ export default function startLoaders(
       new Map([...(loaderDataStore.get(currentEntry.id) || []), ...currentLoaderDataMap]),
     );
   }
+
   return {
     async idle() {
       // 全ローダーの確定を待ち、隠蔽前の結果からリダイレクトを走査します。
