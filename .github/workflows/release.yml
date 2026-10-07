@@ -168,7 +168,7 @@ jobs:
             tag="$name@$VERSION"
 
             if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-              echo "::notice::タグ $tag がすでに存在するため $name をスキップします。"
+              echo "::warning::タグ $tag がすでに存在するため $name をスキップします。"
               continue
             fi
 
@@ -196,6 +196,24 @@ jobs:
             echo "count=$count"
             echo "non_private=$non_private_count"
           } >> "$GITHUB_OUTPUT"
+
+      - name: "npm レジストリーを確認"
+        if: steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+        run: |
+          while IFS=$'\t' read -r _ name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            if npm view "$name@$version" version >/dev/null 2>&1; then
+              echo "::warning::$name@$version は npm レジストリーに存在します。"
+            else
+              echo "::error::$name@$version は npm レジストリーに存在しません。"
+              exit 1
+            fi
+          done <<< "$LIST"
 
       - name: "バージョンを更新"
         if: steps.packages.outputs.count != '0'
@@ -373,6 +391,20 @@ jobs:
             )
           done <<< "$LIST"
 
+      - name: "失敗時に npm 公開を取り消し"
+        if: failure()
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+        run: |
+          while IFS=$'\t' read -r _ name version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            echo "$name@$version の npm 公開を取り消します。"
+            npm unpublish "$name@$version" --force || true
+          done <<< "$LIST"
+
       - name: "失敗時にタグと Release を削除"
         if: failure()
         env:
@@ -389,7 +421,31 @@ jobs:
 
             gh release delete "$tag" --yes --cleanup-tag || true
             git push origin ":refs/tags/$tag" || true
+            git tag -d "$tag" || true
           done <<< "$LIST"
+
+      - name: "失敗時に release コミットを取り消し"
+        if: failure()
+        run: |
+          git fetch origin --tags --force || true
+
+          remote_subject=$(git log -1 --format=%s origin/main 2>/dev/null || true)
+          local_subject=$(git log -1 --format=%s HEAD 2>/dev/null || true)
+
+          case "$remote_subject" in
+            "release: "*)
+              if [ "$remote_subject" = "$local_subject" ]; then
+                echo "release コミットを取り消します: $remote_subject"
+                git push --force-with-lease origin HEAD~1:main || true
+                git reset --hard HEAD~1 || true
+              else
+                echo "::notice::リモートとローカルの先頭コミットが一致しないためコミットの取り消しをスキップします。"
+              fi
+              ;;
+            *)
+              echo "::notice::リモート先頭が release コミットではないためコミットの取り消しをスキップします。"
+              ;;
+          esac
 
       - name: "pnpm ログをアップロード"
         if: always()
