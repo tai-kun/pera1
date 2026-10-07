@@ -143,14 +143,17 @@ function applyStaticPriorityFilter<TComponent>(
     }
     const segments = splitPatternSegments(pattern);
     const wildcard = segments.some(isWildcardSegment);
+
     let exact = false;
+
     if (!wildcard) {
       try {
-        exact = new RoutePatternUtils(pattern).match(url);
+        exact = RoutePatternUtils.match(pattern, url);
       } catch {
         exact = false;
       }
     }
+
     return { route, segments, exact, wildcard };
   });
 

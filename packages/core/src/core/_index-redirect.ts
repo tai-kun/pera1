@@ -116,8 +116,9 @@ export function resolveIndexRedirectDestination(
     resolved = (base === "/" ? "" : base) + "/" + relative;
   }
   if (resolved.includes(":")) {
-    resolved = new RoutePatternUtils(resolved).inject(params as Record<string, string>);
+    resolved = RoutePatternUtils.inject(resolved, params as Record<string, string>);
   }
+
   return resolved + search + hash;
 }
 
