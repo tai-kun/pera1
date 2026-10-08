@@ -1,5 +1,5 @@
 name: "リリース"
-run-name: "${{ github.event.inputs.version }}"
+run-name: "リリース ${{ inputs.dry-run && '[dry-run] ' || '' }}${{ github.event.inputs.version }}"
 
 on:
   workflow_dispatch:
@@ -7,6 +7,16 @@ on:
       version:
         description: "バージョン（例:「1.2.3」「package-name@1.2.3」）"
         required: true
+      dry-run:
+        description: "公開せずに検証のみ行う（コミット・タグ・Release・npm 公開を省略）"
+        required: false
+        type: boolean
+        default: false
+      skip-checks:
+        description: "ビルド・format・lint・テストを省略する（CI 済みの場合用）"
+        required: false
+        type: boolean
+        default: false
 
 defaults:
   run:
@@ -43,12 +53,20 @@ jobs:
         uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
 
       - name: "依存関係をインストール"
-        run: pnpm i
+        run: pnpm install --frozen-lockfile
 
       - name: "ビルド"
+        if: inputs.skip-checks != true
         run: |
-          for dir in $(jq -r '.workspaces[]' package.json); do
-            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+          # NOTE: workspaces の定義順がトポロジカル順（依存される側が先）であることを前提に、
+          # 上から順にビルドする。順序を変える場合は依存関係を考慮すること。
+          dirs="$(jq -r '.workspaces[]' package.json)"
+          while IFS= read -r dir; do
+            if [ -z "$dir" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            if [ "$(jq -r '.private // false' "$dir/package.json")" = "true" ]; then
               continue
             fi
 
@@ -60,15 +78,21 @@ jobs:
             echo "::group::$dir"
             (
               cd "$dir" || exit 1
-              npm run build
+              pnpm run build
             )
             echo "::endgroup::"
-          done
+          done <<< "$dirs"
 
       - name: "format"
+        if: inputs.skip-checks != true
         run: |
-          for dir in $(jq -r '.workspaces[]' package.json); do
-            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+          dirs="$(jq -r '.workspaces[]' package.json)"
+          while IFS= read -r dir; do
+            if [ -z "$dir" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            if [ "$(jq -r '.private // false' "$dir/package.json")" = "true" ]; then
               continue
             fi
 
@@ -84,12 +108,18 @@ jobs:
               mise run test:format
             )
             echo "::endgroup::"
-          done
+          done <<< "$dirs"
 
       - name: "lint"
+        if: inputs.skip-checks != true
         run: |
-          for dir in $(jq -r '.workspaces[]' package.json); do
-            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+          dirs="$(jq -r '.workspaces[]' package.json)"
+          while IFS= read -r dir; do
+            if [ -z "$dir" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            if [ "$(jq -r '.private // false' "$dir/package.json")" = "true" ]; then
               continue
             fi
 
@@ -105,12 +135,18 @@ jobs:
               mise run test:lint
             )
             echo "::endgroup::"
-          done
+          done <<< "$dirs"
 
       - name: "テスト"
+        if: inputs.skip-checks != true
         run: |
-          for dir in $(jq -r '.workspaces[]' package.json); do
-            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+          dirs="$(jq -r '.workspaces[]' package.json)"
+          while IFS= read -r dir; do
+            if [ -z "$dir" ] || [ ! -f "$dir/package.json" ]; then
+              continue
+            fi
+
+            if [ "$(jq -r '.private // false' "$dir/package.json")" = "true" ]; then
               continue
             fi
 
@@ -118,8 +154,8 @@ jobs:
             (
               cd "$dir" || exit 1
 
-              if grep -q "playwright" package.json; then
-                npx playwright install --with-deps
+              if jq -e '((.dependencies // {}) + (.devDependencies // {})) | has("playwright")' package.json >/dev/null; then
+                pnpm exec playwright install --with-deps
               fi
 
               if [ -f scripts/pretest.sh ]; then
@@ -134,7 +170,7 @@ jobs:
               mise run test
             )
             echo "::endgroup::"
-          done
+          done <<< "$dirs"
 
       - name: "公開パッケージを決定"
         id: packages
@@ -147,9 +183,11 @@ jobs:
           matched=false
           non_private_count=0
           list=""
+          first_tag=""
 
-          for dir in $(jq -r '.workspaces[]' package.json); do
-            if [ "$dir" = "website" ] || [ ! -f "$dir/package.json" ]; then
+          dirs="$(jq -r '.workspaces[]' package.json)"
+          while IFS= read -r dir; do
+            if [ -z "$dir" ] || [ ! -f "$dir/package.json" ]; then
               continue
             fi
 
@@ -172,8 +210,12 @@ jobs:
               continue
             fi
 
+            if [ -z "$first_tag" ]; then
+              first_tag="$tag"
+            fi
+
             list+="$dir"$'\t'"$name"$'\t'"$VERSION"$'\n'
-          done
+          done <<< "$dirs"
 
           if [ "$PACKAGE_NAME" != "*" ] && [ "$matched" = "false" ]; then
             echo "::error::公開対象のパッケージ「$PACKAGE_NAME」が見つかりません。"
@@ -189,12 +231,34 @@ jobs:
 
           count=$(grep -c . <<< "$list")
 
+          # release コミットの文面はここで確定し、コミット手順とドライラン表示で共有する。
+          if [ "$count" -ge 2 ]; then
+            names=""
+            while IFS=$'\t' read -r _ name _version; do
+              if [ -z "$name" ]; then
+                continue
+              fi
+
+              names+="- $name"$'\n'
+            done <<< "$list"
+            message="release: v$VERSION (x$count)"$'\n'"${names%$'\n'}"
+          elif [ "$non_private_count" -eq 1 ]; then
+            message="release: v$VERSION"
+          else
+            message="release: $first_tag"
+          fi
+
           {
             echo "list<<EOF"
             echo "$list"
             echo "EOF"
             echo "count=$count"
             echo "non_private=$non_private_count"
+            echo "first_tag=$first_tag"
+            echo "version=$VERSION"
+            echo "message<<MESSAGE_EOF"
+            echo "$message"
+            echo "MESSAGE_EOF"
           } >> "$GITHUB_OUTPUT"
 
       - name: "npm レジストリーを確認"
@@ -208,9 +272,13 @@ jobs:
             fi
 
             if npm view "$name@$version" version >/dev/null 2>&1; then
-              echo "::warning::$name@$version は npm レジストリーに存在します。"
+              echo "::error::$name@$version は npm レジストリーにすでに存在します。"
+              exit 1
             elif ! npm view "$name" version >/dev/null 2>&1; then
-              echo "::error::$name は npm レジストリーに存在しません。"
+              # npm の trusted publishing は既存パッケージにしか設定できないため、
+              # 初回公開はこのワークフローでは行えない。初回のみ手動で公開すること。
+              echo "::error::$name は npm レジストリーに存在しません。初回のみ手動で公開してください。"
+              echo "::error::npx setup-npm-trusted-publish $name"
               exit 1
             fi
           done <<< "$LIST"
@@ -236,33 +304,24 @@ jobs:
         id: changelog
         if: steps.packages.outputs.count != '0'
         env:
-          LIST: ${{ steps.packages.outputs.list }}
+          FIRST_TAG: ${{ steps.packages.outputs.first_tag }}
+          RELEASE_VERSION: ${{ steps.packages.outputs.version }}
           RELEASE_COUNT: ${{ steps.packages.outputs.count }}
         run: |
           entry_file="$RUNNER_TEMP/release-changelog.md"
 
-          release_tag=""
-          release_version=""
-
-          while IFS=$'\t' read -r _ name version; do
-            if [ -z "$name" ]; then
-              continue
-            fi
-
-            if [ -z "$release_tag" ]; then
-              release_tag="$name@$version"
-              release_version="$version"
-            fi
-          done <<< "$LIST"
-
           if [ "$RELEASE_COUNT" -gt 1 ]; then
-            heading="v$release_version"
+            heading="v$RELEASE_VERSION"
           else
-            heading="$release_tag"
+            heading="$FIRST_TAG"
           fi
 
-          previous_tag=$(git describe --tags --abbrev=0 HEAD 2>/dev/null || true)
-          body=$(node .github/scripts/generate-changelog.mjs "$GITHUB_REPOSITORY" "$release_tag" "$previous_tag")
+          # 同名パッケージの直前タグを起点にする。他パッケージのタグを拾わないため、
+          # モノレポでもパッケージごとの差分に近い CHANGELOG になる。
+          # NOTE: 複数パッケージ同時リリース時は先頭パッケージを基準にした共通文面になる。
+          first_name="${FIRST_TAG%@*}"
+          previous_tag=$(git describe --tags --abbrev=0 --match "$first_name@*" HEAD 2>/dev/null || true)
+          body=$(node .github/scripts/generate-changelog.mjs "$GITHUB_REPOSITORY" "$FIRST_TAG" "$previous_tag")
 
           printf '## %s\n\n%s\n' "$heading" "$body" > "$entry_file"
 
@@ -291,47 +350,77 @@ jobs:
           mv "$merged" CHANGELOG.md
 
       - name: "更新をコミット"
-        if: steps.packages.outputs.count != '0'
+        id: commit
+        if: steps.packages.outputs.count != '0' && inputs.dry-run != true
         env:
           LIST: ${{ steps.packages.outputs.list }}
-          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
-          NON_PRIVATE_COUNT: ${{ steps.packages.outputs.non_private }}
+          MESSAGE: ${{ steps.packages.outputs.message }}
         run: |
-          release_tag=""
-          release_version=""
-          release_names=""
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
+          # 意図しない成果物の混入を防ぐため、更新対象のファイルのみをステージする。
+          add_paths=(CHANGELOG.md pnpm-lock.yaml)
+          while IFS=$'\t' read -r dir name _version; do
+            if [ -z "$name" ]; then
+              continue
+            fi
+
+            add_paths+=("$dir/package.json")
+          done <<< "$LIST"
+          git add -- "${add_paths[@]}"
+
+          if git diff --cached --quiet; then
+            echo "::notice::コミット対象の変更がないためコミットをスキップします。"
+            echo "committed=false" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          git commit -m "$MESSAGE"
+
+          branch="$(git branch --show-current)"
+          if [ -z "$branch" ]; then
+            echo "::error::現在のブランチを特定できません。"
+            exit 1
+          fi
+
+          git push origin "HEAD:$branch"
+
+          {
+            echo "committed=true"
+            echo "sha=$(git rev-parse HEAD)"
+            echo "branch=$branch"
+          } >> "$GITHUB_OUTPUT"
+
+      - name: "タグを作成"
+        if: steps.packages.outputs.count != '0' && inputs.dry-run != true
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+        run: |
+          tags=()
           while IFS=$'\t' read -r _ name version; do
             if [ -z "$name" ]; then
               continue
             fi
 
-            if [ -z "$release_tag" ]; then
-              release_tag="$name@$version"
-              release_version="$version"
-            fi
-
-            release_names+="- $name"$'\n'
+            tag="$name@$version"
+            git tag -a "$tag" -m "$tag"
+            tags+=("$tag")
           done <<< "$LIST"
 
-          if [ "$RELEASE_COUNT" -ge 2 ]; then
-            message="release: v$release_version (x$RELEASE_COUNT)"$'\n'"${release_names%$'\n'}"
-          elif [ "$NON_PRIVATE_COUNT" -eq 1 ]; then
-            message="release: v$release_version"
-          else
-            message="release: $release_tag"
+          if [ "${#tags[@]}" -eq 0 ]; then
+            echo "::notice::作成するタグがありません。"
+            exit 0
           fi
 
-          git config user.name "github-actions[bot]"
-          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-          git add --all
-          git commit -m "$message"
-          git push
+          # 部分的なタグ push を避けるため、まとめてアトミックに push する。
+          git push --atomic origin "${tags[@]}"
 
-      - name: "タグを作成"
-        if: steps.packages.outputs.count != '0'
+      - name: "Release を作成"
+        if: steps.packages.outputs.count != '0' && inputs.dry-run != true
         env:
           LIST: ${{ steps.packages.outputs.list }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           while IFS=$'\t' read -r _ name version; do
             if [ -z "$name" ]; then
@@ -339,46 +428,18 @@ jobs:
             fi
 
             tag="$name@$version"
-            git tag "$tag"
-            git push origin "$tag"
+            gh release create "$tag" --title "$tag" --notes-file "$RUNNER_TEMP/release-changelog.md"
           done <<< "$LIST"
-
-      - name: "Release を作成"
-        if: steps.packages.outputs.count != '0'
-        env:
-          LIST: ${{ steps.packages.outputs.list }}
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          first_tag=""
-          release_version=""
-          package_count=0
-
-          while IFS=$'\t' read -r _ name version; do
-            if [ -z "$name" ]; then
-              continue
-            fi
-
-            package_count=$((package_count + 1))
-
-            if [ -z "$first_tag" ]; then
-              first_tag="$name@$version"
-              release_version="$version"
-            fi
-          done <<< "$LIST"
-
-          if [ "$package_count" -gt 1 ]; then
-            title="$release_version"
-          else
-            title="$first_tag"
-          fi
-
-          gh release create "$first_tag" --title "$title" --notes-file "$RUNNER_TEMP/release-changelog.md"
 
       - name: "npm に公開"
-        if: steps.packages.outputs.count != '0'
+        if: steps.packages.outputs.count != '0' && inputs.dry-run != true
         env:
           LIST: ${{ steps.packages.outputs.list }}
         run: |
+          # ロールバック時に取り消す対象を特定するため、この実行で公開した版のみを記録する。
+          published_file="$RUNNER_TEMP/released-npm.txt"
+          : > "$published_file"
+
           while IFS=$'\t' read -r dir name version; do
             if [ -z "$name" ]; then
               continue
@@ -389,21 +450,61 @@ jobs:
               cd "$dir" || exit 1
               pnpm publish --access public --no-git-checks --provenance
             )
+            echo "$name@$version" >> "$published_file"
           done <<< "$LIST"
+
+      - name: "ドライラン結果を表示"
+        if: inputs.dry-run == true && steps.packages.outputs.count != '0'
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+          MESSAGE: ${{ steps.packages.outputs.message }}
+          CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+        run: |
+          {
+            echo "## ドライラン結果（公開は行いません）"
+            echo ""
+            echo "### 公開対象"
+            echo ""
+            echo "| ディレクトリ | パッケージ | バージョン |"
+            echo "| --- | --- | --- |"
+            while IFS=$'\t' read -r dir name version; do
+              if [ -z "$name" ]; then
+                continue
+              fi
+
+              echo "| $dir | $name | $version |"
+            done <<< "$LIST"
+            echo ""
+            echo "### コミットメッセージ"
+            echo ""
+            echo '```'
+            echo "$MESSAGE"
+            echo '```'
+            echo ""
+            echo "### CHANGELOG 追記内容"
+            echo ""
+            echo "$CHANGELOG"
+          } >> "$GITHUB_STEP_SUMMARY"
+          echo "::notice::ドライランのため、コミット・タグ・Release・npm 公開は行いませんでした。"
 
       - name: "失敗時に npm 公開を取り消し"
         if: failure()
-        env:
-          LIST: ${{ steps.packages.outputs.list }}
         run: |
-          while IFS=$'\t' read -r _ name version; do
-            if [ -z "$name" ]; then
+          published_file="$RUNNER_TEMP/released-npm.txt"
+
+          if [ ! -s "$published_file" ]; then
+            echo "::notice::この実行で公開したパッケージはないため取り消しをスキップします。"
+            exit 0
+          fi
+
+          while IFS= read -r spec; do
+            if [ -z "$spec" ]; then
               continue
             fi
 
-            echo "$name@$version の npm 公開を取り消します。"
-            npm unpublish "$name@$version" --force || true
-          done <<< "$LIST"
+            echo "$spec の npm 公開を取り消します。"
+            npm unpublish "$spec" --force || true
+          done < "$published_file"
 
       - name: "失敗時にタグと Release を削除"
         if: failure()
@@ -411,6 +512,11 @@ jobs:
           LIST: ${{ steps.packages.outputs.list }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          if [ -z "${LIST:-}" ]; then
+            echo "::notice::公開対象がないため削除をスキップします。"
+            exit 0
+          fi
+
           while IFS=$'\t' read -r _ name version; do
             if [ -z "$name" ]; then
               continue
@@ -425,33 +531,32 @@ jobs:
           done <<< "$LIST"
 
       - name: "失敗時に release コミットを取り消し"
-        if: failure()
+        if: failure() && steps.commit.outputs.committed == 'true'
+        env:
+          COMMIT_SHA: ${{ steps.commit.outputs.sha }}
+          COMMIT_BRANCH: ${{ steps.commit.outputs.branch }}
         run: |
-          git fetch origin --tags --force || true
+          git fetch origin "$COMMIT_BRANCH" --tags --force || true
 
-          remote_subject=$(git log -1 --format=%s origin/main 2>/dev/null || true)
-          local_subject=$(git log -1 --format=%s HEAD 2>/dev/null || true)
+          remote_sha="$(git rev-parse "origin/$COMMIT_BRANCH" 2>/dev/null || true)"
 
-          case "$remote_subject" in
-            "release: "*)
-              if [ "$remote_subject" = "$local_subject" ]; then
-                echo "release コミットを取り消します: $remote_subject"
-                git push --force-with-lease origin HEAD~1:main || true
-                git reset --hard HEAD~1 || true
-              else
-                echo "::notice::リモートとローカルの先頭コミットが一致しないためコミットの取り消しをスキップします。"
-              fi
-              ;;
-            *)
-              echo "::notice::リモート先頭が release コミットではないためコミットの取り消しをスキップします。"
-              ;;
-          esac
+          # この実行が push したコミットが先頭にある場合のみ取り消す。
+          # 検証前の失敗や後続コミットがある場合は、前回の正常リリースを壊さないよう何もしない。
+          if [ -n "$COMMIT_SHA" ] && [ "$remote_sha" = "$COMMIT_SHA" ]; then
+            echo "release コミットを取り消します: $COMMIT_SHA"
+            git push --force-with-lease origin "HEAD~1:$COMMIT_BRANCH" || true
+            git reset --hard HEAD~1 || true
+          else
+            echo "::notice::リモート先頭がこの実行の release コミットではないためコミットの取り消しをスキップします。"
+          fi
 
       - name: "pnpm ログをアップロード"
         if: always()
         uses: actions/upload-artifact@b7c566a772e6b6bfb58ed0dc250532a479d7789f # v6.0.0
         with:
           name: pnpm-logs-publish
-          path: /home/runner/.pnpm-debug.log
+          path: |
+            /home/runner/.pnpm-debug.log
+            **/pnpm-debug.log
           if-no-files-found: ignore
           retention-days: 3
