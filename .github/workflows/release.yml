@@ -464,7 +464,7 @@ jobs:
           RELEASE_VERSION: ${{ steps.packages.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          # 複数同時時は集約用タグ v$VERSION に1つだけ作成する。
+          # 複数同時時は集約用タグ v$VERSION に 1 つだけ作成する。
           # 単件時はパッケージタグに作成する。
           if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
             gh release create "$RELEASE_TAG" --title "v$RELEASE_VERSION" --notes-file "$RUNNER_TEMP/release-changelog.md"
@@ -513,7 +513,7 @@ jobs:
             echo "## リリース結果"
             echo ""
             if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
-              echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG （$RELEASE_COUNT 件分を1つに集約）"
+              echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG （$RELEASE_COUNT 件分を 1 つに集約）"
               echo ""
             fi
             while IFS=$'\t' read -r _ name version; do
@@ -577,9 +577,9 @@ jobs:
             fi
             echo ""
             if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
-              echo "Release は $RELEASE_TAG に1つ集約（タイトル: v$RELEASE_VERSION）"
+              echo "Release は $RELEASE_TAG に 1 つ集約します（タイトル: v$RELEASE_VERSION）。"
             else
-              echo "Release は $RELEASE_TAG に作成"
+              echo "Release は $RELEASE_TAG に作成します。"
             fi
             echo ""
             echo "### CHANGELOG 追記内容"
@@ -637,7 +637,7 @@ jobs:
             exit 0
           fi
 
-          # Release は集約用タグ（単件時はパッケージタグ）に1つのみ。
+          # Release は集約用タグ（単件時はパッケージタグ）に 1 つのみ。
           if [ -n "${RELEASE_TAG:-}" ]; then
             if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
               echo "$RELEASE_TAG の Release を削除します。"
