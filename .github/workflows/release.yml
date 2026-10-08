@@ -53,7 +53,11 @@ jobs:
         uses: jdx/mise-action@5228313ee0372e111a38da051671ca30fc5a96db # v3.6.3
 
       - name: "依存関係をインストール"
-        run: pnpm install --frozen-lockfile
+        run: |
+          node --version
+          pnpm --version
+          npm --version
+          pnpm install --frozen-lockfile
 
       - name: "ビルド"
         if: inputs.skip-checks != true
@@ -222,14 +226,14 @@ jobs:
             exit 1
           fi
 
-          list="${list%$'\n'}"
+          list=${list%$'\n'}
 
           if [ -z "$list" ]; then
             echo "::error::公開対象のパッケージがありません。"
             exit 1
           fi
 
-          count=$(grep -c . <<< "$list")
+          count=$(grep -c . <<< "$list" || true)
 
           # release コミットの文面はここで確定し、コミット手順とドライラン表示で共有する。
           if [ "$count" -ge 2 ]; then
@@ -241,24 +245,27 @@ jobs:
 
               names+="- $name"$'\n'
             done <<< "$list"
-            message="release: v$VERSION (x$count)"$'\n'"${names%$'\n'}"
+            names=${names%$'\n'}
+            message="release: v$VERSION (x$count)"$'\n'"$names"
           elif [ "$non_private_count" -eq 1 ]; then
             message="release: v$VERSION"
           else
             message="release: $first_tag"
           fi
 
+          list_delim="RELEASE_LIST_EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
+          msg_delim="RELEASE_MSG_EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           {
-            echo "list<<EOF"
+            echo "list<<$list_delim"
             echo "$list"
-            echo "EOF"
+            echo "$list_delim"
             echo "count=$count"
             echo "non_private=$non_private_count"
             echo "first_tag=$first_tag"
             echo "version=$VERSION"
-            echo "message<<MESSAGE_EOF"
+            echo "message<<$msg_delim"
             echo "$message"
-            echo "MESSAGE_EOF"
+            echo "$msg_delim"
           } >> "$GITHUB_OUTPUT"
 
       - name: "npm レジストリーを確認"
@@ -284,7 +291,7 @@ jobs:
           done <<< "$LIST"
 
       - name: "バージョンを更新"
-        if: steps.packages.outputs.count != '0'
+        if: steps.packages.outputs.count != '0' && inputs.dry-run != true
         env:
           LIST: ${{ steps.packages.outputs.list }}
         run: |
@@ -325,14 +332,15 @@ jobs:
 
           printf '## %s\n\n%s\n' "$heading" "$body" > "$entry_file"
 
+          changelog_delim="RELEASE_CHANGELOG_EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           {
-            echo "changelog<<EOF"
+            echo "changelog<<$changelog_delim"
             cat "$entry_file"
-            echo "EOF"
+            echo "$changelog_delim"
           } >> "$GITHUB_OUTPUT"
 
       - name: "CHANGELOG.md に追記"
-        if: steps.packages.outputs.count != '0'
+        if: steps.packages.outputs.count != '0' && inputs.dry-run != true
         run: |
           entry_file="$RUNNER_TEMP/release-changelog.md"
 
@@ -355,6 +363,7 @@ jobs:
         env:
           LIST: ${{ steps.packages.outputs.list }}
           MESSAGE: ${{ steps.packages.outputs.message }}
+          BRANCH: ${{ github.ref_name }}
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
@@ -378,13 +387,21 @@ jobs:
 
           git commit -m "$MESSAGE"
 
-          branch="$(git branch --show-current)"
+          branch="${BRANCH:-}"
+          if [ -z "$branch" ]; then
+            branch="$(git branch --show-current || true)"
+          fi
           if [ -z "$branch" ]; then
             echo "::error::現在のブランチを特定できません。"
             exit 1
           fi
 
-          git push origin "HEAD:$branch"
+          # 通常 push との競合時は rebase して1回だけ再試行する。
+          if ! git push origin "HEAD:$branch"; then
+            echo "::notice::push に失敗したため rebase して再試行します。"
+            git pull --rebase origin "$branch"
+            git push origin "HEAD:$branch"
+          fi
 
           {
             echo "committed=true"
@@ -453,6 +470,26 @@ jobs:
             echo "$name@$version" >> "$published_file"
           done <<< "$LIST"
 
+      - name: "リリース結果を表示"
+        if: success() && steps.packages.outputs.count != '0' && inputs.dry-run != true
+        env:
+          LIST: ${{ steps.packages.outputs.list }}
+        run: |
+          {
+            echo "## リリース結果"
+            echo ""
+            while IFS=$'\t' read -r _ name version; do
+              if [ -z "$name" ]; then
+                continue
+              fi
+
+              tag="$name@$version"
+              echo "- $tag"
+              echo "  - npm: https://www.npmjs.com/package/$name/v/$version"
+              echo "  - release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag"
+            done <<< "$LIST"
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: "ドライラン結果を表示"
         if: inputs.dry-run == true && steps.packages.outputs.count != '0'
         env:
@@ -488,8 +525,9 @@ jobs:
           echo "::notice::ドライランのため、コミット・タグ・Release・npm 公開は行いませんでした。"
 
       - name: "失敗時に npm 公開を取り消し"
-        if: failure()
+        if: failure() || cancelled()
         run: |
+          # NOTE: unpublish した版は同番号で再公開できない。取り消し後は改版が必要。
           published_file="$RUNNER_TEMP/released-npm.txt"
 
           if [ ! -s "$published_file" ]; then
@@ -497,17 +535,20 @@ jobs:
             exit 0
           fi
 
+          # 依存される側から公開しているため、取り消しは逆順（依存する側から）に行う。
           while IFS= read -r spec; do
             if [ -z "$spec" ]; then
               continue
             fi
 
             echo "$spec の npm 公開を取り消します。"
-            npm unpublish "$spec" --force || true
-          done < "$published_file"
+            if ! npm unpublish "$spec"; then
+              echo "::warning::$spec の取り消しに失敗しました。手動で確認してください。"
+            fi
+          done < <(tac "$published_file")
 
       - name: "失敗時にタグと Release を削除"
-        if: failure()
+        if: failure() || cancelled()
         env:
           LIST: ${{ steps.packages.outputs.list }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
@@ -523,20 +564,38 @@ jobs:
             fi
 
             tag="$name@$version"
-            echo "$tag を削除します。"
 
-            gh release delete "$tag" --yes --cleanup-tag || true
-            git push origin ":refs/tags/$tag" || true
-            git tag -d "$tag" || true
+            if ! git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+              echo "::notice::$tag はリモートに存在しないため削除をスキップします。"
+            else
+              echo "$tag を削除します。"
+
+              if ! gh release delete "$tag" --yes --cleanup-tag; then
+                echo "::warning::$tag の Release 削除に失敗しました。手動で確認してください。"
+              fi
+
+              if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
+                if ! git push origin ":refs/tags/$tag"; then
+                  echo "::warning::$tag のリモートタグ削除に失敗しました。手動で確認してください。"
+                fi
+              fi
+            fi
+
+            if git rev-parse "$tag" >/dev/null 2>&1; then
+              git tag -d "$tag" || echo "::warning::$tag のローカルタグ削除に失敗しました。"
+            fi
           done <<< "$LIST"
 
       - name: "失敗時に release コミットを取り消し"
-        if: failure() && steps.commit.outputs.committed == 'true'
+        if: (failure() || cancelled()) && steps.commit.outputs.committed == 'true'
         env:
           COMMIT_SHA: ${{ steps.commit.outputs.sha }}
           COMMIT_BRANCH: ${{ steps.commit.outputs.branch }}
         run: |
-          git fetch origin "$COMMIT_BRANCH" --tags --force || true
+          if ! git fetch origin "$COMMIT_BRANCH" --tags --force; then
+            echo "::warning::fetch に失敗したためコミットの取り消しをスキップします。手動で確認してください。"
+            exit 0
+          fi
 
           remote_sha="$(git rev-parse "origin/$COMMIT_BRANCH" 2>/dev/null || true)"
 
@@ -544,8 +603,11 @@ jobs:
           # 検証前の失敗や後続コミットがある場合は、前回の正常リリースを壊さないよう何もしない。
           if [ -n "$COMMIT_SHA" ] && [ "$remote_sha" = "$COMMIT_SHA" ]; then
             echo "release コミットを取り消します: $COMMIT_SHA"
-            git push --force-with-lease origin "HEAD~1:$COMMIT_BRANCH" || true
-            git reset --hard HEAD~1 || true
+            if ! git push --force-with-lease origin "HEAD~1:$COMMIT_BRANCH"; then
+              echo "::warning::release コミットの取り消し push に失敗しました。手動で確認してください。"
+            else
+              git reset --hard HEAD~1 || echo "::warning::ローカルの reset に失敗しました。"
+            fi
           else
             echo "::notice::リモート先頭がこの実行の release コミットではないためコミットの取り消しをスキップします。"
           fi
@@ -557,6 +619,7 @@ jobs:
           name: pnpm-logs-publish
           path: |
             /home/runner/.pnpm-debug.log
+            ~/.pnpm-debug.log
             **/pnpm-debug.log
           if-no-files-found: ignore
           retention-days: 3
