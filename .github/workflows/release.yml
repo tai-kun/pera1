@@ -485,20 +485,69 @@ jobs:
         env:
           LIST: ${{ steps.packages.outputs.list }}
         run: |
+          # 連続 publish で npm のレート制限（429）に当たることがあるため、
+          # パッケージ間に待機を入れ、制限検出時は指数バックオフで再試行する。
+          publish_interval_seconds=15
+          max_retries=5
+          retry_base_seconds=30
+
+          is_rate_limit_error() {
+            grep -Ei "429|too many requests|rate limit" "$1" >/dev/null 2>&1
+          }
+
+          publish_with_retry() {
+            local dir="$1" name="$2" version="$3"
+            local attempt=1 log_file wait_seconds
+            log_file="$(mktemp)"
+
+            while true; do
+              echo "$name@$version を公開します。（試行 $attempt/$max_retries）"
+              if (
+                cd "$dir" || exit 1
+                pnpm publish --access public --no-git-checks --provenance
+              ) 2>&1 | tee "$log_file"; then
+                rm -f "$log_file"
+                return 0
+              fi
+
+              if ! is_rate_limit_error "$log_file"; then
+                echo "::error::$name@$version の公開に失敗しました。"
+                rm -f "$log_file"
+                return 1
+              fi
+
+              if [ "$attempt" -ge "$max_retries" ]; then
+                echo "::error::$name@$version の公開でレート制限が解消しませんでした。"
+                rm -f "$log_file"
+                return 1
+              fi
+
+              wait_seconds=$((retry_base_seconds * (1 << (attempt - 1))))
+              echo "::notice::npm のレート制限を検出しました。${wait_seconds}s 待機して再試行します。（試行 $attempt/$max_retries）"
+              sleep "$wait_seconds"
+              attempt=$((attempt + 1))
+            done
+          }
+
           # ロールバック時に取り消す対象を特定するため、この実行で公開した版のみを記録する。
           published_file="$RUNNER_TEMP/released-npm.txt"
           : > "$published_file"
 
+          first=true
           while IFS=$'\t' read -r dir name version; do
             if [ -z "$name" ]; then
               continue
             fi
 
-            echo "$name@$version を公開します。"
-            (
-              cd "$dir" || exit 1
-              pnpm publish --access public --no-git-checks --provenance
-            )
+            # 初回はすぐ公開し、2 件目以降の連続 publish 前に間隔をあける。
+            if [ "$first" = true ]; then
+              first=false
+            else
+              echo "::notice::npm のレート制限を避けるため ${publish_interval_seconds}s 待機します。"
+              sleep "$publish_interval_seconds"
+            fi
+
+            publish_with_retry "$dir" "$name" "$version"
             echo "$name@$version" >> "$published_file"
           done <<< "$LIST"
 
