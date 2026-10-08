@@ -1,0 +1,84 @@
+---
+title: Installation
+description: "Add the packages and check the prerequisites and Navigation API support."
+---
+
+To use pera1 in a React app, add only `@pera1/react`. Since `@pera1/react` depends on `@pera1/core`, the core package is installed automatically.
+
+<Steps>
+  <Step title="Prepare a React app">
+    Add it to your existing React 19 app, or create a new one with Vite or similar.
+
+    ```sh
+    npm create vite@latest my-app -- --template react-ts
+    ```
+
+  </Step>
+  <Step title="Add the packages">
+    `react`, `react-dom`, and `valibot` are peer dependencies. If your app doesn't have them yet, install them together.
+
+    ```package-install
+    npm i @pera1/react react react-dom valibot
+    ```
+
+  </Step>
+  <Step title="Define routes and render">
+    Pass an array of route definitions to `BrowserRouter`. See [Quickstart](/getting-started/quickstart) for details.
+
+    ```tsx main.tsx
+    import { BrowserRouter } from "@pera1/react";
+    import { createRoot } from "react-dom/client";
+
+    const routes = [{ path: "/", component: () => <h1>Hello, pera1</h1> }];
+
+    createRoot(document.getElementById("root")!).render(<BrowserRouter routes={routes} />);
+    ```
+
+  </Step>
+</Steps>
+
+## Using only the core [#core-only]
+
+If you only need the UI-framework-independent router core, you can add `@pera1/core` on its own. Use it when implementing your own bindings or a custom engine.
+
+```package-install
+npm i @pera1/core valibot
+```
+
+## Prerequisites [#requirements]
+
+| Item | Requirement |
+| --- | --- |
+| React | Version 19 (when using `@pera1/react`) |
+| valibot | Version 1 |
+| Browser | A browser that implements the Navigation API |
+| Module format | ESM only (`type: "module"` recommended) |
+
+pera1 uses the Navigation API directly. At the time of writing, support is centered on Chromium-based browsers. In unsupported environments, `NavigationApiEngine` throws a `NavigationApiNotSupportedError`. Check the [compatibility table on MDN](https://developer.mozilla.org/docs/Web/API/Navigation_API#browser_compatibility) for current support.
+
+pera1 is browser-only. Server-side rendering (SSR) is not supported.
+
+## Example TypeScript configuration [#typescript]
+
+A minimal configuration example. DOM types and the ESNext library are required.
+
+```json tsconfig.json lineNumbers
+{
+  "compilerOptions": {
+    "target": "ES2020",
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "jsx": "react-jsx",
+    "strict": true
+  }
+}
+```
+
+## Bundlers [#bundlers]
+
+pera1 ships ESM only. Any bundler that can resolve ESM — Vite, Rollup, webpack 5, and similar — works without extra configuration.
+
+## Next steps [#next]
+
+Once you're set up, continue to [Quickstart](/getting-started/quickstart). You'll build a working app while learning how routing, loaders, and actions flow.

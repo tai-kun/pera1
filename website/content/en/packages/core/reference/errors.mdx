@@ -1,0 +1,131 @@
+---
+title: Error classes
+description: "Lists the error classes, their meta contents, and how to replace Japanese messages."
+---
+
+All `@pera1/core` errors extend `ErrorBase`. Each class keeps the context at throw time in a `meta` property, and ships with a default English message plus a registered Japanese message. Names carry a `Pera1` prefix to avoid collisions.
+
+```ts
+import {
+  ErrorBase,
+  setErrorMessage,
+  UnreachableError,
+  ValidationErrorBase,
+  UnexpectedValidationError,
+  NavigationApiNotSupportedError,
+  LoaderConditionError,
+  LoaderDataNotFoundError,
+  RouterContextMissingError,
+  RouteContextMissingError,
+} from "@pera1/core";
+import type { ErrorMeta, ErrorOptions, Issue } from "@pera1/core";
+```
+
+## Base classes [#base]
+
+```ts
+class ErrorBase<TMeta extends ErrorMeta | undefined = undefined> extends I18nErrorBase<TMeta> {}
+
+class ValidationErrorBase<
+  TMeta extends ErrorMeta | undefined = ErrorMeta | undefined,
+> extends ErrorBase<TMeta> {}
+```
+
+`ErrorBase` is a pera1-oriented re-export of `I18nErrorBase` from `i18n-error-base`, which supports internationalization. `ValidationErrorBase` is the common parent for validation errors. `UnexpectedValidationError` extends it.
+
+### meta property [#meta]
+
+Each error receives a `meta` object at creation time. `meta` holds the values that identify the cause, such as the target `url`, `shouldReload`, and actual `returnValue` for `LoaderConditionError`.
+
+`meta` is also used to build messages. Default messages are generated dynamically from `meta`.
+
+## Types [#types]
+
+| Type | Description |
+| --- | --- |
+| `ErrorMeta` | Base shape of `meta`. String keys with `unknown` values. |
+| `ErrorOptions` | Standard error options such as `cause`. |
+| `Issue` | `valibot`'s `BaseIssue<unknown>`. Represents a problem found during validation. |
+
+## List of errors [#classes]
+
+| Class | `name` | When thrown | Meta / Args |
+| --- | --- | --- | --- |
+| `UnreachableError` | `Pera1UnreachableError` | Reached code that should be unreachable | `UnreachableErrorMeta` (`{ value?: unknown }`) / `UnreachableErrorArgs` (`actual: [never?]` plus options) |
+| `UnexpectedValidationError` | `Pera1UnexpectedValidationError` | Encountered an unexpected value during schema validation | `UnexpectedValidationErrorMeta` (`{ issues, value }`) / `UnexpectedValidationErrorArgs` |
+| `NavigationApiNotSupportedError` | `Pera1NavigationApiNotSupportedError` | Navigation API is not supported | None |
+| `LoaderConditionError` | `Pera1LoaderConditionError` | `shouldReload` returned something other than a sync boolean | `LoaderConditionErrorMeta` (`{ url, shouldReload, returnValue }`) / `LoaderConditionErrorArgs` |
+| `LoaderDataNotFoundError` | `Pera1LoaderDataNotFoundError` | Loader result not found | `LoaderDataNotFoundErrorMeta` (`{ loader }`) / `LoaderDataNotFoundErrorArgs` |
+| `RouterContextMissingError` | `Pera1RouterContextMissingError` | `RouterContext` was not provided | None |
+| `RouteContextMissingError` | `Pera1RouteContextMissingError` | `RouteContext` was not provided | None |
+
+`UnexpectedValidationErrorMeta`'s `issues` guarantees at least one entry as `readonly [Issue, ...Issue[]]`. `Args` types intersect the corresponding `Meta` type with `ErrorOptions`.
+
+## Japanese messages [#i18n]
+
+The message language comes from `valibot`'s global config. Setting `lang` to `"ja"` enables the registered Japanese messages.
+
+```ts
+import { setGlobalConfig } from "valibot";
+
+setGlobalConfig({ lang: "ja" });
+```
+
+`UnexpectedValidationError` is handled differently. Its message joins each `issue`'s `message` with `": "`. The rendered wording depends on the language setting of the schema used for validation.
+
+## Replacing messages [#set-error-message]
+
+Use `setErrorMessage` to register a message in any language per class.
+
+```ts
+function setErrorMessage<TMeta extends ErrorMeta | undefined>(
+  reference: new (...args: any) => ErrorBase<TMeta>,
+  message: string | ((meta: TMeta) => string),
+  lang: string | Iterable<string>,
+): void;
+```
+
+```ts no-run
+import { setErrorMessage, UnreachableError } from "@pera1/core";
+
+setErrorMessage(UnreachableError, "設定値が不正です。", "ja");
+```
+
+The second argument can also be a function that receives `meta` and returns a string.
+
+```ts no-run
+import { setErrorMessage, LoaderDataNotFoundError } from "@pera1/core";
+
+setErrorMessage(
+  LoaderDataNotFoundError,
+  ({ loader }) => `ローダー ${loader?.name ?? "不明"} が見つかりません。`,
+  "ja",
+);
+```
+
+## Usage [#usage]
+
+Discriminate with `instanceof` and read details from `meta`.
+
+```ts no-run
+import { ErrorBase } from "@pera1/core";
+
+try {
+  runTask();
+} catch (ex) {
+  if (ex instanceof ErrorBase) {
+    console.error(ex.meta);
+  }
+}
+```
+
+## Notes [#notes]
+
+- The `name` prefix identifies errors originating from pera1. `instanceof ErrorBase` also works.
+- Pass `cause` as `ErrorOptions`, as in `new RouterContextMissingError({ cause })`.
+
+## Related [#related]
+
+- [RoutePatternUtils](/packages/core/reference/route-pattern-utils) — Throws on pattern mismatch
+- [History entry schemas](/packages/core/reference/schemas) — Throws `UnexpectedValidationError`
+- [createRouter](/packages/core/reference/create-router) — Processing where errors originate

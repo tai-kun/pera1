@@ -1,0 +1,281 @@
+---
+title: Routing
+description: "Path patterns, specificity, index routes, and nesting rules, with concrete examples."
+---
+
+Routing design comes down to how you order the route definition array. The primary spec in pera1 is a flat array. Routes without `index: true` match by prefix as layouts, are sorted by specificity after normalization, collect matches child-first, then reverse parent-first (`toReversed`) at render time to nest. To declare parent-child explicitly, use the `children` syntax (recommended). It joins with the parent path internally and expands into a flat array, so behavior is equivalent. This page covers available patterns, match priority, nesting conditions, and overlapping patterns in order.
+
+## Two ways to define routes [#definition-forms]
+
+The basic form is the object form. `path` is required; `index`, `component`, `loader`, `action`, and `shouldReload` are optional.
+
+```tsx
+const routes = [
+  { path: "/", component: RootLayout },
+  { path: "/", index: true, component: HomePage },
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+];
+```
+
+The module form is also accepted. If you omit `component`, the module's default export is used as the component. This is handy when you want one file per route.
+
+```tsx
+import * as contactRoute from "./routes/contact.js";
+
+const routes = [{ path: "/contacts/:id", ...contactRoute }];
+```
+
+:::note
+Keep the route definition array at module scope; don't recreate it on every render. When the `routes` reference changes, `Router` rebuilds the router and loses the loader cache.
+:::
+
+## Available path patterns [#patterns]
+
+Pattern syntax follows [regexparam](https://github.com/lukeed/regexparam).
+
+| Pattern | Example | Matching URLs | Parameters |
+| --- | --- | --- | --- |
+| Static | `/contacts` | `/contacts` | None |
+| Named parameter | `/contacts/:id` | `/contacts/42` | `{ id: "42" }` |
+| Optional parameter | `/archive/:year?` | `/archive`, `/archive/2026` | No key when omitted |
+| Suffixed parameter | `/movies/:title.mp4` | `/movies/hello.mp4` | `{ title: "hello" }` |
+| Wildcard | `/files/*` | `/files/a/b.txt` | `{ "*": "a/b.txt" }` |
+| Optional wildcard | `/files/*?` | `/files`, `/files/a` | No key when omitted |
+
+Suffixed parameters also support extension choices like `/movies/:title.(mp4|mov)`.
+
+```tsx
+const utils = new RoutePatternUtils("/movies/:title.mp4");
+utils.match("/movies/hello.mp4"); // true
+utils.match("/movies/hello.mov"); // false
+utils.parse("/movies/hello.mp4"); // { title: "hello" }
+```
+
+Parameter values are passed through still percent-encoded. For `/users/%20hello`, `id` is `"%20hello"`, not `" "`. Decode before display as needed.
+
+## Query and hash don't affect matching [#query-hash]
+
+`matchRoutes` matches on the path portion of the URL only. `/search?query=1#hash` matches the same as `/search`, and trailing slashes are ignored. To refetch data when the query changes, use `shouldReload` from [Data loading](/guides/data-loading).
+
+## More specific routes match first [#specificity]
+
+Routes are normalized internally, then sorted most-specific first. For a URL, every route is tested in that order, and matches are collected child-first.
+
+Specificity is decided per segment in this order, highest first.
+
+1. Static segment (`/contacts`)
+2. Suffixed parameter (`/:title.mp4`)
+3. Named parameter (`/:id`)
+4. Optional parameter (`/:id?`)
+5. Wildcard (`/*`)
+6. Optional wildcard (`/*?`)
+
+When segments have equal specificity, more segments win. If still tied, lexical string order wins. For example, among `/users/v1`, `/users/:id/profile`, `/users/:id`, and `/users`, `/users/v1` comes first and `/users` comes last.
+
+```tsx
+const routes = [
+  { path: "/users/:id", component: UserPage },
+  { path: "/users/me", component: MePage },
+];
+```
+
+Visiting `/users/me` matches the static `/users/me` first. The sibling `/users/:id` is excluded from the match chain by static-priority exclusion (see [Overlapping](#overlapping)).
+
+## `index` routes only match exactly [#index-routes]
+
+With `index: true`, a route matches only on exact match. Routes without it are treated as layouts covering child paths, not index routes. That is how nesting works.
+
+```tsx
+const routes = [
+  { path: "/contacts", index: true, component: ContactsPage },
+  { path: "/contacts", component: ContactsLayout },
+  { path: "/contacts/:id", component: ContactPage },
+];
+```
+
+At `/contacts` you get `ContactsPage`; at `/contacts/42` you get `ContactPage` inside `ContactsLayout`. `ContactsLayout` places an `Outlet` where the child should render.
+
+```tsx
+function ContactsLayout() {
+  return (
+    <section>
+      <h2>Contacts</h2>
+      <Outlet />
+    </section>
+  );
+}
+```
+
+## Bare paths auto-redirect to a child index [#index-redirect]
+
+Normalizing a bare path — one with no exact `index: true` match — needs no declaration, as in sending `/app` to `/app/dashboard`. It redirects to a child `index: true` automatically, so you don't need render-side code that checks the path and navigates.
+
+```tsx
+const routes = [
+  { path: "/app", component: AppLayout, loader: appLoader },
+  { path: "/app/dashboard", index: true, component: DashboardPage },
+];
+```
+
+The target is the index with the fewest extra segments, breaking ties by definition order. Placeholders are filled with the matched values. Redirection fires only on exact match, never on child paths. If an index for the same path exists, normal rendering is enough so no redirect happens.
+
+When combined with a `loader`, your loader still runs first even on a bare path. If the loader returns a `RedirectResponse` — for example to send unauthenticated users to login — that takes precedence. No render-side branching is needed.
+
+:::note
+Don't branch on the pathname inside `loader` and return `redirect()`. The result is cached per history entry and reused on child navigation, freezing the screen. Auto-redirect always re-runs on bare-path transitions and never reuses like that.
+:::
+
+## Declare parent-child with `children` (recommended) [#children]
+
+Instead of writing the same `path` twice in flat notation, you can declare parent-child with `children`. The shape is React Router compatible, and `processRoutes` joins it with the parent path on expansion. Plain flat arrays without `children` keep working.
+
+```tsx
+const routes = [
+  {
+    path: "/users/:username",
+    component: ProfileLayout,
+    loader: profileLoader,
+    children: [
+      { index: true, component: UserPostsPage, loader: userPostsLoader },
+      { path: "followers", component: FollowersPage },
+    ],
+  },
+];
+```
+
+Expansion rules:
+
+- If a child's `path` starts with `"/"`, it is absolute and ignores the parent. Otherwise it joins relative to the parent (`"followers"` → `"/users/:username/followers"`).
+- A child with `index: true` or no `path` inherits the parent path (the index above becomes `"/users/:username"`).
+- The parent itself remains as a layout. After expansion, each route is sorted by specificity like a flat array and subject to prefix matching and `toReversed` rendering.
+- An `index: true` route with `children` is invalid. It warns in development and expansion continues.
+
+:::note[Flat arrays are the primary spec]
+`children` is syntactic sugar. After expansion it becomes the same `Route` array as a flat array, with unchanged matching rules (prefix matching, sorting, child-first collection, reversed rendering). You can migrate gradually. Mixing flat and `children` is allowed.
+:::
+
+:::warning[Put the index before the layout on the same path]
+Routes with the same `path` have equal specificity, so definition order is preserved. Defining the `index` route first yields matches in “index, layout, …” order, so after reversal the layout wraps the index. Reverse the order and parent-child flips, leaving the layout's `Outlet` without the index.
+:::
+
+## When patterns overlap, static wins over param [#overlapping]
+
+pera1 collects every matched route, but when a static route exactly matches at a level, parameter routes at that level (and their prefix-matching layouts below) are excluded from the match chain. Static exact match beats param prefix match.
+
+```tsx
+const routes = [
+  { path: "/contacts/new", index: true, component: NewContactPage },
+  { path: "/contacts/:id", component: ContactPage },
+];
+```
+
+Visiting `/contacts/new` matches only `NewContactPage` at that level; `ContactPage` (param `id: "new"`) and its loaders or layouts never run. No scattered `projectId === "new"` guards needed.
+
+Exclusion applies only when all of these hold:
+
+- Neither winner nor loser contains a wildcard (`*`). A `/*` fallback is always kept.
+- The winner exactly matches the URL (it also matches with strict `allowChild: false` checking).
+- At the same segment position, the winner is static and the loser is a parameter.
+
+Legitimate parent layouts (e.g. the parent of `/app` → `/app/dashboard`) are all-static and equal on every segment, so they are not excluded. `/` is kept the same way. The same rule applies to paths expanded from `children` (e.g. `/projects/{ new, :projectId/tasks }`).
+
+A static route that is only a prefix-matching parent (not an exact match) excludes nothing. For URLs with no static exact match at that level (e.g. `/contacts/42`), parameter routes match normally.
+
+## Match results are a `MatchedRoute` array [#matched-route]
+
+Use `matchRoutes` to inspect the raw match result. `MatchedRoute` is a normalized `Route` plus extracted `params` and a `urlPath` with parameters filled back in.
+
+```ts
+import { matchRoutes } from "@pera1/core";
+
+const matched = matchRoutes(routes, new URL("https://example.com/contacts/42"));
+
+for (const route of matched ?? []) {
+  console.log(route.path, route.params, route.urlPath);
+}
+// /contacts/:id { id: "42" } /contacts/42
+// /contacts     {}           /contacts
+// /             {}           /
+```
+
+`urlPath` is the path with parameters filled with actual values. Use it to pick an action target or as a form destination.
+
+`matchRoutes` returns child-first order, most specific first. `Router` reverses it with `.toReversed()` to parent-first at render time, nesting layouts from the outside in.
+
+## Provide a screen for unmatched URLs [#not-found]
+
+When no route matches, `Router` renders nothing. To show a 404 screen, define a wildcard route with the lowest specificity.
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts/:id", component: ContactPage },
+  { path: "/*", component: NotFoundPage },
+];
+```
+
+`/*` matches any URL but loses to every other route, so it works as a fallback.
+
+## Read params in components [#use-params]
+
+In components, read parameters with `useParams`. Pass the route pattern as the type argument to type the keys.
+
+```tsx
+function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  return <p>ID: {params.id}</p>;
+}
+```
+
+Loaders and actions receive the same values as `params` in their arguments. But since a route definition's `path` widens to `string`, each value is typed `string | undefined`. Check existence before use. See [TypeScript](/guides/typescript#widening) for the typing details.
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("Missing id.");
+  }
+  return findContact(id);
+}
+```
+
+## Use `RoutePatternUtils` standalone [#route-pattern-utils]
+
+To match patterns outside the routing engine, use `RoutePatternUtils` directly. `parse` throws on mismatch; `parseSafe` returns `null`.
+
+```ts
+import { RoutePatternUtils } from "@pera1/core";
+
+const utils = new RoutePatternUtils("/contacts/:id");
+
+utils.match("/contacts/42"); // true
+utils.parseSafe("/contacts/42"); // { id: "42" }
+utils.inject({ id: "42" }); // "/contacts/42"
+utils.replace("/contacts/42", { id: "7" }); // "/contacts/7"
+```
+
+| Method | On mismatch | Use |
+| --- | --- | --- |
+| `match` | `false` | Check for a match |
+| `parse` / `parseSafe` | Throws / `null` | Extract parameters |
+| `inject` | Throws | Fill in parameters |
+| `replace` / `replaceSafe` | Throws / `null` | Replace some parameters |
+
+Passing `allowChild: true` makes `/contacts` prefix-match `/contacts/42`. Same behavior as route parent-child checks.
+
+## Define routes from files [#file-based]
+
+So far this page has shown hand-written route arrays. You can also generate routes from files and directories under `src/pages`. Add [@pera1/vite-plugin](/packages/vite-plugin) to Vite, then import route definitions from `virtual:pera1/routes`, with a `Route` type generated per route file.
+
+```tsx
+import { routes } from "virtual:pera1/routes";
+```
+
+File naming conventions (`_index`, `_layout`, `$id`, `$.`) and the generation flow are covered in the [@pera1/vite-plugin overview](/packages/vite-plugin). The generated definitions have the same shape as the arrays in this page.
+
+## Next steps [#next]
+
+Once URLs are designed, assign loaders to each route in [Data loading](/guides/data-loading).

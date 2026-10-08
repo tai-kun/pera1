@@ -1,0 +1,146 @@
+---
+title: NavigationApiEngine
+description: "Explains how the default engine handles navigate events, from initialization to cleanup."
+---
+
+`NavigationApiEngine` is the default implementation of [IEngine](/packages/core/reference/engine). It subscribes to the standard Navigation API, translating link clicks, form submissions, and back/forward moves into router state. React's `BrowserRouter` creates this class internally.
+
+This page covers the constructor requirements, the actual behavior of `init` / `start` / `submit` / `navigate`, and history entry cleanup.
+
+## Constructor [#constructor]
+
+```ts
+import { NavigationApiEngine } from "@pera1/core";
+
+const engine = new NavigationApiEngine();
+```
+
+It obtains the Navigation API from the global `navigation` or `window.navigation`. When neither yields an object, the constructor throws `NavigationApiNotSupportedError`. The same applies when an exception occurs during lookup.
+
+:::warning
+At the time of writing, mainly Chromium-based browsers implement the Navigation API. Check the [MDN compatibility table](https://developer.mozilla.org/docs/Web/API/Navigation_API#browser_compatibility) for support status. On unsupported environments, this error is thrown before the router is created.
+:::
+
+## init [#init]
+
+`init` synchronously computes the initial state. It does no async waiting.
+
+1. Validates `navigation.currentEntry`. Returns `null` when there is no entry, the URL is `null`, or the index is `-1`.
+2. Finds routes matching the current URL with [matchRoutes](/packages/core/reference/routes). Returns `null` when nothing matches.
+3. Starts all matched loaders at once with [initLoaders](/packages/core/reference/loaders). The signal from `getSignal()` is passed.
+4. Registers the started `NinjaPromise` `Map` in `loaderDataStore` under the current history entry ID.
+5. Returns `{ entry, routes }`.
+
+## start [#start]
+
+`start` subscribes to `navigate` events and calls `update` each time state settles. It also subscribes to `currententrychange` to add new history entries to the cleanup targets. When the signal from `getSignal()` aborts, in-progress navigation is interrupted.
+
+### navigate event interception conditions [#interception]
+
+Events matching any of the following are left to the browser's default behavior.
+
+| Condition | Meaning |
+| --- | --- |
+| `!event.isTrusted` | Synthetic event from a script. |
+| `!event.canIntercept` | Cannot be intercepted. |
+| `event.hashChange` | Hash-only change. |
+| `event.downloadRequest !== null` | Download request. |
+| `event.navigationType === "reload"` | Reload. |
+
+Even for interceptable events, processing may not continue. This happens when the current history entry cannot be obtained, or when no route matches the destination. In both cases, reset to the unmatched state with `update(null)` and hand control back to the browser.
+
+### Aborting consecutive navigations [#abort]
+
+Once interception is decided, the previous in-progress navigation is aborted with an `AbortController`. A new controller is then created, and its signal is passed to actions and loaders. Even with rapid successive navigations, stale async work never overwrites results.
+
+## GET navigation [#get-navigation]
+
+When `event.formData` is absent, the event is treated as a GET navigation from a link click or back/forward move. The `handler` runs in this order.
+
+1. Re-reads the current history entry, calling `update(null)` when missing.
+2. Does nothing when the entry URL differs from the destination.
+3. Resolves the routes matched against the pre-navigation URL, then calls [startLoaders](/packages/core/reference/loaders).
+4. Notifies the new state with `update({ entry, routes })` without waiting for loaders.
+5. Awaits `startedLoaders.idle()`. Waiting here keeps the browser tab's loading indicator until all loaders finish.
+
+## POST navigation [#post-navigation]
+
+When `event.formData` is present, the event is treated as a data mutation from form submission. Processing is split into two stages, `precommitHandler` and `handler`, separating action execution from view finalization.
+
+### precommitHandler [#precommit-handler]
+
+Runs the action before the URL is rewritten.
+
+1. When `sourceElement` carries a `data-pera1submit` attribute, removes the temporary form added by [submit](#submit) from the DOM.
+2. Calls [startAction](/packages/core/reference/actions). Exits as-is when there is no action to run.
+3. Registers the action's `NinjaPromise` in `actionDataStore` under the pre-navigation history entry ID.
+4. Calls `update()` with no arguments to trigger a re-render such as loading UI.
+5. Awaits `action.idle()`. On action failure, redirects back to the current URL via `controller.redirect`. On success, redirects to the instructed URL when present, otherwise to the current URL.
+6. Returns `{ action, actionData, redirectUrl }` to the next stage.
+
+When `redirectTo` is omitted, the current URL is used. Even when the action only returned a value, the redirect target is the current URL.
+
+### handler [#post-handler]
+
+Syncs the view after the browser address is settled.
+
+1. Does nothing when there is no `precommitHandler` result.
+2. Re-reads the history entry, calling `update(null)` when missing.
+3. Does nothing when the committed URL differs from `redirectUrl`.
+4. Re-keys the action result to the settled new history entry ID.
+5. Resolves the routes matching the settled URL, calling `update(null)` when none match.
+6. Passes `formData` and `actionData` to `startLoaders` to re-run loaders. The post-POST default decision always refetches.
+7. Notifies state with `update({ entry, routes })` and awaits `idle()`.
+
+## History entry cleanup [#disposal]
+
+Data stores hold results per history entry ID. Left alone, stale data for entries evicted from the session history would accumulate. The engine cleans up through two paths.
+
+At `start` time, it scans `navigation.entries()` and subscribes to each entry's `dispose`. When an entry is discarded, its action and loader data are removed from the stores. Already-subscribed IDs are not subscribed twice.
+
+On `currententrychange`, newly activated entries are added to the subscription targets the same way. Since targets grow with each navigation, later-created entries are also cleaned up on disposal.
+
+## submit [#submit]
+
+### FORM_DATA [#submit-form-data]
+
+`FORM_DATA` is sent as a POST. It builds a hidden `form` element from the read-only form data, temporarily adds it to the DOM, and calls `form.submit()`.
+
+The engine sets `method="POST"`, the target `action`, `enctype="multipart/form-data"`, and a `data-pera1submit` attribute on the `form`. Values containing `File` become file inputs, others become hidden inputs. After submission, the form is removed from the DOM during navigate event handling, identified by `data-pera1submit`.
+
+### URL_SEARCH_PARAMS [#submit-url-search-params]
+
+`URL_SEARCH_PARAMS` is a GET-equivalent query update. It loads the target path into a `RoutePath`, replaces `search` with the given parameters, then calls `navigation.navigate(path, { history })`. `history: "replace"` overwrites history, `"push"` adds a new entry.
+
+## navigate [#navigate]
+
+### LINK (STATIC) [#link-static]
+
+Normalizes the path with `RoutePath.encode(to.path)` to trim extra slashes and similar, then calls `navigation.navigate(path, { history })`.
+
+### LINK (DYNAMIC) [#link-dynamic]
+
+Builds a `RoutePath` from the current `window.location` and applies `patch`. Only the parts you want to change among path, query, and hash are rewritten. Calls `navigate` only when the string actually changed, and does nothing otherwise.
+
+### MOVE [#move]
+
+Adds `delta` to the current entry's index and looks up the entry with that index in `navigation.entries()`. When found, moves with `traverseTo(entry.key)`. Out-of-range moves do nothing. Same when there is no current history entry.
+
+## Building a custom engine [#custom-engines]
+
+The engine contract is summarized in [IEngine](/packages/core/reference/engine). See [Custom engines](/guides/custom-engines) for a minimal implementation example and notes.
+
+## Notes [#notes]
+
+- This engine uses `window` and `document`, so it is client-only.
+- `start` returns no stop function. Aborting the signal from `getSignal()` unsubscribes.
+- Successful actions redirect to the current URL even without an instruction. Keep this in mind when asserting `redirect` calls in tests.
+- The engine handles cleanup of the temporary submit form. You do not need to remove the form yourself.
+
+## Related [#related]
+
+- [IEngine](/packages/core/reference/engine) — Engine contract
+- [createRouter](/packages/core/reference/create-router) — Embedding the engine
+- [startAction](/packages/core/reference/actions) — Actions run on POST
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — Loader execution and refetching
+- [Custom engines](/guides/custom-engines) — Guide to custom implementations

@@ -1,0 +1,132 @@
+---
+title: RoutePatternUtils
+description: "Utility for pattern matching, parameter extraction, and path generation."
+---
+
+`RoutePatternUtils` is a class that matches route patterns such as `/users/:id` against actual paths. Matching, parameter extraction, and path generation with embedded params are available from both static and instance methods.
+
+```ts
+import { RoutePatternUtils } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+type Optional<T> = { readonly [P in keyof T]?: T[P] | undefined };
+
+class RoutePatternUtils<const TRoutePattern extends string = string> {
+  constructor(routePattern: TRoutePattern, options?: RoutePatternUtilsOptions);
+
+  readonly route: string;
+  readonly pattern: RegExp;
+  readonly paramKeys: readonly string[];
+
+  match(target: string | RoutePatternMatchURL): boolean;
+  parse(target: string | RoutePatternMatchURL): RouteParams<TRoutePattern>;
+  parseSafe(target: string | RoutePatternMatchURL): RouteParams<TRoutePattern> | null;
+  inject(params: Readonly<RouteParams<TRoutePattern>>): string;
+  replace(target: string | RoutePatternMatchURL, params: Optional<RouteParams<TRoutePattern>>): string;
+  replaceSafe(
+    target: string | RoutePatternMatchURL,
+    params: Optional<RouteParams<TRoutePattern>>,
+  ): string | null;
+}
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `routePattern` | `TRoutePattern extends string` | Yes | Base route pattern. |
+| `target` | `string \| RoutePatternMatchURL` | Yes | Target to match or parse. |
+| `params` | `RouteParams<TRoutePattern>` | Yes | Params to embed or overwrite. |
+| `options` | `RoutePatternUtilsOptions` | No | Controls matching behavior. |
+
+## RoutePatternUtilsOptions [#options]
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `allowChild` | `boolean` | `false` | When `true`, allows prefix matching into child directories. |
+
+```ts no-run
+const parent = new RoutePatternUtils("/users", { allowChild: true });
+parent.match("/users/123"); // true
+```
+
+## RoutePatternMatchURL [#match-url]
+
+`target` also accepts an object with `pathname` besides strings. When an object is passed, only `pathname` is used; `search` and `hash` are ignored.
+
+```ts
+interface RoutePatternMatchURL {
+  readonly pathname: string;
+}
+```
+
+Whether a string or an object, it is normalized internally through `RoutePath`. Duplicate slashes and trailing slashes are therefore removed before matching.
+
+## Methods [#methods]
+
+Static and instance methods share names and results. Static methods internally create an instance and call the corresponding instance method.
+
+| Method | Behavior on mismatch | Description |
+| --- | --- | --- |
+| `match` | Returns `false` | Checks whether the pattern matches. |
+| `parse` | Throws an error | Extracts params from a path. |
+| `parseSafe` | Returns `null` | Safe version of `parse`. |
+| `inject` | Always returns a string | Generates a path by embedding params into the pattern. |
+| `replace` | Throws an error | Replaces only some params of an existing path. |
+| `replaceSafe` | Returns `null` | Safe version of `replace`. |
+
+## Pattern syntax [#patterns]
+
+| Syntax | Example | Behavior |
+| --- | --- | --- |
+| `:name` | `/users/:id` | Extracts one segment as `id`. |
+| `:name?` | `/users/:id?` | Segment can be omitted. Omitted segments are excluded from `params`. |
+| `*` | `/files/*` | Extracts the rest of the path as the `"*"` key. |
+| `*?` | `/files/*?` | Matches even when the remainder is empty. |
+| `:name.ext` | `/movies/:title.mp4` | Splits on the extension and extracts only `title`. |
+
+## Parameter values [#params]
+
+Values returned by `parse` and `parseSafe` are taken as-is from the normalized path. Since `RoutePath` encodes pathname Unicode, values stay encoded. Conversely, `inject` embeds given values as-is.
+
+```ts
+RoutePatternUtils.parseSafe("/users/:id", "/users/%20hello");
+// { id: "%20hello" }
+
+RoutePatternUtils.parseSafe("/users/:name", "/users/日本語");
+// { name: "%E6%97%A5%E6%9C%AC%E8%AA%9E" }
+
+RoutePatternUtils.inject("/users/:name", { name: "日本語" });
+// "/users/日本語"
+```
+
+## Usage [#usage]
+
+```ts no-run
+import { RoutePatternUtils } from "@pera1/core";
+
+RoutePatternUtils.match("/users/:id", "/users/123"); // true
+RoutePatternUtils.parse("/users/:id", "/users/123"); // { id: "123" }
+RoutePatternUtils.parseSafe("/users/:id", "/posts/123"); // null
+RoutePatternUtils.inject("/users/:id", { id: "123" }); // "/users/123"
+RoutePatternUtils.replace(
+  "/users/:id/posts/:postId",
+  "/users/1/posts/2",
+  { postId: "9" },
+); // "/users/1/posts/9"
+```
+
+## Notes [#notes]
+
+- When `inject` lacks values for params, those portions are output as placeholders. Provide the required values at the call site.
+- `parse` and `replace` throw a dedicated error for pattern mismatches. Use `parseSafe` and `replaceSafe` when missing values are expected.
+- `paramKeys` holds param names extracted from the pattern in definition order. The wildcard key is `"*"`.
+
+## Related [#related]
+
+- [RoutePath](/packages/core/reference/route-path) — Target path normalization
+- [createRouter](/packages/core/reference/create-router) — Using route definitions and patterns
+- [Error classes](/packages/core/reference/errors) — Shared handling of validation errors

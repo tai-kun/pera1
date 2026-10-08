@@ -1,0 +1,312 @@
+---
+title: Quickstart
+description: "Build a contacts app to try out route definitions, data fetching, and form submissions."
+---
+
+Build a small contacts app to try out the pera1 basics. You'll end up with an app that has three screens: a list, a detail view, and creation. It uses only in-memory data, no external API. It takes about 15 minutes.
+
+This page covers route definitions, nested layouts, data fetching with loaders, form submissions with actions, and redirects. The complete working version is in [examples/contacts](https://github.com/tai-kun/pera1/tree/main/examples/contacts). Open it if you want to run the code while reading.
+
+## Set up the project [#setup]
+
+Create a React + TypeScript project with Vite and add the packages.
+
+```sh
+npm create vite@latest pera1-contacts -- --template react-ts
+cd pera1-contacts
+npm install
+```
+
+```package-install
+npm i @pera1/react react react-dom valibot
+```
+
+You'll replace the contents of the `src` folder next.
+
+## Prepare the data [#data]
+
+First, create a module that holds contacts. In real apps you'd call an API from loaders, but here we use a Map so you can focus on the data flow.
+
+```ts src/data.ts lineNumbers
+export type Contact = {
+  readonly id: string;
+  readonly name: string;
+  readonly email: string;
+};
+
+const contacts = new Map<string, Contact>([
+  ["1", { id: "1", name: "Ada Lovelace", email: "ada@example.com" }],
+  ["2", { id: "2", name: "Grace Hopper", email: "grace@example.com" }],
+]);
+
+let nextId = contacts.size + 1;
+
+export async function listContacts(): Promise<Contact[]> {
+  return [...contacts.values()];
+}
+
+export async function findContact(id: string): Promise<Contact | undefined> {
+  return contacts.get(id);
+}
+
+export async function createContact(name: string, email: string): Promise<Contact> {
+  const contact = { id: String(nextId++), name, email };
+  contacts.set(contact.id, contact);
+  return contact;
+}
+```
+
+## Define routes and data logic [#routes]
+
+Put route definitions and data logic together in `src/routes.tsx`. Route definitions are a flat array. Parent-child relationships are expressed by URL prefix matching, so the `/contacts` layout becomes the parent of `/contacts/42`.
+
+A route with `index: true` is only used on an exact match. Attach it to screens that represent the hierarchy itself, like a list view.
+
+```tsx src/routes.tsx lineNumbers
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@pera1/core";
+
+import { createContact, findContact, listContacts } from "./data.js";
+import {
+  ContactPage,
+  ContactsLayout,
+  ContactsPage,
+  HomePage,
+  NotFoundPage,
+  RootLayout,
+} from "./pages.js";
+
+export async function contactsLoader() {
+  return listContacts();
+}
+
+export async function contactLoader({ params }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("No id provided.");
+  }
+  const contact = await findContact(id);
+  if (!contact) {
+    throw new Error(`Contact ${id} not found.`);
+  }
+  return contact;
+}
+
+export async function createContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  const email = String(request.formData.get("email") ?? "").trim();
+  if (name === "") {
+    return { error: "Please enter a name." };
+  }
+  const contact = await createContact(name, email);
+  return redirect(`/contacts/${contact.id}`);
+}
+
+export const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts", index: true, component: ContactsPage },
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    loader: contactsLoader,
+    action: createContactAction,
+  },
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+  { path: "/*", component: NotFoundPage },
+];
+```
+
+:::warning
+When placing a layout and an `index` route with the same `path` side by side, define the `index` route first. Routes with equal specificity keep their definition order, so writing `index` first nests them as "list inside layout". Reverse the order and the parent-child relationship flips, leaving the layout's `Outlet` empty.
+:::
+
+:::note[About the `params` type]
+The `path` in a route definition widens to `string`, so values in `params` passed to loaders are typed `string | undefined`. Check for existence before use, as in `contactLoader` above. To type params on the component side, use `useParams<"/contacts/:id">()`.
+:::
+
+## Write the screen components [#components]
+
+Write the components in `src/pages.tsx`. A parent layout places an `Outlet` where the child should be rendered. Wrapping the `Outlet` in `Suspense` shows a fallback while loaders are running.
+
+```tsx src/pages.tsx lineNumbers
+import type { ActionData } from "@pera1/react";
+import { Outlet, useActionData, useLoaderData, useParams } from "@pera1/react";
+import * as React from "react";
+
+import type { contactLoader, contactsLoader, createContactAction } from "./routes.js";
+
+export function RootLayout() {
+  return (
+    <>
+      <header>
+        <h1>
+          <a href="/">Contacts</a>
+        </h1>
+      </header>
+      <main>
+        <React.Suspense fallback={<p>Loading…</p>}>
+          <Outlet />
+        </React.Suspense>
+      </main>
+    </>
+  );
+}
+```
+
+Loader results arrive as a `NinjaPromise`. Pass it to `React.use` and the component suspends while loading — the `Suspense` fallback is shown — then returns the resolved value once complete.
+
+```tsx src/pages.tsx lineNumbers
+export function ContactsPage() {
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
+
+  return (
+    <>
+      <ul>
+        {contacts.map((contact) => (
+          <li key={contact.id}>
+            <a href={`/contacts/${contact.id}`}>{contact.name}</a>
+          </li>
+        ))}
+      </ul>
+      <CreateContactForm />
+    </>
+  );
+}
+```
+
+Forms are plain `<form method="post">`. No special components are needed; submissions reach the router as actions. Action results are also `NinjaPromise`, so you receive them the same way with `use`. Since the result is `undefined` before any action has run, the part that calls `use` is split into a child component.
+
+```tsx src/pages.tsx lineNumbers
+function CreateContactForm() {
+  const actionData = useActionData<typeof createContactAction>();
+
+  return (
+    <form method="post" action="/contacts">
+      <h3>Add a contact</h3>
+      <label>
+        Name
+        <input name="name" />
+      </label>
+      <label>
+        Email
+        <input name="email" type="email" />
+      </label>
+      {actionData ? <ActionError actionData={actionData} /> : null}
+      <button type="submit">Add</button>
+    </form>
+  );
+}
+
+function ActionError({ actionData }: { actionData: ActionData<typeof createContactAction> }) {
+  const data = React.use(actionData);
+  if (data && "error" in data) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+On the detail page, receive parameters with `useParams`. Passing the route pattern as a type argument types `params.id` as a string.
+
+```tsx src/pages.tsx lineNumbers
+export function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  const contact = React.use(useLoaderData<typeof contactLoader>());
+
+  return (
+    <article>
+      <h2>{contact.name}</h2>
+      <p>{contact.email}</p>
+      <p>ID: {params.id}</p>
+      <p>
+        <a href="/contacts">Back to list</a>
+      </p>
+    </article>
+  );
+}
+```
+
+The remaining screen components are short, so they're listed together.
+
+```tsx src/pages.tsx lineNumbers
+export function HomePage() {
+  return (
+    <p>
+      The contact list is <a href="/contacts">here</a>.
+    </p>
+  );
+}
+
+export function ContactsLayout() {
+  return (
+    <section>
+      <h2>Contacts</h2>
+      <Outlet />
+    </section>
+  );
+}
+
+export function NotFoundPage() {
+  return (
+    <div>
+      <h2>Page not found</h2>
+      <p>
+        <a href="/">Back to home</a>
+      </p>
+    </div>
+  );
+}
+```
+
+## Write the entry point [#entry]
+
+Finally, start the router in `src/main.tsx`.
+
+```tsx src/main.tsx lineNumbers
+import { BrowserRouter } from "@pera1/react";
+import * as React from "react";
+import { createRoot } from "react-dom/client";
+
+import { routes } from "./routes.js";
+
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter routes={routes} />
+  </React.StrictMode>,
+);
+```
+
+## Run it and verify [#run]
+
+Start the dev server and open `/contacts`.
+
+```sh
+npm run dev
+```
+
+Check the following flow:
+
+- Clicking a list link navigates to `/contacts/1` and shows the detail view.
+- Going back to the list shows the cached loader result instantly.
+- Adding a contact with a name redirects to `/contacts/3` and shows the new contact.
+- Adding with an empty name shows an error on the same `/contacts` screen.
+
+During development, keep the network tab open to confirm that screen transitions don't reload the HTML, and that only the necessary loaders run after an action completes.
+
+## What just happened [#what-happened]
+
+The form submission reaches the router as a `navigate` event of the Navigation API, and the action defined on `/contacts` runs. When the action returns `redirect()`, the loaders for that URL run and the screen is swapped.
+
+`useLoaderData` and `useActionData` return a `NinjaPromise`. Just passing it to `React.use` hooks into standard React behavior: the `Suspense` fallback while loading, and the nearest error boundary on failure. No manual status checks are needed.
+
+## Deploying to static hosting [#deploy]
+
+When placing built files on static hosting, direct access to deep URLs like `/contacts/42` needs to fall back to `index.html`. In environments like GitHub Pages where that can't be configured, a common workaround is to make `404.html` identical to `index.html`.
+
+## Next steps [#next]
+
+- [Routing](/guides/routing) — Review all path pattern and specificity rules.
+- [Data fetching](/guides/data-loading) — Control reload conditions and cache behavior.
+- [Mutations](/guides/mutations) — Learn how actions are selected and advanced form patterns.
+- [Error handling](/guides/error-handling) — Catch loader failures with error boundaries.

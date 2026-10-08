@@ -1,0 +1,65 @@
+---
+title: useRouterContext
+description: "Hook that subscribes to only the selector-picked slice of the snapshot."
+---
+
+`useRouterContext` is a low-level hook that selects and subscribes to only the needed part of the router's global state. Public hooks such as `useNavigate` and `useRoutePath` use this hook internally.
+
+```tsx
+import { useRouterContext } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useRouterContext<TSlice>(
+  selector: (router: RouterSnapshot) => TSlice,
+): TSlice;
+```
+
+## Type parameters [#type-parameters]
+
+| Name | Description |
+| --- | --- |
+| `TSlice` | Type of the sliced data returned by the selector. Inferred from the function return value. |
+
+## Arguments [#arguments]
+
+| Argument | Type | Description |
+| --- | --- | --- |
+| `selector` | `(router: RouterSnapshot) => TSlice` | Function that picks the needed value out of the snapshot. |
+
+See [`createRouter`](/packages/core/reference/create-router#snapshot) for the contents of `RouterSnapshot`.
+
+## Returns [#returns]
+
+Returns the selector result. Internally it uses `useSyncExternalStore`, re-running the selector on every state change received through `subscribe`.
+
+## Usage [#usage]
+
+```tsx
+import { useRouterContext } from "@pera1/react";
+
+function CurrentUrl() {
+  const url = useRouterContext((router) => router.currentEntry.url);
+  return <p>{url.href}</p>;
+}
+```
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouterContextMissingError` | `RouterContext` is not provided |
+
+## Notes [#notes]
+
+- Selectors must return the same value on every call for unchanged state. Creating a new object or array on each call is treated as changed by `Object.is` and causes endless re-renders. Return a primitive or an existing reference.
+- Selectors re-run on every state change. Keep them cheap.
+- When the use case is fixed, use the dedicated hook instead: `useNavigate` for navigation, `useActionData` for action results, `useLoaderData` for loader results.
+
+## Related [#related]
+
+- [Contexts](/packages/react/reference/contexts) — Shape of `RouterContextValue`
+- [createRouter](/packages/core/reference/create-router#snapshot) — Contents of `RouterSnapshot`
+- [useRouteContext](/packages/react/reference/use-route-context) — Per-route information

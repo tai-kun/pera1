@@ -1,0 +1,87 @@
+---
+title: toNavigateArgs
+description: "Normalizes useNavigate arguments into navigation arguments for engines."
+---
+
+`toNavigateArgs` converts the destination specification accepted by hooks such as `useNavigate` into low-level `IEngine.NavigateArgs`. It handles 4 input kinds: strings, partial objects, functions, and numeric history moves. Handling them in one function keeps behavior consistent between React and Solid.js.
+
+```ts
+import { toNavigateArgs } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+function toNavigateArgs(
+  to: NavigateTo | number,
+  options?: NavigateOptions,
+): IEngine.NavigateArgs;
+```
+
+## Destination specification [#navigate-to]
+
+`NavigateTo` accepts the following 3 forms. The shape of the returned argument changes with the form.
+
+| Form | Type | Returned argument |
+| --- | --- | --- |
+| Full path string | `string` | `{ type: "LINK", to: { type: "STATIC", path } }` |
+| Partial object | `{ pathname?, search?, hash? }` | `{ type: "LINK", to: { type: "DYNAMIC", patch } }` |
+| Patch function | `(route: RoutePath) => void` | `{ type: "LINK", to: { type: "DYNAMIC", patch } }` |
+
+Partial objects only overwrite the specified components. For example, passing `{ hash: "#top" }` keeps the current pathname and query; only the hash is replaced. The function form can freely call `RoutePath` setters, so multiple components can be composed at once.
+
+Numbers are not part of `NavigateTo`; they are a special argument accepted only by `toNavigateArgs`. Passing a number returns `{ type: "MOVE", delta }`, representing a history move rather than a link. The second `options` argument is then unused.
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `to` | `NavigateTo \| number` | Yes | Destination specification, or the number of steps to move through history. |
+| `options` | `NavigateOptions` | No | Controls how the entry is added to the history stack. |
+
+## NavigateOptions [#navigate-options]
+
+| Property | Type | Default | Description |
+| --- | --- | --- | --- |
+| `replace` | `boolean` | `false` | When `true`, overwrites the current history; when `false` or omitted, adds new history. |
+
+## Return value [#returns]
+
+The return value is `IEngine.NavigateArgs`. The engine switches between link navigation and history moves based on the returned argument's `type`.
+
+```ts no-run
+import { toNavigateArgs } from "@pera1/core";
+
+engine.navigate(toNavigateArgs("/dashboard"));
+// { type: "LINK", to: { type: "STATIC", path: "/dashboard" }, history: "push" }
+
+engine.navigate(toNavigateArgs(-1));
+// { type: "MOVE", delta: -1 }
+```
+
+Examples of partial-object and function forms. Passing `replace` overwrites history instead of appending.
+
+```ts no-run
+// Replace only the query
+engine.navigate(toNavigateArgs({ search: "?tab=activity" }, { replace: true }));
+
+// Build a RoutePath directly
+engine.navigate(
+  toNavigateArgs((path) => {
+    path.pathname = "/settings";
+    path.hash = "profile";
+  }),
+);
+```
+
+## Notes [#notes]
+
+- Keys omitted from a partial object are left unchanged. Passing an empty object keeps the current URL.
+- The function-form `patch` receives a `RoutePath` instance built from the current URL by the engine. Only use setters to modify it.
+- String input is normalized by the engine with `RoutePath` before navigation. Duplicate and trailing slashes are removed.
+
+## Related [#related]
+
+- [useNavigate](/packages/react/reference/use-navigate) — Hook that navigates from React
+- [RoutePath](/packages/core/reference/route-path) — Path object received in the function form
+- [createRouter](/packages/core/reference/create-router) — Engine and controller integration

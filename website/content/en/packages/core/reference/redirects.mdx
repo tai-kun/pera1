@@ -1,0 +1,88 @@
+---
+title: redirect
+description: "Specification for redirect and RedirectResponse, which navigate to another path from an action."
+---
+
+`redirect` creates a `RedirectResponse` that navigates to another page as an action result. Returning this object from an action makes the engine redirect to that page.
+
+```ts
+import { redirect, RedirectResponse } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+function redirect(destination: string): RedirectResponse;
+
+class RedirectResponse {
+  constructor(destination: string);
+  readonly pathname: string;
+  readonly search: string;
+  readonly hash: string;
+}
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `destination` | `string` | Yes | Destination path. An empty string points to the root. |
+
+## RedirectResponse properties [#properties]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `pathname` | `string` | Path without the domain part. Always starts with `/`. |
+| `search` | `string` | Query including the leading `?`. Always sorted. |
+| `hash` | `string` | Hash including the leading `#`. |
+
+Input parsing follows the same rules as `RoutePath`. See [RoutePath](/packages/core/reference/route-path) for normalization details.
+
+## Usage [#usage]
+
+Return it as an action's return value. Actions can read submitted content from `request.formData`.
+
+```ts no-run
+import { redirect } from "@pera1/core";
+import type { ActionFunction } from "@pera1/core";
+
+const createUser: ActionFunction = async ({ request }) => {
+  const formData = request.formData;
+  await saveUser(formData);
+
+  return redirect("/users?created=1");
+};
+```
+
+`RedirectResponse` itself is just data holding the redirect destination. When the engine finds this type in an action result, it navigates to that URL. An action that returns a redirect yields `undefined` in `useActionData`.
+
+## Normalization examples [#normalization]
+
+```ts
+redirect("/users/profile?id=123&sort=desc#bio");
+// pathname: "/users/profile"
+// search: "?id=123&sort=desc"
+// hash: "#bio"
+
+redirect("/users?z=1&a=2");
+// search: "?a=2&z=1"
+
+redirect("relative/path");
+// pathname: "/relative/path"
+
+redirect("");
+// pathname: "/"
+```
+
+## Notes [#notes]
+
+- Queries are always sorted in ascending order.
+- Relative paths without a leading slash automatically gain a `/`.
+- Absolute URLs are not parsed as URLs. `"https://example.com/a"` is treated as a single path string, so `pathname` becomes `"/https:/example.com/a"`.
+- Consecutive slashes and trailing slashes are removed using the same rules as `RoutePath`.
+
+## Related [#related]
+
+- [RoutePath](/packages/core/reference/route-path) — Path normalization and manipulation
+- [RouteRequest](/packages/core/reference/route-request) — Requests passed to actions
+- [selectActionData and selectLoaderData](/packages/core/reference/router-store) — Subscribing to action results

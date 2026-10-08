@@ -1,0 +1,137 @@
+---
+title: RoutePath
+description: "Specification for RoutePath, which normalizes and manipulates paths, queries, and hashes."
+---
+
+`RoutePath` is a class for building, parsing, and manipulating in-app paths. It drops extraneous information such as hosts and protocols, and manages only the pathname, query, and hash under consistent rules. The function form of `useNavigate` also receives this instance.
+
+```ts
+import { RoutePath } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+class RoutePath implements ReadonlyRoutePath {
+  constructor(path?: string | Pick<ReadonlyURL, "pathname" | "search" | "hash">);
+
+  static encode(path: string | Pick<ReadonlyURL, "pathname" | "search" | "hash">): string;
+
+  get pathname(): string;
+  set pathname(value: string);
+
+  get search(): string;
+  set search(value: string);
+
+  get searchParams(): URLSearchParams;
+
+  get hash(): string;
+  set hash(value: string);
+
+  toString(): string;
+  clone(): RoutePath;
+}
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `path` | `string \| Pick<ReadonlyURL, "pathname" \| "search" \| "hash">` | No | Path to parse. When omitted, it is treated as an empty string and becomes the root (`/`). |
+
+## Properties [#properties]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `pathname` | `string` | Normalized pathname. Normalization also runs on assignment. |
+| `search` | `string` | Query including the leading `?`. Sorted on every read. |
+| `searchParams` | `URLSearchParams` | Object for manipulating the query. Changes are reflected in `search` and `toString()`. |
+| `hash` | `string` | Hash including the leading `#`. |
+
+## Methods [#methods]
+
+| Method | Return value | Description |
+| --- | --- | --- |
+| `toString()` | `string` | Returns the pathname, sorted query, and hash concatenated. |
+| `clone()` | `RoutePath` | Returns an independent instance with the same content. |
+| `RoutePath.encode(path)` | `string` | Static method that returns the input as a normalized string. |
+
+## Normalization rules [#normalization]
+
+Both strings and objects are normalized by the following rules.
+
+- When there is no leading slash, `/` is added.
+- Consecutive slashes are collapsed into one.
+- Except for the root (`/`), trailing slashes are removed.
+- The query is sorted in ascending order on read.
+- Assigning a `hash` value without `#` automatically adds `#`.
+- Unicode and special characters in the pathname are percent-encoded. Already-encoded strings are preserved as-is.
+
+```ts
+new RoutePath("/users///profile//").toString();
+// "/users/profile"
+
+new RoutePath("/page?b=2&a=1#section").toString();
+// "/page?a=1&b=2#section"
+
+new RoutePath({ pathname: "/search", search: "?z=1&a=2", hash: "#top" }).toString();
+// "/search?a=2&z=1#top"
+```
+
+An absolute URL string is not parsed as a URL. The whole string is treated as a path.
+
+```ts
+new RoutePath("http://google.com/path").toString();
+// "/http:/google.com/path"
+```
+
+## Static method encode [#encode]
+
+`encode` is for when you only want the normalized string. It internally creates a `RoutePath` and returns its `toString()` value.
+
+```ts
+RoutePath.encode("//items//123//");
+// "/items/123"
+```
+
+## ReadonlyRoutePath [#readonly-route-path]
+
+`ReadonlyRoutePath` is a readonly view that only allows reads. Use it for function arguments that only receive a reference.
+
+```ts
+interface ReadonlyRoutePath {
+  readonly pathname: string;
+  readonly search: string;
+  readonly searchParams: ReadonlyURLSearchParams;
+  readonly hash: string;
+  toString(): string;
+  clone(): RoutePath;
+}
+```
+
+## Relationship with useNavigate [#use-navigate]
+
+When you pass a function to `useNavigate`, its `route` argument receives a `RoutePath` instance. Mutating that instance, which is based on the current URL, via setters becomes the next navigation target.
+
+```tsx
+import { RoutePath } from "@pera1/core";
+
+navigate((route: RoutePath) => {
+  route.pathname = "/settings";
+  route.search = "?tab=account";
+});
+```
+
+When you only want to specify the whole path as a static string, passing a string through [toNavigateArgs](/packages/core/reference/navigation-utils) is simpler. The function form suits changing only part of the path while keeping the current query.
+
+## Notes [#notes]
+
+- `searchParams` returns the object held by the internal `URL` as-is. Changes via `append` and similar methods are reflected immediately.
+- An instance created by `clone()` is independent of the original. Changing one does not affect the other.
+- Unicode in queries and hashes is also encoded following `URL` rules.
+
+## Related [#related]
+
+- [toNavigateArgs](/packages/core/reference/navigation-utils) — Normalization function that accepts functional navigation
+- [redirect](/packages/core/reference/redirects) — Parses redirect destinations with the same rules
+- [RoutePatternUtils](/packages/core/reference/route-pattern-utils) — Path pattern parsing and generation

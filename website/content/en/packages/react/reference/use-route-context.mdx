@@ -1,0 +1,64 @@
+---
+title: useRouteContext
+description: "Low-level hook that reads the full route information for the current level."
+---
+
+`useRouteContext` returns the full route information for the current level. `useParams`, `useFormAction`, `useActionData`, and `useLoaderData` all pick the part they need from this value internally. Use it when building custom hooks or layout components.
+
+```tsx
+import { useRouteContext } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useRouteContext(): RouteContextValue;
+```
+
+## Returns [#returns]
+
+Returns a `RouteContextValue`: matched route information plus `outlet`.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `path` | `string` | Path pattern of the route definition. |
+| `index` | `boolean` | Whether this is an index route. |
+| `params` | `RouteParams` | Parameters extracted from the URL. |
+| `urlPath` | `string` | Path with parameters filled in with actual values. |
+| `component` | `React.ComponentType<{}> \| undefined` | Component to render. |
+| `action` | Action function or `undefined` | Includes the value inherited from the parent. |
+| `loader` | Loader function or `undefined` | Includes the value inherited from the parent. |
+| `shouldReload` | `ShouldReloadFunction` | Function that decides whether to refetch. |
+| `utils` | `RoutePatternUtils` | Utilities for matching patterns and extracting parameters. |
+| `outlet` | `React.ReactElement \| null` | Element of the child route. |
+
+## Usage [#usage]
+
+```tsx
+import { useRouteContext } from "@pera1/react";
+
+function RouteDebug() {
+  const { path, params, urlPath } = useRouteContext();
+  return (
+    <p>
+      {path} → {urlPath} ({Object.keys(params).length} params)
+    </p>
+  );
+}
+```
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` is not provided |
+
+## Notes [#notes]
+
+- When you only need a specific piece of information, prefer the dedicated hooks such as `useParams` or `useFormAction`. Destructuring the whole value makes it harder to see what the component depends on.
+
+## Related [#related]
+
+- [Contexts](/packages/react/reference/contexts) — Shape of `RouteContextValue`
+- [useRouterContext](/packages/react/reference/use-router-context) — Router-wide state
+- [useLoaderData](/packages/react/reference/use-loader-data) — Loader results

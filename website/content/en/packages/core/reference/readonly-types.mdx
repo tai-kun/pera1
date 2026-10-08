@@ -1,0 +1,121 @@
+---
+title: Readonly Types
+description: "Three interfaces for handling URLs and form data immutably."
+---
+
+Loaders and actions in pera1 receive parts of the request as readonly types. You can read them but not mutate them, so data cannot change mid-processing. This page covers three interfaces.
+
+## `ReadonlyURL` [#readonly-url]
+
+`ReadonlyURL` is the standard `URL` interface without assignment-based mutation. `RouteRequest`'s `url` and `HistoryEntry`'s `url` use this type.
+
+```ts
+interface ReadonlyURL {
+  readonly hash: string;
+  readonly host: string;
+  readonly hostname: string;
+  readonly href: string;
+  readonly origin: string;
+  readonly password: string;
+  readonly pathname: string;
+  readonly port: string;
+  readonly protocol: string;
+  readonly search: string;
+  readonly searchParams: ReadonlyURLSearchParams;
+  readonly username: string;
+  toString(): string;
+  toJSON(): string;
+}
+```
+
+The runtime value is a standard `URL` object. Property semantics match [MDN's `URL`](https://developer.mozilla.org/docs/Web/API/URL), and `toJSON()` returns the same string as `href`.
+
+```tsx
+async function loader({ request }: LoaderFunctionArgs) {
+  const { pathname, searchParams } = request.url;
+  const page = searchParams.get("page") ?? "1";
+  return { pathname, page };
+}
+```
+
+## `ReadonlyURLSearchParams` [#readonly-url-search-params]
+
+`ReadonlyURLSearchParams` is `URLSearchParams` without mutating methods such as `append`, `delete`, `set`, and `sort`.
+
+```ts
+interface ReadonlyURLSearchParams {
+  readonly size: number;
+  get(name: string): string | null;
+  getAll(name: string): string[];
+  has(name: string, value?: string): boolean;
+  toString(): string;
+  forEach(
+    callbackfn: (value: string, key: string, parent: ReadonlyURLSearchParams) => void,
+    thisArg?: any,
+  ): void;
+}
+```
+
+To build a new URL with a modified query, use `RoutePath` or construct a fresh `URLSearchParams`.
+
+```ts
+import { RoutePath } from "@pera1/core";
+
+const path = new RoutePath(request.url);
+path.searchParams.set("page", "2");
+path.toString(); // Path with updated query
+```
+
+## `ReadonlyFormData` [#readonly-form-data]
+
+`ReadonlyFormData` is `FormData` without mutating methods. An action's `request.formData` uses this type.
+
+```ts
+interface ReadonlyFormData {
+  get(name: string): FormDataEntryValue | null;
+  getAll(name: string): FormDataEntryValue[];
+  has(name: string): boolean;
+  forEach(
+    callbackfn: (value: FormDataEntryValue, key: string, parent: ReadonlyFormData) => void,
+    thisArg?: any,
+  ): void;
+  entries(): IterableIterator<[string, FormDataEntryValue]>;
+  keys(): IterableIterator<string>;
+  values(): IterableIterator<FormDataEntryValue>;
+  [Symbol.iterator](): IterableIterator<[string, FormDataEntryValue]>;
+}
+```
+
+`get` returns `null` when no value exists, and the value type is a string or `File`. Handle `null` explicitly when converting to a number.
+
+```tsx
+async function action({ request }: ActionFunctionArgs) {
+  const age = Number(request.formData.get("age") ?? 0);
+  const avatar = request.formData.get("avatar");
+  const file = avatar instanceof File ? avatar : undefined;
+  return { age, fileName: file?.name };
+}
+```
+
+:::note
+`ReadonlyFormData` is readonly, but the `File` objects themselves are not immutable. If you read a received file as a stream, close it inside the action.
+:::
+
+## Converting form data to a web-standard `Request` [#to-request]
+
+`RouteRequest.toRequest()` converts these readonly objects into a web-standard `Request`. Since you can pass it directly to `fetch`, it is handy for calling APIs from actions.
+
+```tsx
+async function action({ request }: ActionFunctionArgs) {
+  const response = await fetch("/api/contacts", request.toRequest());
+  return response.json();
+}
+```
+
+Passing `RequestInit` overrides `method`, `body`, `headers`, and similar fields. See [RouteRequest](/packages/core/reference/route-request) for details.
+
+## Related [#related]
+
+- [RouteRequest](/packages/core/reference/route-request) — GET / POST request abstraction
+- [schemas](/packages/core/reference/schemas) — URL validation and normalization
+- [Data loading](/guides/data-loading) — Handling requests in loaders

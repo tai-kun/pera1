@@ -1,0 +1,116 @@
+---
+title: History Entry Schemas
+description: "Schemas that validate history entry IDs and URLs, plus expectHistoryEntry."
+---
+
+`HistoryEntryIdSchema` and `HistoryEntryUrlSchema` are `valibot` schemas that validate history entry identifiers and URLs. `expectHistoryEntry` combines both to validate a whole history entry.
+
+```ts
+import {
+  HistoryEntryIdSchema,
+  HistoryEntryUrlSchema,
+  expectHistoryEntry,
+} from "@pera1/core";
+import type {
+  HistoryEntry,
+  HistoryEntryId,
+  HistoryEntryIdLike,
+  HistoryEntryLike,
+  HistoryEntryUrl,
+  HistoryEntryUrlLike,
+} from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+import type * as v from "valibot";
+
+function HistoryEntryIdSchema(): v.GenericSchema<HistoryEntryIdLike, HistoryEntryId>;
+function HistoryEntryUrlSchema(): v.GenericSchema<HistoryEntryUrlLike, HistoryEntryUrl>;
+
+function expectHistoryEntry(entry: HistoryEntryLike): HistoryEntry;
+function expectHistoryEntry(entry: HistoryEntryLike | null | undefined): HistoryEntry | null;
+```
+
+## HistoryEntryIdSchema [#history-entry-id-schema]
+
+Validates whether a string is a UUID, and outputs a passing value as a `HistoryEntryId`. It also accepts UUIDs containing uppercase letters.
+
+Empty strings and short digit counts fail.
+
+## HistoryEntryUrlSchema [#history-entry-url-schema]
+
+Validates whether a string is an absolute URL. On success it outputs the normalized `ReadonlyURL` as a `HistoryEntryUrl`; on failure it fails. The query is sorted following `RoutePath` rules.
+
+```ts no-run
+import { HistoryEntryUrlSchema } from "@pera1/core";
+import * as v from "valibot";
+
+const url = v.parse(HistoryEntryUrlSchema(), "https://example.com/page?c=3&a=1&b=2");
+
+url.search; // "?a=1&b=2&c=3"
+```
+
+## expectHistoryEntry [#expect-history-entry]
+
+Validates the `{ id, url, index }` shape and converts it into a definitive `HistoryEntry`. `url` allows `null`, and `index` is an integer greater than or equal to `-1`. It returns `null` without failing validation in the following cases.
+
+- The argument is `null` or `undefined`
+- `url` is `null`
+- `index` is less than `0` (such as `-1`)
+
+It throws `UnexpectedValidationError` for malformed shapes. Extra properties are ignored.
+
+```ts no-run
+import { expectHistoryEntry } from "@pera1/core";
+
+const entry = expectHistoryEntry({
+  id: "123e4567-e89b-12d3-a456-426614174000",
+  url: "https://example.com",
+  index: 0,
+}); // HistoryEntry
+
+expectHistoryEntry(null); // null
+
+// Throws UnexpectedValidationError for malformed input
+expectHistoryEntry({
+  id: "123e4567-e89b-12d3-a456-426614174000",
+  url: "not a url",
+  index: 0,
+});
+```
+
+## Types [#types]
+
+| Type | Input / Output | Description |
+| --- | --- | --- |
+| `HistoryEntryIdLike` | Input (`string`) | UUID string. |
+| `HistoryEntryId` | Output | Branded UUID string. |
+| `HistoryEntryUrlLike` | Input (`string`) | Absolute URL string. |
+| `HistoryEntryUrl` | Output (`ReadonlyURL`) | Normalized readonly URL. |
+| `HistoryEntryLike` | Input | Raw `{ id, url, index }` object. `url` allows `null`. |
+| `HistoryEntry` | Output | Validated `{ id, url, index }`. |
+
+## Singleton cache [#singleton]
+
+Schema functions store the first generation result in an internal cache, so repeated calls return the same instance. You can call them where needed without worrying about the cost of obtaining a schema.
+
+```ts
+import { HistoryEntryIdSchema } from "@pera1/core";
+
+const a = HistoryEntryIdSchema();
+const b = HistoryEntryIdSchema();
+a === b; // true
+```
+
+## Notes [#notes]
+
+- Calling `v.parse` directly throws a `valibot` validation error on failure. Only `expectHistoryEntry` throws `UnexpectedValidationError`.
+- `expectHistoryEntry`'s `index` rejects decimals and `NaN`.
+
+## Related [#related]
+
+- [Error classes](/packages/core/reference/errors) — `UnexpectedValidationError` specification
+- [RoutePath](/packages/core/reference/route-path) — URL normalization rules
+- [createRouter](/packages/core/reference/create-router) — Use of history entries

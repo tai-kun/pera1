@@ -1,0 +1,94 @@
+---
+title: useActionData
+description: "Hook that subscribes to the action result for reading with React.use."
+---
+
+`useActionData` subscribes to the action result tied to the current route hierarchy. Passing the returned `NinjaPromise` to `React.use` suspends while it runs and returns the result on completion.
+
+```tsx
+import { useActionData } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useActionData<TData = unknown>(): ActionData<TData> | undefined;
+```
+
+## Type parameters [#type-parameters]
+
+| Name | Default | Description |
+| --- | --- | --- |
+| `TData` | `unknown` | Type of the action function, or the resolved data type. Passing a function type derives the data type from its return value. |
+
+```ts
+type ActionResult<TResult> = Awaited<TResult extends RedirectResponse ? undefined : TResult>;
+
+type FulfilledActionData<TData = unknown> = ActionResult<
+  TData extends (...args: any) => infer TReturn ? TReturn : TData
+>;
+
+type ActionData<TData = unknown> = NinjaPromise<FulfilledActionData<TData>>;
+```
+
+Pass a function like `useActionData<typeof action>()`, or a data type directly like `ActionData<Result>()`.
+
+## Returns [#returns]
+
+Returns a `NinjaPromise` when the action has run or is running, and `undefined` for history entries where it has never run. Selection is delegated to `selectActionData` in `@pera1/core`, looking up the cache by the current history entry ID and the action function reference.
+
+Since `use` cannot be called on `undefined`, split the part that calls `use` into a child component.
+
+```tsx
+function ContactForm() {
+  const actionData = useActionData<typeof updateContactAction>();
+
+  return (
+    <form method="post" action="/contacts">
+      <input name="name" />
+      {actionData ? <ActionError actionData={actionData} /> : null}
+      <button type="submit">Save</button>
+    </form>
+  );
+}
+
+function ActionError({ actionData }: { actionData: ActionData<typeof updateContactAction> }) {
+  const data = React.use(actionData);
+  if (data && "error" in data && data.error) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+While running, the component suspends, so a `Suspense` fallback is shown during submission. On failure the rejection reason is thrown and caught by an error boundary.
+
+## Redirects and the `value` type [#redirect]
+
+When an action returns `redirect()`, the framework replaces the response with `undefined` instead of passing it to the screen. However, if an async action returns a union of `{ error }` and `RedirectResponse`, `RedirectResponse` remains in the type. Narrow with the `in` operator before reading the value.
+
+```tsx
+const data = React.use(actionData);
+if (data && "error" in data) {
+  return <p role="alert">{data.error}</p>;
+}
+```
+
+See the [TypeScript guide](/guides/typescript#action-data) for details on typing.
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` is not provided |
+| `RouterContextMissingError` | `RouterContext` is not provided |
+
+## Inheriting the parent action [#inheritance]
+
+When a child route has no action, it inherits the parent route's action. A child definition takes precedence. This works the same as `useLoaderData`.
+
+## Related [#related]
+
+- [useLoaderData](/packages/react/reference/use-loader-data) — Subscribing to loader results
+- [Mutations](/guides/mutations) — Wiring actions to forms
+- [TypeScript](/guides/typescript#action-data) — Deriving types

@@ -1,0 +1,95 @@
+---
+title: Concepts
+description: "Three foundations — route matching, history entries, and data flow — explained with examples."
+---
+
+To use pera1 as designed, three ideas make later decisions easier: routes build hierarchy by URL prefix matching, data is cached per history entry, and fetching and updating are split between loaders and actions.
+
+## Parent routes also match child URLs [#allow-child]
+
+The route array passed to `createRouter` is first sorted by specificity. For a requested URL, patterns are tested from the start of the array and all matches are collected. The result is an array ordered "child to parent".
+
+```tsx
+const routes = [
+  { path: "/", component: RootLayout },
+  { path: "/contacts", component: ContactsLayout },
+  { path: "/contacts/:id", component: ContactPage },
+];
+```
+
+For the URL `/contacts/42`, three routes match in this order: `/contacts/:id`, `/contacts`, and `/`. A parent route like `/contacts` prefix-matches anything below it unless declared as an index route. This property is what makes nested layouts work.
+
+A route with `index: true` only matches on an exact path match. Use it when you want to place a list page and a detail page under the same `/contacts`.
+
+```tsx
+{ path: "/contacts", index: true, component: ContactsPage }
+```
+
+Query strings and hashes don't affect matching. `/contacts?sort=name#top` matches the same as `/contacts`. Trailing slashes are also ignored.
+
+## Matched hierarchy renders as nested UI [#nesting]
+
+The `Router` reverses the matched array from parent to child order and renders child components nested inside parent components. A parent component places an `Outlet` where the child should be inserted.
+
+```tsx
+function RootLayout() {
+  return (
+    <div>
+      <Header />
+      <main>
+        <Outlet />
+      </main>
+    </div>
+  );
+}
+```
+
+A route without a `component` passes its child straight through to the parent's `Outlet`. This is handy when you want to add a routing level without inserting a layout.
+
+## Data is cached per history entry [#history-entries]
+
+Each time the browser navigates, the Navigation API adds one history entry. pera1 assigns a UUID to each entry and manages loader and action results per ID.
+
+When you return to the same entry (e.g. the browser "back" button), loader results are pulled from the store. Whether to refetch is decided by `shouldReload`. By default, it refetches only when the query string changed or when a route appears that wasn't in the pre-navigation hierarchy; otherwise it reuses the previous result.
+
+When a history entry drops out of the session history and is discarded, its data is removed from the store. Memory doesn't grow without bound.
+
+## Data flows in three scenarios [#data-flow]
+
+On **initial render**, `engine.init` matches the URL and launches the loaders of all matched routes in parallel. There's no need to wait for loaders to finish. The screen renders immediately, leaving waiting and display to each component.
+
+On a **GET navigation**, `startLoaders` compares routes before and after the transition, decides per loader whether to reuse or rerun, then notifies the UI of the new state.
+
+On a **form submission (POST)**, exactly one action runs first — the closest parent route to the submission target. Once the action completes, the redirect target is determined, the loaders for that URL run, and the results are reflected on screen. Since data generally needs refetching after an update, the default `shouldReload` is always `true`.
+
+## Receive async results as `NinjaPromise` [#ninja-promise]
+
+Loader and action results are passed as a thenable called `NinjaPromise`. In components, the basic pattern is to pass it to `React.use`. While loading, the component suspends and the `Suspense` fallback is shown; on failure, the nearest error boundary receives the exception. On success, the resolved value is returned as-is.
+
+```tsx
+function ProfilePage() {
+  const user = React.use(useLoaderData<typeof userLoader>());
+  return <Profile user={user} />;
+}
+```
+
+A `NinjaPromise` can also be `await`ed like a normal Promise. No manual status checks are needed. Since error display can be centralized in error boundaries, there's no reason to swallow exceptions inside loaders or actions.
+
+## Engines and UI bindings are decoupled [#engine]
+
+Routing is executed by an engine that implements `IEngine`. The default `NavigationApiEngine` subscribes to Navigation API events and is driven externally through four methods: `init`, `start`, `submit`, and `navigate`. Engines are swappable. Write an in-memory router for tests or a hash-based router, and it works the same way in environments without the Navigation API.
+
+`createRouter` mediates between the engine and route definitions, providing subscription and snapshot access. The React binding's `Router` subscribes to this snapshot with `useSyncExternalStore` and rerenders only the parts that need it.
+
+## Current limitations [#limitations]
+
+pera1 is a small library and deliberately lacks some features. Check the following before adopting it.
+
+| Limitation | Details and workarounds |
+| --- | --- |
+| No SSR | Browser-only. No HTML is generated on the server. |
+| Default engine requires the Navigation API | `NavigationApiEngine` doesn't run in unsupported browsers. Swap in a custom engine to work around this. |
+| 404 pages | On no match, `Router` renders `null`. Define a fallback route like `{ path: "/*", component: NotFoundPage }` to show a 404-style screen. |
+| No global progress state | There is no hook returning whole-navigation loading state. Express loading UI with `Suspense` fallbacks. |
+| No lazy route loading | You can't pass `React.lazy` directly as `component`. [Code splitting](/guides/code-splitting) introduces a wrapper. |
+| Route definition type inference | Since `path` in a route definition array is treated as `string`, loader `params` arrive as `string \| undefined`. Use `useParams<TPath>()` to type them on the component side. See [TypeScript](/guides/typescript). |

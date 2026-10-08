@@ -1,0 +1,75 @@
+---
+title: pera1
+description: "A lightweight router for single-page applications with a swappable routing engine."
+---
+
+pera1 is a lightweight router for single-page applications (SPAs). The name comes from the Japanese "pera-ichi". By default it uses the standard browser Navigation API, handling link clicks, back/forward navigation, and form submissions through the `navigate` event. It swaps screens without reloading the whole page.
+
+Declare loaders that fetch the data a screen needs up front, and actions that update data, right on your routes. Common flows like list views, detail views, and form submissions can be built around URLs.
+
+## Define routes as a flat array [#routes]
+
+You don't need to build a tree structure. Parent-child relationships are determined by URL prefix matching, so layouts and screens go in the same array.
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts", index: true, component: ContactsPage },
+  { path: "/contacts", component: ContactsLayout, loader: contactsLoader },
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+];
+```
+
+## Handle data with loaders and actions [#data]
+
+Put fetching in loaders and updates in actions. Both results arrive as a thenable called `NinjaPromise`, which you can pass directly to `React.use`.
+
+```tsx
+function ContactPage() {
+  const contact = React.use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+```
+
+While loading, the component suspends and the `Suspense` fallback is shown; on failure, an error boundary receives the exception. No manual status checks are needed.
+
+## Engines are swappable [#engines]
+
+Routing is executed by an engine that implements `IEngine`. The default is `NavigationApiEngine`, which uses the Navigation API, but you can swap in your own engine. Write an in-memory router for tests or a hash-based router, and the same route definitions and hooks work in environments without the Navigation API.
+
+```tsx
+<Router engine={myEngine} routes={routes} />
+```
+
+For implementation steps, see [Custom engines](/guides/custom-engines); for the interface definition, see [IEngine](/packages/core/reference/engine).
+
+## Where to start [#where-to-start]
+
+If this is your first time, work through [Installation](/getting-started/installation) and [Quickstart](/getting-started/quickstart) in order. You'll build a working app while learning how loaders and actions flow.
+
+If you prefer to understand how things work first, start with [Concepts](/getting-started/concepts) — the rest of the guides will make more sense.
+
+<CardGroup cols={2}>
+  <Card title="Quickstart" href="/getting-started/quickstart" icon="rocket">
+    Learn routing and data fetching basics by building a contacts app.
+  </Card>
+  <Card title="Concepts" href="/getting-started/concepts" icon="lightbulb">
+    Explains route matching, history entries, and the overall data flow.
+  </Card>
+  <Card title="@pera1/core" href="/packages/core" icon="box">
+    Reference for the UI-framework-independent router core.
+  </Card>
+  <Card title="@pera1/react" href="/packages/react" icon="atom">
+    Reference for React components and hooks.
+  </Card>
+  <Card title="@pera1/vite-plugin" href="/packages/vite-plugin" icon="zap">
+    A Vite plugin that generates route definitions and route types from your file structure.
+  </Card>
+</CardGroup>
+
+## Requirements [#requirements]
+
+The default `NavigationApiEngine` runs in browsers that implement the Navigation API. At the time of writing, that mainly means Chromium-based browsers. Check the [compatibility table on MDN](https://developer.mozilla.org/docs/Web/API/Navigation_API#browser_compatibility) for current support. In unsupported environments, creating a `NavigationApiEngine` throws a `NavigationApiNotSupportedError`. Swapping in a custom engine removes this constraint.
+
+The React bindings target React 19 and do not support server-side rendering. Apps are expected to run in the browser.

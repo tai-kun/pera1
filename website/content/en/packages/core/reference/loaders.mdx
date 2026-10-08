@@ -1,0 +1,151 @@
+---
+title: initLoaders / startLoaders
+description: "Explains concurrent loader startup, cache reuse, and refetch decisions."
+---
+
+`initLoaders` and `startLoaders` run loader functions declared on routes. `initLoaders` starts everything at once for the initial render, while `startLoaders` decides cache reuse versus re-execution on each navigation.
+
+Both wrap loader return values in `NinjaPromise` and return without waiting. Call `StartedLoaders.idle()` only when you need to wait.
+
+## initLoaders [#init-loaders]
+
+```ts
+function initLoaders(
+  routes: readonly Pick<MatchedRoute, "loader" | "params">[],
+  request: LoaderInitRequest,
+): Map<LoaderFunction, NinjaPromise<unknown>>;
+```
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `routes` | `readonly Pick<MatchedRoute, "loader" \| "params">[]` | Matched routes. Only `loader` and `params` are used. |
+| `request.url` | `HistoryEntryUrl` | URL of the target history entry. |
+| `request.signal` | `AbortSignal` | Signal to abort loaders. |
+
+The return value is a `Map` keyed by loader function with `NinjaPromise` values. All matched loaders start concurrently, so a child fetch is never delayed waiting on parent data.
+
+A single `request` is created and shared: every loader receives the same GET `RouteRequest`. When the same `loader` function is used on multiple routes, the `Map` key collides and the later result overwrites the earlier one.
+
+## startLoaders [#start-loaders]
+
+```ts
+function startLoaders(
+  args: StartLoadersArgs,
+  options?: StartLoadersOptions,
+): StartedLoaders;
+```
+
+### StartLoadersArgs [#start-loaders-args]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `prevRoutes` | `readonly Pick<MatchedRoute, "path" \| "params">[] \| null` | Routes matched before the navigation. |
+| `currentRoutes` | `readonly Pick<MatchedRoute, "path" \| "params" \| "action" \| "loader" \| "shouldReload">[]` | Routes matched for the navigation target. |
+| `prevEntry` | `Pick<HistoryEntry, "id" \| "url">` | History entry before the navigation. |
+| `currentEntry` | `Pick<HistoryEntry, "id" \| "url">` | Target history entry. |
+| `loaderDataStore` | `Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>` | Cache per history entry. |
+| `signal` | `AbortSignal` | Signal to abort loaders. |
+
+### StartLoadersOptions [#start-loaders-options]
+
+Passing `options` treats the run as a post-POST refetch. Omitting it treats it as a GET navigation.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `formData` | `FormData` | Submitted form data. |
+| `actionData` | `unknown` | Result of the immediately preceding action. |
+
+### StartedLoaders [#started-loaders]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `idle` | `() => Promise<void>` | Waits for all loaders settled in this phase. |
+
+## Refetch decisions [#reload-decision]
+
+`startLoaders` walks `currentRoutes` from the start and decides handling per loader.
+
+Loaders that are not functions are skipped. When no previous cache is found, a new loader runs without consulting `shouldReload`. Only when a cache exists is `shouldReload` called: `true` re-runs, `false` reuses the previous `NinjaPromise` as-is.
+
+The cache is looked up from the `Map` keyed by `prevEntry.id`, using the loader function itself as the key. Returning to the same history entry reuses the cache through this path.
+
+Omitting `shouldReload` uses the default decision.
+
+| Trigger | Default decision |
+| --- | --- |
+| GET | When the query string changed, or when the route was absent from the pre-navigation route hierarchy. |
+| POST | Always `true`. Refetching after a mutation is the safe default. |
+
+The default result is passed to `shouldReload` as `defaultShouldReload`. For GET it is the two conditions above, for POST it is always `true`. Custom logic can return this value as-is to preserve the default behavior.
+
+[shouldReload arguments](/packages/core/reference/route-definitions#should-reload-arguments) are a discriminated union that differs between GET and POST. Branch on `triggerMethod`.
+
+## Storing results [#storing]
+
+Decided `NinjaPromise` values are first collected in a per-phase `Map`. They are then merged into `loaderDataStore` under `currentEntry.id`, preserving existing entries. Writing multiple phases to the same history entry ID never drops other loaders' results.
+
+When none of the currently matched routes has a loader, nothing is written to the store.
+
+## Error handling [#errors]
+
+Loader exceptions are not thrown in place. They are stored as `rejected` `NinjaPromise` values. The rejection reaches an error boundary from the component consuming the data with `use`.
+
+`shouldReload` is the exception. It must synchronously return a boolean, and a `NinjaPromise` rejected with `LoaderConditionError` is stored in the following cases.
+
+- When it returns a thenable such as a `Promise`.
+- When it returns a non-boolean value.
+
+Exceptions thrown while running `shouldReload` produce a `rejected` promise with that exception as the reason.
+
+## Usage [#usage]
+
+GET navigation example.
+
+```ts
+const started = startLoaders({
+  signal,
+  prevEntry,
+  prevRoutes,
+  currentEntry,
+  currentRoutes,
+  loaderDataStore,
+});
+
+await started.idle();
+```
+
+Pass a second argument after a POST. The default decision is then always `true`, so the updated list is refetched automatically.
+
+```ts
+const started = startLoaders(
+  {
+    signal,
+    prevEntry,
+    prevRoutes,
+    currentEntry,
+    currentRoutes,
+    loaderDataStore,
+  },
+  {
+    formData,
+    actionData,
+  },
+);
+
+await started.idle();
+```
+
+## Notes [#notes]
+
+- `idle()` waits with `Promise.allSettled`, so loader failures do not reject it. Inspect each `NinjaPromise` to judge individual results.
+- Regardless of whether a refetch happens, a newly run loader result is registered as a new `NinjaPromise`. Only a `false` decision keeps the previous reference.
+- The cache key is the loader function reference. Inline functions in route definitions are treated as different functions each time the definition is recreated.
+- A `null` `prevRoutes` is not an error. It is treated as an empty hierarchy.
+
+## Related [#related]
+
+- [RouteDefinition](/packages/core/reference/route-definitions) — Loader and `shouldReload` types
+- [matchRoutes](/packages/core/reference/routes) — Collecting the routes to run loaders for
+- [startAction](/packages/core/reference/actions) — Creates the POST trigger
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — Calls this function on navigation
+- [Data fetching](/guides/data-loading) — How to use loaders

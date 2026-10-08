@@ -1,0 +1,130 @@
+---
+title: Auth Guards
+description: "Official patterns for login redirects and authorization with redirectToLogin, sanitizeRedirectTo, and requireRole."
+---
+
+Pages that require login detect unauthenticated users at the top of the loader and redirect them to the login page. This round-trip boilerplate is centralized in the guard helpers in `@pera1/core`, so each app doesn't need to build or validate `redirectTo` itself.
+
+## Guard protected pages with `redirectToLogin` [#guard]
+
+Check the current user at the top of the loader, and if unauthenticated, return the result of `redirectToLogin` as-is. The current path is saved in the `redirectTo` query, so the user can return to the original page after logging in. How you fetch the user stays app-specific (reading `localStorage`, calling an API, and so on — implement `getCurrentUser` yourself).
+
+```tsx
+import { redirectToLogin } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function dashboardLoader({ request }: LoaderFunctionArgs) {
+  const user = getCurrentUser();
+  if (!user) {
+    return redirectToLogin(request);
+  }
+  return { user };
+}
+```
+
+If the login path is not `/login`, specify it explicitly, for example `redirectToLogin(request, { loginPath: "/sign-in" })`. You don't need to hand-roll the query name or assembly logic.
+
+## Centralize guards in the layout loader [#layout]
+
+When you have multiple protected pages, don't scatter the check across each page — guard them in a single layer in the layout loader. Child page loaders contain no guard logic; the layout is the only entry point for authentication. With the branch in one place, auditing for unprotected pages is easy.
+
+```tsx
+import { redirectToLogin } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function appLoader({ request }: LoaderFunctionArgs) {
+  if (!getCurrentUser()) {
+    return redirectToLogin(request);
+  }
+  return { authenticated: true as const };
+}
+```
+
+If you only want to normalize a bare path (such as `/app` → `/app/dashboard`), don't write a branch in the loader. It redirects automatically to the child with `index: true`. See [Routing](/guides/routing#index-redirect) for details.
+
+## The `redirectTo` handoff convention [#redirect-to]
+
+The handoff from the unauthenticated redirect to the completed login follows three conventions:
+
+1. Use `REDIRECT_TO_PARAM` (whose value is `"redirectTo"`) for both the query name and the hidden input name.
+2. In the login page loader, validate the query value with `sanitizeRedirectTo`.
+3. In the login page action, validate the form value with `sanitizeRedirectTo` again.
+
+```tsx
+import { REDIRECT_TO_PARAM, redirect, sanitizeRedirectTo } from "@pera1/core";
+import type { ActionFunctionArgs, LoaderFunctionArgs } from "@pera1/core";
+
+async function loginLoader({ request }: LoaderFunctionArgs) {
+  const redirectTo = sanitizeRedirectTo(
+    request.url.searchParams.get(REDIRECT_TO_PARAM),
+    "/dashboard",
+  );
+  if (getCurrentUser()) {
+    return redirect(redirectTo);
+  }
+  return { redirectTo };
+}
+
+async function loginAction({ request }: ActionFunctionArgs) {
+  const redirectTo = sanitizeRedirectTo(
+    String(request.formData.get(REDIRECT_TO_PARAM) ?? ""),
+    "/dashboard",
+  );
+  const user = await login(request);
+  if (!user) {
+    return { error: "Incorrect email address or password." };
+  }
+  return redirect(redirectTo);
+}
+```
+
+On the form side, round-trip the validated value through a hidden input. Use the constant for `name` instead of a literal string.
+
+```tsx
+<form method="post" action="/login">
+  <input type="hidden" name={REDIRECT_TO_PARAM} value={data.redirectTo} />
+</form>
+```
+
+Never skip revalidation in the action. The query can be rewritten after it passes through the loader, so the form value is never guaranteed to be trustworthy as-is.
+
+## Values rejected by `sanitizeRedirectTo` [#sanitize]
+
+`sanitizeRedirectTo(value, fallback)` only passes same-origin paths. A value is considered safe when it starts with `/` and its second character is neither `/` nor `\`. Unsafe or empty values return the fallback (`/` when omitted).
+
+As an open redirect countermeasure, it rejects the following values:
+
+- Protocol-relative URLs such as `//evil.com`
+- Backslash starts such as `/\evil.com` (browsers may normalize them into a different origin)
+- Values containing a backslash, whitespace, or control characters in the middle of the path
+- Encoded bypasses such as `/%2f%2fevil.com`, or double-encoded bypasses such as `/%252f`
+- Values that turn into `//` after stripping tabs or newlines
+- Absolute URLs or values with a scheme such as `https://evil.com` or `javascript:`
+
+Legitimate encodings inside the query (such as `/search?q=a%20b`) are preserved.
+
+## Declare authorization with `requireRole` [#authorize]
+
+For role-based authorization, don't write branches like `user.role !== "admin"` in each page — declare the allowed roles as a set with `requireRole`. It returns a redirect to the login page when unauthenticated, a navigation to `forbiddenPath` on a role mismatch, and `null` when access is allowed.
+
+```tsx
+import { redirectToLogin, requireRole } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function adminLoader({ request }: LoaderFunctionArgs) {
+  const user = getCurrentUser();
+  if (!user) {
+    return redirectToLogin(request);
+  }
+  const forbidden = requireRole(request, user, {
+    roles: ["admin"],
+    forbiddenPath: "/dashboard",
+  });
+  if (forbidden) {
+    return forbidden;
+  }
+  return { user };
+}
+```
+
+No branching is needed on the render side. See [Data loading](/guides/data-loading#redirect) for details.

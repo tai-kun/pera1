@@ -1,0 +1,165 @@
+---
+title: TypeScript
+description: "How to type params, loaders, and actions, and how to handle widening constraints."
+---
+
+pera1 is designed around TypeScript. This page explains `RouteParams` for deriving param types, how to type loaders and actions, and the constraints caused by route-definition `path` widening to `string`, plus workarounds.
+
+## Deriving param types [#route-params]
+
+`RouteParams<TPath>` derives a param type from a path string literal.
+
+```ts
+import type { RouteParams } from "@pera1/core";
+
+type Params = RouteParams<"/contacts/:id">;
+// { readonly id: string }
+
+type Optional = RouteParams<"/archive/:year?">;
+// { readonly year?: string }
+
+type Wildcard = RouteParams<"/files/*">;
+// { readonly "*": string }
+```
+
+Optional params (`:year?`) become optional properties, and the key is absent from the runtime object when the URL omits them. Access wildcard values via `params["*"]`.
+
+This type is applied automatically where a pattern is inferred as a literal type.
+
+```ts
+import { RoutePatternUtils } from "@pera1/core";
+
+const utils = new RoutePatternUtils("/movies/:title.mp4");
+const params = utils.parse("/movies/hello.mp4");
+params.title; // string
+```
+
+## Route-definition `path` widens to `string` [#widening]
+
+The `routes` prop of `Router` accepts `RouteDefinitionObject<string, ...>`, so an array literal passed as-is widens `path` to `string`. As a result, `params` in loaders and actions becomes `RouteParams<string>` — values are `string | undefined`.
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("Missing id.");
+  }
+  return findContact(id);
+}
+```
+
+This is both a constraint and a safety net. What a URL contains isn't known until runtime, so checking existence before use is the reliable approach.
+
+On the component side, the `useParams` type argument applies as-is.
+
+```tsx
+function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  // params.id is string
+  return <p>{params.id}</p>;
+}
+```
+
+The same applies when using core types directly. Param types are only fixed when the type argument and the implementation point at the same `TPath`, as in `RoutePatternUtils<"/contacts/:id">` or `LoaderFunction<"/contacts/:id">`.
+
+## Loader return types [#loader-data]
+
+`useLoaderData<typeof loader>()` derives the resolved type from the loader function's return value. The type after `await` becomes the return type of `use`.
+
+```tsx
+async function contactLoader({ params }: LoaderFunctionArgs) {
+  const response = await fetch(`/api/contacts/${params["id"]}`);
+  return (await response.json()) as { name: string; email: string };
+}
+
+function ContactPage() {
+  const contact = React.use(useLoaderData<typeof contactLoader>());
+  contact.name; // string
+  return <h2>{contact.name}</h2>;
+}
+```
+
+To define only the data type up front, use `LoaderData<TData>` and `FulfilledLoaderData<TData>`.
+
+```tsx
+import type { LoaderData } from "@pera1/react";
+
+type Contact = { name: string; email: string };
+
+function ContactPage() {
+  const contact = React.use(useLoaderData<LoaderData<Contact>>());
+  // ...
+}
+```
+
+## Action return types [#action-data]
+
+`useActionData<typeof action>()` derives the resolved data type from the action's return value.
+
+```tsx
+async function saveAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "Please enter a name." };
+  }
+  const contact = await createContact(name);
+  return redirect(`/contacts/${contact.id}`);
+}
+```
+
+This action returns a union of `{ error: string }` and `RedirectResponse`. Redirect values are replaced with `undefined` at runtime, but `RedirectResponse` remains in the type. Narrow it on the display side with the `in` operator.
+
+```tsx
+function ActionError({ actionData }: { actionData: ActionData<typeof saveAction> }) {
+  const data = React.use(actionData);
+  if (data && "error" in data) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+For actions that never return a redirect, you can keep it simple with `data?.error`. When the return type gets complex, use `ActionData<TData>` and `FulfilledActionData<TData>` directly to simplify the type.
+
+## Reusing route-definition types [#route-definition]
+
+When sharing route definitions split across files, use `RouteDefinition` or `RouteDefinitionObject` as types.
+
+```tsx
+import type { RouteDefinitionObject } from "@pera1/core";
+
+const contactRoute: RouteDefinitionObject<"/contacts/:id"> = {
+  path: "/contacts/:id",
+  loader: contactLoader,
+  component: ContactPage,
+};
+```
+
+`Route<TComponent>` is a normalized route, and `MatchedRoute<TComponent>` is a route with `params` and `urlPath` added after matching. Use them when handling `matchRoutes` results yourself.
+
+## History entry types [#history-entry]
+
+`HistoryEntryId` and `HistoryEntryUrl` are branded types that show a value passed validation. You can't assign plain strings, so obtain them via a schema or `expectHistoryEntry`.
+
+```ts
+import { HistoryEntryUrlSchema } from "@pera1/core";
+import { parse } from "valibot";
+
+const url = parse(HistoryEntryUrlSchema(), "https://example.com/contacts");
+// A normalized URL object
+```
+
+Schemas are cached as singletons and return the same reference from the second call onward. Repeated validation and normalization cost nothing extra.
+
+## Checklist for type mismatches [#troubleshooting]
+
+1. Are you using loader or action `params` without validation (values are `string | undefined`)?
+2. Is the type argument to `useLoaderData` the loader of the route the component belongs to (you can't use a child's `typeof loader` to inherit a parent loader)?
+3. Does an action returning `redirect` leave `RedirectResponse` in `value` (narrow with the `in` operator)?
+4. Are you recreating the route-definition array on every render (a runtime, not a type, problem)?
+
+## Next steps [#next]
+
+For each type's definition, see the [@pera1/core reference](/packages/core/reference/route-definitions) and the [@pera1/react reference](/packages/react/reference/use-loader-data).

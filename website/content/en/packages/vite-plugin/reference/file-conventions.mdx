@@ -1,0 +1,113 @@
+---
+title: File conventions
+description: "How file and directory names are converted into URL paths."
+---
+
+The pages directory structure becomes the route tree as-is. Directories become path segments, and specially named files represent indexes, layouts, parameters, and wildcards.
+
+## Directory and file mapping [#mapping]
+
+```text
+src/pages/
+├── _layout.tsx            -> /
+├── _index.tsx             -> / (index)
+├── about.tsx              -> /about
+├── sitemap[.]xml.tsx      -> /sitemap.xml
+├── blog/
+│   ├── _layout.tsx        -> /blog
+│   ├── _index.tsx         -> /blog (index)
+│   ├── $postId.tsx        -> /blog/:postId
+│   └── $.tsx              -> /blog/*
+└── _auth/                 -> not present in the URL
+    ├── login.tsx          -> /login
+    └── signup.tsx         -> /signup
+```
+
+A route name is the filename minus its last extension. `about.tsx` becomes `/about` and `$postId.tsx` becomes `:postId`.
+
+## Special filenames [#special-files]
+
+| File               | Generated route   | Description                                                        |
+| ------------------ | ----------------- | ------------------------------------------------------------------ |
+| `_index.<ext>`     | `{ index: true }` | Index route for that directory.                                    |
+| `_layout.<ext>`    | Layout route      | Layout for that directory. Has sibling routes as children.         |
+| `$name.<ext>`      | `:name`           | Named parameter.                                                   |
+| `$.<ext>`          | `*`               | Wildcard. Used for 404 pages and similar.                          |
+| Other names        | Name as-is        | Regular route.                                                     |
+
+`_layout` becomes a layout that groups sibling routes, displaying children with `Outlet`. A top-level `_layout.tsx` is the `/` layout.
+
+```tsx src/pages/_layout.tsx
+import { Outlet } from "@pera1/react";
+
+export default function RootLayout() {
+  return (
+    <>
+      <header>Site name</header>
+      <main>
+        <Outlet />
+      </main>
+    </>
+  );
+}
+```
+
+## Pathless directories [#pathless]
+
+Directories starting with `_` do not appear in the URL. Use them to organize pages that share no common prefix.
+
+```text
+src/pages/_auth/login.tsx   -> /login
+src/pages/_auth/signup.tsx  -> /signup
+```
+
+A pathless directory cannot contain `_layout`. Since pera1 layouts apply by path prefix matching, a layout in a directory that never appears in the URL cannot narrow its scope. To add a layout to pages sharing a path segment, put `_layout` in a regular directory.
+
+## Escapes [#escapes]
+
+Characters unusable in filenames are treated as literals when wrapped as `[x]`. `sitemap[.]xml.tsx` becomes `/sitemap.xml`.
+
+## Wildcard notes [#wildcard]
+
+The `*` of `$.tsx` also prefix-matches URLs matched by other routes. Since pera1 collects matched routes from child to parent, `$.tsx` can sit in the middle of a match chain. In that case return `outlet` as-is, and render the 404 only when nothing else matched.
+
+```tsx src/pages/$.tsx
+import { useRouteContext } from "@pera1/react";
+
+export default function NotFoundPage() {
+  const { outlet } = useRouteContext();
+  if (outlet) {
+    return outlet;
+  }
+
+  return <h2>Page not found</h2>;
+}
+```
+
+## Filtering target files [#include-exclude]
+
+Target files are decided by the `include` and `exclude` glob patterns. Both are evaluated relative to the pages directory, and `exclude` wins.
+
+```ts vite.config.ts
+pera1({
+  include: ["**/*.tsx"],
+  exclude: ["**/*.test.tsx", "_components"],
+});
+```
+
+Specifying just a directory name in `exclude` excludes everything under it at once.
+
+## Invalid structures [#errors]
+
+The following structures error at dev server startup or type generation time.
+
+- Multiple special files with the same name, e.g. `_index.tsx` and `_index.ts`.
+- Multiple routes resolving to the same path, e.g. `about.tsx` and `about.jsx`.
+- Files starting with `_` other than `_index` and `_layout`.
+- `_layout` inside a pathless directory.
+
+## Related [#related]
+
+- [Plugin options](/packages/vite-plugin/reference/plugin-options) — `dir` and `include` / `exclude`
+- [Routing](/guides/routing) — Path patterns and matching rules
+- [Route types](/packages/vite-plugin/reference/typegen) — Types imported from `./+types`

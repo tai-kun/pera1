@@ -1,0 +1,90 @@
+---
+title: Plugin options
+description: "Options for pera1() and the API provided by the virtual module."
+---
+
+The default export of `@pera1/vite-plugin` is `pera1()`. Adding it to Vite's `plugins` scans the pages directory, serves the `virtual:pera1/routes` virtual module, and generates route types.
+
+```ts
+import pera1 from "@pera1/vite-plugin";
+```
+
+## Signature [#signature]
+
+```ts
+function pera1(options?: Pera1VitePluginOptions): Plugin;
+```
+
+## Options [#options]
+
+| Option     | Type                | Default                                          | Description                                                                          |
+| ---------- | ------------------- | ------------------------------------------------ | ------------------------------------------------------------------------------------ |
+| `dir`      | `string`            | `"src/pages"`                                    | Pages directory, relative to the project root.                                       |
+| `include`  | `readonly string[]` | `["**/*.tsx", "**/*.ts", "**/*.jsx", "**/*.js"]` | Glob patterns for files treated as routes, relative to the pages directory.         |
+| `exclude`  | `readonly string[]` | `[]`                                             | Glob patterns for files excluded from routes. Wins over `include`.                   |
+| `typesDir` | `string`            | `".pera1/types"`                                 | Route type output directory, relative to the project root.                           |
+
+```ts vite.config.ts
+import pera1 from "@pera1/vite-plugin";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [
+    pera1({
+      dir: "app/routes",
+      include: ["**/*.tsx"],
+      exclude: ["**/*.test.tsx", "_components"],
+    }),
+  ],
+});
+```
+
+`include` and `exclude` are evaluated with Node.js built-in `fs.globSync`. Patterns are relative to the pages directory; anything matching `exclude` is skipped even when it also matches `include`. Specifying just a directory name excludes everything under it.
+
+:::note
+The `exclude` glob pattern requires Node.js 22.17 or later.
+:::
+
+## Virtual module [#virtual-module]
+
+The plugin resolves `virtual:pera1/routes` and exports the route definitions. The virtual module ID is also exposed as `VIRTUAL_ROUTES_ID`.
+
+```tsx
+import { routes } from "virtual:pera1/routes";
+```
+
+| Export  | Type                                      | Description                                 |
+| ------- | ----------------------------------------- | ------------------------------------------- |
+| `routes` | `readonly RouteDefinition<string, any>[]` | Route definition array generated from the file structure. |
+| default | Same as above                             | Same array as `routes`.                     |
+
+Type definitions ship in `@pera1/vite-plugin/client`. Add it to `types` in `tsconfig.json` or reference it at the top of a source file.
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "types": ["vite/client", "@pera1/vite-plugin/client"]
+  }
+}
+```
+
+Generated route definitions can be passed to `BrowserRouter` or `createRouter` as-is. See [File conventions](/packages/vite-plugin/reference/file-conventions) for the detailed file mapping.
+
+## Dev server behavior [#dev-server]
+
+- Generates route types at server startup.
+- Watches the pages directory for file additions, changes, and deletions, regenerating route types.
+- On file additions and deletions, invalidates the virtual module and reloads the whole page. Content changes are left to Vite HMR.
+- Route type generation failures only warn; they never stop the dev server.
+
+## Build behavior [#build]
+
+- Generates route types when `vite build` starts.
+- With `vite build --watch`, regenerates on pages directory changes.
+- Page modules used to build the virtual module are registered as watch targets.
+
+## Related [#related]
+
+- [File conventions](/packages/vite-plugin/reference/file-conventions) — Filename-to-route mapping
+- [Route types](/packages/vite-plugin/reference/typegen) — Generating and configuring the `Route` type
+- [CLI](/packages/vite-plugin/reference/cli) — Type generation command

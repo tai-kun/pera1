@@ -1,0 +1,114 @@
+---
+title: startAction
+description: "Explains action selection rules, execution results, and redirect handling."
+---
+
+`startAction` selects and runs exactly one action from the matched routes. Multiple actions never run for a single form submission. Selection stops once the first match is found.
+
+The result is held as a `NinjaPromise`, and you can await completion with `StartedAction.idle()`. Redirect instructions are not exposed as view data. Read them from the return value of `idle()`.
+
+## Signature [#signature]
+
+```ts
+function startAction(
+  routes: readonly Pick<MatchedRoute, "params" | "action" | "urlPath">[],
+  request: ActionStartRequest,
+): StartedAction | null;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `routes` | `readonly Pick<MatchedRoute, "params" \| "action" \| "urlPath">[]` | Routes matched against the submission target URL. |
+| `request.url` | `HistoryEntryUrl` | Submission target URL of the action. |
+| `request.formData` | `ReadonlyFormData` | Submitted form data. |
+| `request.signal` | `AbortSignal` | Signal to abort the action. |
+
+Pass `routes` already matched against the submission target URL. Passing the result of `matchRoutes` as-is is the standard approach.
+
+## Return value [#returns]
+
+Returns a `StartedAction` when an action to run is found, or `null` when none is found.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `data` | `NinjaPromise<unknown>` | Action result, or its in-progress state. |
+| `func` | `ActionFunction` | The action function that was actually selected. |
+| `idle` | `() => Promise<{ redirectTo: RedirectResponse \| undefined }>` | Waits for completion and extracts the redirect request. |
+
+## Selection rules [#selection]
+
+Scans `routes` from the start and selects the first route that satisfies all of the following conditions.
+
+1. `action` is defined as a function.
+2. The request path equals the route's `urlPath` or is a child path of `urlPath`.
+
+Child-path matching is segment-based. When `urlPath` is `/users`, `/users/42` matches but `/usersettings` does not. A plain string prefix match would cross a segment boundary, so the character right after `/users` must also be `/`. The same applies to `/foo` versus `/foo-bar`.
+
+A route with path `/` is treated specially. Since every absolute path starts with `/`, the root action is selected when there is no other candidate.
+
+The matched array is ordered from the most specific child to the parent. Therefore deeper route actions take precedence. For `/contacts/42`, the action for `/contacts/:id` is selected and the action for `/contacts` does not run.
+
+## Execution and results [#execution]
+
+The selected action receives a POST `RouteRequest`. `params` holds the values extracted for that route.
+
+Actions may be sync or async. A sync throw and a rejected `Promise` both produce a `rejected` `data`, and the exception is not rethrown. Rendering the error is delegated to error boundaries via the component consuming `data` with `use`.
+
+When the return value is a `RedirectResponse`, that instance is not exposed to the view. `data` is replaced with a `NinjaPromise` resolving to `undefined`, and the original `RedirectResponse` is placed in `idle()`'s `redirectTo`. Sync and async cases are handled the same way.
+
+| Action result | `data` state | `idle()`'s `redirectTo` |
+| --- | --- | --- |
+| Normal value | `fulfilled` | `undefined` |
+| `RedirectResponse` | `fulfilled` (value is `undefined`) | The returned `RedirectResponse` |
+| Thrown exception, or rejection | `rejected` | `undefined` |
+
+`idle()` handles `data` failures internally, so it never rejects.
+
+## Usage [#usage]
+
+```ts
+import { matchRoutes, startAction } from "@pera1/core";
+
+const matched = matchRoutes(routes, url);
+const action = startAction(matched ?? [], {
+  url,
+  formData,
+  signal,
+});
+
+if (action) {
+  const { redirectTo } = await action.idle();
+  if (redirectTo) {
+    // Navigate to the redirect target
+  }
+}
+```
+
+Inside an action, read form data from the POST `request`.
+
+```tsx
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs } from "@pera1/core";
+
+async function deleteContactAction({ params }: ActionFunctionArgs<"/contacts/:id">) {
+  await deleteContact(params.id);
+  return redirect("/contacts");
+}
+```
+
+## Notes [#notes]
+
+- Selection stops after one match. Parent actions never run at the same time.
+- A route not matched against the submission target URL is not selected.
+- The action result is registered in the store by [NavigationApiEngine](/packages/core/reference/navigation-api-engine). `startAction` itself does not touch the store.
+- When the action completes, loaders run next. How writes and reads are split is covered in [Mutations](/guides/mutations).
+
+## Related [#related]
+
+- [RouteDefinition](/packages/core/reference/route-definitions) — Action and argument types
+- [matchRoutes](/packages/core/reference/routes) — Route array used for selection
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — Refetching after an action
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — Calls this function on POST
+- [Mutations](/guides/mutations) — How to use actions

@@ -1,0 +1,99 @@
+---
+title: Custom Engines
+description: "The IEngine contract and how to build a memory router for tests."
+---
+
+pera1 delegates routing execution to an engine that implements `IEngine`. The default `NavigationApiEngine` uses the Navigation API, but engines are swappable as long as they satisfy the contract. This page explains the engine's role and shows a minimal replacement for tests.
+
+## The engine contract [#contract]
+
+An engine implements these four methods. All of them are called from `createRouter`.
+
+| Method | When it is called | Role |
+| --- | --- | --- |
+| `init` | At router creation (when `Router` mounts) | Matches the current URL and synchronously returns the initial state |
+| `start` | After mounting | Starts event subscriptions and returns a stop function |
+| `submit` | From `useSubmit` | Handles form-data or query submissions |
+| `navigate` | From `useNavigate`, or from link operations | Handles screen navigation |
+
+`init` must be synchronous. Leave loader execution to `initLoaders` and register the resulting `NinjaPromise` in the `loaderDataStore`.
+
+`start` returns a cleanup function. It is called when `Router` unmounts, so unsubscribe event listeners and abort in-flight work there.
+
+## A fake engine for tests [#test-engine]
+
+In component tests, replacing the real Navigation API with an engine initialized at a fixed URL keeps tests stable. The following example is a minimal setup that only starts loaders on mount.
+
+```tsx test-engine.tsx
+import type { IEngine } from "@pera1/core";
+import { expectHistoryEntry, initLoaders, matchRoutes } from "@pera1/core";
+import type { RouterProps } from "@pera1/react";
+import { Router } from "@pera1/react";
+
+export function createTestEngine(href: string): IEngine {
+  const entry = expectHistoryEntry({
+    id: crypto.randomUUID(),
+    url: href,
+    index: 0,
+  })!;
+
+  return {
+    init({ routes, loaderDataStore, getSignal }) {
+      const matched = matchRoutes(routes, entry.url);
+      if (!matched) {
+        return null;
+      }
+      loaderDataStore.set(
+        entry.id,
+        initLoaders(matched, { url: entry.url, signal: getSignal() }),
+      );
+      return { entry, routes: matched };
+    },
+    start() {
+      // Tests never navigate, so no subscription is needed.
+    },
+    submit() {},
+    navigate() {},
+  };
+}
+
+export function TestRouter(props: Pick<RouterProps, "routes">) {
+  return <Router engine={createTestEngine("https://example.com/")} routes={props.routes} />;
+}
+```
+
+:::note
+`createTestEngine` creates a new engine on every render. To preserve state across re-renders of the test target, hold the engine in `useState` or `useRef`, or use `createRouter` directly.
+:::
+
+## Using `createRouter` directly [#create-router]
+
+If you build a UI binding outside React, you can use the controller provided by `createRouter`. Connect the subscribe function and the snapshot getter to your framework's reactivity system.
+
+```ts no-run
+import { createRouter } from "@pera1/core";
+
+const controller = createRouter({ engine, routes });
+const stop = controller.start();
+
+const unsubscribe = controller.subscribe(() => {
+  const routes = controller.getRoutes();
+  const snapshot = controller.getSnapshot();
+  // Update the UI here
+});
+```
+
+The object returned by `getSnapshot()` has a stable reference; only `currentEntry` is updated on each navigation. Subscriptions fire on every state change, so it is efficient to select only what you need and compare.
+
+## Notes for custom engines [#caveats]
+
+- When the URL doesn't match in `init`, or when no current history entry exists, return `null`. `Router` will render nothing.
+- The `start` stop function should abort in-flight actions and loaders in addition to unsubscribing. `NavigationApiEngine` receives an `AbortController` from `Router` and aborts everything together on stop.
+- Calling `update()` with no arguments requests only a re-render while keeping the current state. Use it for loading UI when an action starts, for example.
+- `Router` manages the data stores (`loaderDataStore`, `actionDataStore`). Engines only write to the provided maps and should not hold their own cache.
+
+For another engine example, consider hash-based routing. Subscribe to `hashchange` and pass `location.hash` as the URL to `matchRoutes`, and it works even in environments like GitHub Pages that can't serve deep URLs.
+
+## Next steps [#next]
+
+Type parameter usage is covered in [TypeScript](/guides/typescript). For each module's specification, including engines, see the [@pera1/core reference](/packages/core/reference/create-router).

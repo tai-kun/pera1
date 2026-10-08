@@ -1,0 +1,244 @@
+---
+title: RouteDefinition
+description: "The two route definition forms, plus types for loaders, actions, shouldReload, and params."
+---
+
+`RouteDefinition` is the route definition type. It represents elements of the array passed to `createRouter` or React's `Router`. There are two forms, object and module. `path` is required at the top level. Inside `children`, `path` is optional and inherits the parent path when omitted.
+
+`createRouter` normalizes definitions internally and converts them into `Route` objects. This page covers definition-side types, the normalized `Route`, and argument types for loaders and actions.
+
+## Types [#types]
+
+| Type | Role |
+| --- | --- |
+| `RouteDefinition` | Union of the two forms. |
+| `RouteDefinitionObject` | Object-form definition. |
+| `RouteDefinitionModule` | Module-form definition. |
+| `Route` | Route used internally after normalization. |
+| `RouteParams` | Derives param types from a path pattern. |
+| `LoaderFunction` / `LoaderFunctionArgs` | Data fetching function and its arguments. |
+| `ActionFunction` / `ActionFunctionArgs` | Data mutation function and its arguments. |
+| `ShouldReloadFunction` / `ShouldReloadFunctionArgs` | Refetch decision function and its arguments. |
+
+## RouteDefinitionObject [#route-definition-object]
+
+```ts
+type RouteDefinitionObject<TPath extends string = string, TComponent = any> = {
+  readonly path?: TPath;
+  readonly index?: boolean;
+  readonly action?: ActionFunction<TPath>;
+  readonly shouldReload?: ShouldReloadFunction<TPath>;
+  readonly loader?: LoaderFunction<TPath>;
+  readonly component?: TComponent;
+  readonly children?: readonly RouteDefinition<string, TComponent>[];
+};
+```
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `path` | `TPath` | Yes at top level, no inside `children` | Path pattern to match. A child inherits the parent path when omitted. A leading `"/"` is absolute, otherwise it is joined relative to the parent. |
+| `index` | `boolean` | No | Makes this an index route used only on an exact parent match. |
+| `action` | `ActionFunction<TPath>` | No | Data mutation function run on POST. |
+| `shouldReload` | `ShouldReloadFunction<TPath>` | No | Decides whether to rerun the loader. |
+| `loader` | `LoaderFunction<TPath>` | No | Function that fetches data needed for the screen. |
+| `component` | `TComponent` | No | Component to render. |
+| `children` | `RouteDefinition[]` | No | Child route definitions with an explicit parent-child relationship. Joined with the parent path on expansion, equivalent to a flat array. |
+
+Without `index`, a route acts as a layout. It contains child routes by prefix match. A route with `index: true` matches only on an exact path match. A bare path auto-redirects to the child's `index: true`. See [Routing](/guides/routing#index-redirect) for details.
+
+## RouteDefinitionModule [#route-definition-module]
+
+The module form is the object form plus `default`. When `component` exists it takes precedence; otherwise `default` is used as the component.
+
+```tsx
+import * as contactRoute from "./routes/contact.js";
+
+const routes = [{ path: "/contacts/:id", ...contactRoute }];
+```
+
+When an ES module's `default` export is a function, it is treated as the module form. Spread the namespace as in the example above. Namespace spreading loses `Symbol.toStringTag`, but detection is based on the presence of a `default` export, so this is not a problem.
+
+## RouteDefinition [#route-definition]
+
+`RouteDefinition` combines `RouteDefinitionObject` and `RouteDefinitionModule`. `TComponent` is the render target type; pass `React.ComponentType` for React.
+
+```ts
+type RouteDefinition<TPath extends string = string, TComponent = any> =
+  | RouteDefinitionObject<TPath, TComponent>
+  | RouteDefinitionModule<TPath, TComponent>;
+```
+
+## Route [#route]
+
+`Route` is the normalized route. `createRouter` creates it when converting definitions, and `matchRoutes` and the engine consume it. Properties that were optional are finalized at this point.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `path` | `string` | Path pattern. |
+| `index` | `boolean` | Whether this is an index route. |
+| `utils` | `RoutePatternUtils` | Utility for parsing and generating patterns. |
+| `action` | `ActionFunction \| undefined` | Data mutation function. |
+| `shouldReload` | `ShouldReloadFunction` | Refetch decision function. |
+| `loader` | `LoaderFunction \| undefined` | Data fetching function. |
+| `component` | `TComponent \| undefined` | Component to render. |
+
+At normalization time, `shouldReload` is always a function. When omitted in the definition, a function that returns `defaultShouldReload` as-is is assigned.
+
+## RouteParams [#route-params]
+
+`RouteParams` derives param types from a path pattern string literal type.
+
+```ts
+import type { RouteParams } from "@pera1/core";
+
+type ContactParams = RouteParams<"/contacts/:id">;
+// { readonly id: string }
+
+type ArchiveParams = RouteParams<"/archive/:year?">;
+// { readonly year?: string }
+
+type MovieParams = RouteParams<"/movies/:title.mp4">;
+// { readonly title: string }
+
+type FileParams = RouteParams<"/files/*">;
+// { readonly "*": string }
+
+type LooseParams = RouteParams;
+// { readonly [key: string]?: string }
+```
+
+Param values are percent-encoded strings. Optional param keys omitted in the URL are excluded from the extraction result. See [Routing](/guides/routing) for pattern syntax.
+
+## Loader types [#loader-types]
+
+```ts
+type LoaderFunctionArgs<TRoutePattern extends string = string> = {
+  params: RouteParams<TRoutePattern>;
+  request: RouteGetRequest;
+};
+
+interface LoaderFunction<TRoutePattern extends string = string, TData = unknown> {
+  (args: LoaderFunctionArgs<TRoutePattern>): TData;
+}
+```
+
+`request` is a GET `RouteGetRequest`. `method` is `"GET"` and `formData` is always `null`. It has `url`, `signal`, and `toRequest()`.
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params, request }: LoaderFunctionArgs<"/contacts/:id">) {
+  const response = await fetch(`/api/contacts/${params.id}`, { signal: request.signal });
+  return response.json();
+}
+```
+
+`TData` is the type of the value the loader returns. Passing the loader function type to [useLoaderData](/packages/react/reference/use-loader-data) determines the resolved value type.
+
+## Action types [#action-types]
+
+```ts
+type ActionFunctionArgs<TRoutePattern extends string = string> = {
+  params: RouteParams<TRoutePattern>;
+  request: RoutePostRequest;
+};
+
+interface ActionFunction<TRoutePattern extends string = string, TData = unknown> {
+  (args: ActionFunctionArgs<TRoutePattern>): TData;
+}
+```
+
+`request` is a POST `RoutePostRequest`. `method` is `"POST"`, and you can read the submitted `formData`.
+
+```tsx
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs } from "@pera1/core";
+
+async function contactAction({ params, request }: ActionFunctionArgs<"/contacts/:id">) {
+  await updateContact(params.id, request.formData);
+  return redirect(`/contacts/${params.id}`);
+}
+```
+
+When the return value is a `RedirectResponse`, the action data is replaced with `undefined`. See [startAction](/packages/core/reference/actions) for details.
+
+## shouldReload arguments [#should-reload-arguments]
+
+`ShouldReloadFunctionArgs` is a discriminated union on `triggerMethod`. GET has no submitted data. POST adds `formData` and `actionData`.
+
+| Property | GET | POST | Description |
+| --- | --- | --- | --- |
+| `triggerMethod` | `"GET"` | `"POST"` | Trigger for refetching. |
+| `currentUrl` / `prevUrl` | Yes | Yes | URLs before and after navigation. |
+| `currentParams` / `prevParams` | Yes | Yes | Params before and after navigation. |
+| `formData` | No | Yes | Submitted form data. |
+| `actionData` | No | Yes | Result of the preceding action. |
+| `defaultShouldReload` | Yes | Yes | Default decision result. |
+
+Branching on `triggerMethod` avoids touching properties that do not exist.
+
+```ts
+import type { ShouldReloadFunction } from "@pera1/core";
+
+const shouldReload: ShouldReloadFunction<"/contacts/:id"> = (args) => {
+  if (args.triggerMethod === "POST") {
+    return true;
+  }
+  return args.defaultShouldReload;
+};
+```
+
+Default decisions and when `shouldReload` is called are covered in [Loaders](/packages/core/reference/loaders).
+
+## Usage [#usage]
+
+```tsx
+const routes = [
+  { path: "/", component: RootLayout },
+  { path: "/", index: true, component: HomePage },
+  { path: "/contacts", component: ContactsLayout },
+  {
+    path: "/contacts/:id",
+    component: ContactPage,
+    loader: contactLoader,
+    action: contactAction,
+    shouldReload,
+  },
+];
+```
+
+Use `children` for explicit parent-child relationships (recommended). Relative paths are joined to the parent, and children with `index: true` or an omitted `path` inherit the parent path. After expansion, this is equivalent to the flat array above.
+
+```tsx
+const routes = [
+  {
+    path: "/",
+    component: RootLayout,
+    children: [{ index: true, component: HomePage }],
+  },
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    children: [{ path: ":id", component: ContactPage, loader: contactLoader }],
+  },
+];
+```
+
+Pass string literals as type arguments. Since `RouteParams` reads keys from the literal type, passing `string` leaves the key types unresolved.
+
+## Notes [#notes]
+
+- `RouteDefinition` is input, `Route` is output. You never need to build a `Route` yourself.
+- Keep the `routes` array at module scope. A changed reference recreates the router and drops the cache.
+- In the module form, `component` takes precedence over `default`.
+- `children` is normalized into a flat array on expansion. Definitions without `children` keep working as before.
+- A bare-path parent with an indexed child gets a synthetic loader. It returns a `RedirectResponse` on the bare path and passes through the user loader result on the child path. It always reruns on transitions involving the bare path.
+- Pattern syntax and specificity rules are covered in [Routing](/guides/routing).
+
+## Related [#related]
+
+- [createRouter](/packages/core/reference/create-router) — Create a router from definitions
+- [matchRoutes](/packages/core/reference/routes) — Match definitions against a URL
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — Run and refetch loaders
+- [startAction](/packages/core/reference/actions) — Select and run actions
+- [IEngine](/packages/core/reference/engine) — Route types accepted by the engine

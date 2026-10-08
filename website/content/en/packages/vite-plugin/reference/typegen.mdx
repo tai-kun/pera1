@@ -1,0 +1,103 @@
+---
+title: Route types
+description: "Where the Route type each route file can import is generated, and how to configure tsconfig."
+---
+
+`@pera1/vite-plugin` generates a type definition with a `Route` namespace per route file. A route file can import its types from `+types` in the same directory.
+
+```tsx src/pages/contacts/$id.tsx
+import type { Route } from "./+types/$id";
+
+export async function loader({ params }: Route.LoaderArgs) {
+  // params is { readonly id: string }.
+  return findContact(params.id);
+}
+
+export async function action({ params }: Route.ActionArgs) {
+  await deleteContact(params.id);
+  return redirect("/contacts");
+}
+
+export default function ContactPage() {
+  const params = useParams<Route.Path>();
+  // ...
+}
+```
+
+## Generated types [#generated-types]
+
+The `Route` namespace contains the following types.
+
+| Type                     | Contents                                         |
+| ------------------------ | ------------------------------------------------ |
+| `Route.Path`             | Path pattern of the route. Example: `"/contacts/:id"` |
+| `Route.Params`           | Parameters derived from the path pattern.       |
+| `Route.LoaderArgs`       | Arguments of the `loader` function.             |
+| `Route.ActionArgs`       | Arguments of the `action` function.             |
+| `Route.ShouldReloadArgs` | Arguments of the `shouldReload` function.       |
+
+`Route.LoaderArgs` and `Route.ActionArgs` are `LoaderFunctionArgs` and `ActionFunctionArgs` applied to `Route.Path`. Parameter keys are reflected in `params`.
+
+## Output [#output]
+
+Types are generated under `typesDir` (default `.pera1/types`), reproducing the route file's path relative to the project root.
+
+```text
+src/pages/contacts/$id.tsx
+  -> .pera1/types/src/pages/contacts/+types/$id.d.ts
+
+src/pages/contacts/_layout.tsx
+  -> .pera1/types/src/pages/contacts/+types/_layout.d.ts
+```
+
+Special files such as `_index`, `_layout`, and `$.tsx` each get types for their route path.
+
+## tsconfig setup [#tsconfig]
+
+So TypeScript resolves `./+types/$id` as a generated file, point `rootDirs` at the project root and the type output directory.
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "rootDirs": [".", "./.pera1/types"],
+    "types": ["vite/client", "@pera1/vite-plugin/client"]
+  },
+  "include": ["src", ".pera1/types"]
+}
+```
+
+`rootDirs` resolves a relative import from a route file to the same position inside another root directory. When you change the output directory, update `rootDirs` and `include` together.
+
+## .gitignore [#gitignore]
+
+A `.gitignore` containing only `*` is emitted at the output location, ignoring everything below it. By default it is `.pera1/.gitignore`. No need to edit the repository's `.gitignore`.
+
+```txt .pera1/.gitignore
+*
+```
+
+When `typesDir` is changed, the `.gitignore` is emitted in the parent directory of the output. When the parent matches the project root or lies outside the project, it is emitted in the output directory itself.
+
+## Generation timing [#timing]
+
+- Automatically generated at dev server startup and on file additions, changes, and deletions in the pages directory.
+- Also generated when `vite build` starts.
+- When only typechecking, e.g. in CI, run the [CLI](/packages/vite-plugin/reference/cli) before `tsc`.
+
+```json package.json
+{
+  "scripts": {
+    "typecheck": "pera1-vite typegen && tsc --noEmit"
+  }
+}
+```
+
+:::note
+Generated files are only rewritten when their contents change. Types for removed route files are deleted.
+:::
+
+## Related [#related]
+
+- [CLI](/packages/vite-plugin/reference/cli) — `pera1-vite typegen`
+- [File conventions](/packages/vite-plugin/reference/file-conventions) — Route-to-file mapping
+- [RouteDefinition](/packages/core/reference/route-definitions) — Type of the generated route definitions

@@ -1,0 +1,58 @@
+---
+title: CLI
+description: "Usage and options for pera1-vite typegen."
+---
+
+`@pera1/vite-plugin` provides the `pera1-vite` command. Types are generated automatically by the dev server and builds, so the CLI is for cases like generating before typechecking in CI.
+
+## Usage [#usage]
+
+```sh
+pera1-vite typegen
+```
+
+Generates route types with the current directory as the project root. Prints the number of generated and deleted files to stdout, exiting with `0` on success and `1` on failure.
+
+```sh
+$ pera1-vite typegen
+Generated route types (generated: 6, deleted: 0).
+```
+
+## Options [#options]
+
+| Option             | Description                                                                               |
+| ------------------ | ----------------------------------------------------------------------------------------- |
+| `--root <path>`    | Project root. Defaults to the current directory.                                          |
+| `--dir <path>`     | Pages directory. Defaults to the `vite.config` setting, else `src/pages`.                 |
+| `--include <glob>` | Glob pattern for files treated as routes. Can be specified multiple times.               |
+| `--exclude <glob>` | Glob pattern for files excluded from routes. Can be specified multiple times; wins over `include`. |
+| `--out <path>`     | Type output directory. Defaults to the `vite.config` setting, else `.pera1/types`.       |
+| `-h`, `--help`     | Shows help.                                                                               |
+
+When `--dir`, `--include`, `--exclude`, and `--out` are omitted, the project's `vite.config.*` is loaded and the options passed to `pera1()` are inherited. Defaults are used when the config file cannot be loaded.
+
+```sh
+pera1-vite typegen --root . --dir app/routes --include "**/*.tsx" --exclude "**/*.test.tsx"
+```
+
+## Wiring into package.json [#scripts]
+
+Generate before typechecking so CI resolves the same types as the editor.
+
+```json package.json
+{
+  "scripts": {
+    "typecheck": "pera1-vite typegen && tsc --noEmit",
+    "build": "pera1-vite typegen && tsc --noEmit && vite build"
+  }
+}
+```
+
+:::note
+The CLI uses the `exclude` pattern of `fs.globSync`, so Node.js 22.17 or later is required.
+:::
+
+## Related [#related]
+
+- [Route types](/packages/vite-plugin/reference/typegen) — Generated types and tsconfig
+- [Plugin options](/packages/vite-plugin/reference/plugin-options) — `pera1()` settings

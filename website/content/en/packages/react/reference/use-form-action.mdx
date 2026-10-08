@@ -1,0 +1,44 @@
+---
+title: useFormAction
+description: "Returns the form submission target URL path with parameters filled in with actual values."
+---
+
+`useFormAction` returns the form submission URL for the current route as a string. Path pattern parameters are already filled in with actual values, so it can be passed to `action` as-is.
+
+```tsx
+import { useFormAction } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useFormAction(): string;
+```
+
+## Returns [#returns]
+
+Returns the `urlPath` of the current `RouteContext`. For example, on a `/contacts/:id` route with `id` of `42` it is `"/contacts/42"`. Query and hash are not included.
+
+## Usage [#usage]
+
+```tsx
+import { useFormAction } from "@pera1/react";
+
+function ContactForm() {
+  const formAction = useFormAction();
+  return <form method="post" action={formAction}>...</form>;
+}
+```
+
+`useSubmit` uses this value as the submission target when the `action` option is omitted.
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` is not provided |
+
+## Related [#related]
+
+- [useSubmit](/packages/react/reference/use-submit) — Submitting programmatically
+- [Mutations](/guides/mutations#forms) — Forms and actions

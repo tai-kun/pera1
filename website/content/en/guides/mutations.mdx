@@ -1,0 +1,212 @@
+---
+title: Mutations
+description: "Create, update, and delete via actions, form submission, and redirect flow, with practical examples."
+---
+
+Implement writes by declaring an action function on the route. This page explains how the action is selected, the submit-to-refetch flow, how to return redirects, and how to connect forms.
+
+## Declare actions on routes [#declaring]
+
+An action is a function passed as the `action` property. It receives params and a `request` representing the POST request. Read form contents from `request.formData`.
+
+```tsx
+import { redirect } from "@pera1/core";
+import type { ActionFunctionArgs } from "@pera1/core";
+
+async function createContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "Please enter a name." };
+  }
+  const contact = await createContact(name);
+  return redirect(`/contacts/${contact.id}`);
+}
+
+const routes = [
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    action: createContactAction,
+  },
+];
+```
+
+Sync or async both work. The return value is kept as action data or interpreted as a redirect instruction. Since `params` values arrive as `string | undefined`, check existence in actions that use params.
+
+## Exactly one action runs [#selection]
+
+POST destinations are matched too. Results come most-specific first (child to parent), so pera1 picks the first route with an action in that order and runs exactly one. Multiple actions never run together.
+
+```tsx
+const routes = [
+  { path: "/contacts", component: ContactsLayout, action: layoutAction },
+  { path: "/contacts/:id", component: ContactPage, action: contactAction },
+];
+```
+
+POST to `/contacts/42` picks `contactAction`; POST to `/contacts` picks `layoutAction`. A parent action receives `params` extracted at the parent route.
+
+## Refetch always runs after an action [#revalidation]
+
+When the action completes, loaders for the settled URL run. The loader refetch condition (`shouldReload`) defaults to always `true` on POST. No need to refresh the updated list inside the action.
+
+The refetch flow:
+
+1. The action completes and the redirect destination (or current URL) settles.
+2. Loaders for routes matching the settled URL run.
+3. The new state is notified to the UI and the screen re-renders.
+
+While waiting, the browser tab shows loading. You can resume once loaders complete.
+
+## Return `redirect` to move screens [#redirect]
+
+To move screens, return a `redirect` result as-is.
+
+```tsx
+import { redirect } from "@pera1/core";
+
+async function deleteContactAction({ params }: ActionFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("Missing id.");
+  }
+  await deleteContact(id);
+  return redirect("/contacts");
+}
+```
+
+Redirects work sync or async. The framework consumes the `RedirectResponse` from `redirect` and replaces it with `undefined` instead of exposing it as data. A redirect response never reaches `useActionData`.
+
+Returning `redirect` from a loader also auto-navigates via the engine. For read-time guards like auth, see [Data loading](/guides/data-loading#redirect).
+
+Returning a value without a redirect stays on the current URL. Fits cases like validation errors where you show the result on the same screen.
+
+```tsx
+async function updateContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "Please enter a name." };
+  }
+  await updateContact(name);
+  return { error: null };
+}
+```
+
+## Receive results in components [#consume]
+
+Like loaders, results are `NinjaPromise`. Take them with `useActionData` and pass to `React.use`. History entries where no action has run yet return `undefined`, so split the `use` call into a child component.
+
+```tsx
+import type { ActionData } from "@pera1/react";
+import { useActionData } from "@pera1/react";
+import * as React from "react";
+
+function ContactForm() {
+  const actionData = useActionData<typeof updateContactAction>();
+
+  return (
+    <form method="post" action="/contacts">
+      <input name="name" />
+      {actionData ? <ActionError actionData={actionData} /> : null}
+      <button type="submit">Save</button>
+    </form>
+  );
+}
+
+function ActionError({ actionData }: { actionData: ActionData<typeof updateContactAction> }) {
+  const data = React.use(actionData);
+  if (data && "error" in data && data.error) {
+    return <p role="alert">{data.error}</p>;
+  }
+  return null;
+}
+```
+
+While submitting, the action's `NinjaPromise` is pending, so `use` suspends and switches to the `Suspense` fallback. The result then appears right after the form.
+
+Results are cached per history entry. Going back after a POST shows the result tied to that entry again.
+
+## Submit with plain forms [#forms]
+
+pera1 has no dedicated `<Form>` component. A plain `<form method="post">` reaches the router through the Navigation API.
+
+```tsx
+<form method="post" action="/contacts">
+  <input name="name" />
+  <button type="submit">Add</button>
+</form>
+```
+
+The destination comes from the `action` attribute, defaulting to the current URL. `method="post"` forms run as actions; `method="get"` forms run as query updates.
+
+## Submit programmatically [#use-submit]
+
+To submit from outside a form — button clicks, after async work — use `useSubmit`. `FormData` acts as POST; `URLSearchParams` acts as GET.
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function DeleteButton({ id }: { id: string }) {
+  const submit = useSubmit();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const formData = new FormData();
+        formData.set("intent", "delete");
+        formData.set("id", id);
+        submit(formData, { action: `/contacts/${id}` });
+      }}
+    >
+      Delete
+    </button>
+  );
+}
+```
+
+`FormData` may include `File`s. Internally a hidden form is temporarily created and sent as multipart/form-data.
+
+| Option | Applies to | Description |
+| --- | --- | --- |
+| `action` | Both | Overrides the destination. Defaults to the current route's `urlPath`. |
+| `replace` | GET only | Overwrites without adding history. |
+
+Get the form destination URL with `useFormAction`. It returns the current route's path with params filled with real values.
+
+```tsx
+function ContactForm() {
+  const formAction = useFormAction();
+  return <form method="post" action={formAction}>...</form>;
+}
+```
+
+## Separate failure display [#errors]
+
+There are two ways to report failure. Choose by whether users can fix it or it is unexpected.
+
+For fixable problems like invalid input, return `{ error: "..." }` without throwing. Like `ActionError` above, you can show the message on the same screen.
+
+Throw unexpected failures as exceptions. They are kept as promise rejections and reach the error boundary from components using `React.use`. Swallowing them mid-flight looks to users like nothing happened.
+
+```tsx
+async function saveAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "Please enter a name." };
+  }
+  // Throw problems users can't fix, like server failures
+  await saveToServer(name);
+  return { error: null };
+}
+```
+
+See [Error handling](/guides/error-handling) for wiring error boundaries.
+
+## Action and loader roles [#action-and-loader]
+
+Roles split into “write” and “read”. Don't fetch display data inside actions; only write, and leave display data to loaders. Loaders run automatically after completion, so this split keeps the screen fresh.
+
+## Next steps [#next]
+
+Programmatic navigation such as button clicks is covered in [Navigation](/guides/navigation). To control post-mutation refetching more finely, see `shouldReload` in [Data loading](/guides/data-loading).

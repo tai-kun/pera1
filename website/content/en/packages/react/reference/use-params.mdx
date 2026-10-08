@@ -1,0 +1,64 @@
+---
+title: useParams
+description: "Reads the path parameters matched by the current route."
+---
+
+`useParams` returns the parameters embedded in the current route's path pattern. Values are strings and remain percent-encoded.
+
+```tsx
+import { useParams } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useParams<TPath extends string = string>(): RouteParams<TPath>;
+```
+
+## Type parameters [#type-parameters]
+
+| Name | Default | Description |
+| --- | --- | --- |
+| `TPath` | `string` | String literal type of the route pattern. |
+
+Passing a pattern reflects its keys and optionality in the type. Omitting it produces a loose type keyed by `string`.
+
+```ts
+type Params = RouteParams<"/contacts/:id">;
+// { readonly id: string }
+
+type Optional = RouteParams<"/archive/:year?">;
+// { readonly year?: string }
+```
+
+## Returns [#returns]
+
+Returns the `params` held by the current `RouteContext`. The value is read via `useRouteContext`, so it differs per level. A child route component does not automatically include the parent pattern's parameters.
+
+## Usage [#usage]
+
+```tsx
+import { useParams } from "@pera1/react";
+
+function ContactPage() {
+  const params = useParams<"/contacts/:id">();
+  return <p>ID: {params.id}</p>;
+}
+```
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` is not provided |
+
+## Notes [#notes]
+
+- When an optional parameter is omitted from the URL, the key does not exist on the runtime object. Test with `in` or an `undefined` check.
+- Access the wildcard value with `params["*"]`.
+
+## Related [#related]
+
+- [Routing](/guides/routing#use-params) — Path pattern syntax
+- [TypeScript](/guides/typescript#route-params) — Deriving types
+- [useRouteContext](/packages/react/reference/use-route-context) — Full route information

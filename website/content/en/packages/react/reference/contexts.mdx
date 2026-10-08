@@ -1,0 +1,80 @@
+---
+title: Contexts
+description: "Values provided by RouteContext and RouterContext, and how to use them for low-level extensions."
+---
+
+`@pera1/react` exposes two contexts. The hooks cover most applications, but you can work with the context values directly when building custom hooks or components.
+
+## RouteContext [#route-context]
+
+Each route component receives information about its matched route from `RouteContext`. `Router` places a provider per route, so the value a component sees belongs to its own level.
+
+```ts
+const RouteContext: React.Context<RouteContextValue | null>;
+
+type RouteContextValue = MatchedRoute<React.ComponentType<{}>> & {
+  readonly outlet: React.ReactElement | null;
+};
+```
+
+`MatchedRoute` is a normalized route plus its match result.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `path` | `string` | Path pattern of the route definition. |
+| `index` | `boolean` | Whether this is an index route. |
+| `params` | `RouteParams` | Parameters extracted from the URL. |
+| `urlPath` | `string` | Path with parameters filled in with actual values. |
+| `component` | `React.ComponentType<{}> \| undefined` | Component to render. |
+| `action` | Action function or `undefined` | Includes the value inherited from the parent. |
+| `loader` | Loader function or `undefined` | Includes the value inherited from the parent. |
+| `shouldReload` | `ShouldReloadFunction` | Function that decides whether to refetch. |
+| `utils` | `RoutePatternUtils` | Utilities for matching patterns and extracting parameters. |
+| `outlet` | `React.ReactElement \| null` | Element of the child route. |
+
+`useRouteContext` returns this value as a whole. `useParams` and `useFormAction` pick out only the part they need.
+
+## RouterContext [#router-context]
+
+`RouterContext` provides a ref to the router instance and a subscription function. The provider itself never updates when state changes. Child components combine `subscribe` with `useSyncExternalStore` to subscribe to only the slice they need.
+
+```ts
+type RouterRef = Readonly<React.RefObject<RouterSnapshot>>;
+
+type RouterContextValue = {
+  readonly routerRef: RouterRef;
+  readonly subscribe: (onRouterChange: () => void) => () => void;
+};
+
+const RouterContext: React.Context<RouterContextValue | null>;
+```
+
+`routerRef.current` is the `@pera1/core` `RouterSnapshot`. The object reference is fixed at creation time, and only `currentEntry` is updated on each navigation. See [`createRouter`](/packages/core/reference/create-router#snapshot) for its contents.
+
+## Low-level usage [#low-level]
+
+Example of reading the contexts directly. The same behavior is available through [`useRouteContext`](/packages/react/reference/use-route-context) and [`useRouterContext`](/packages/react/reference/use-router-context). Prefer those in most cases.
+
+```tsx
+import * as React from "react";
+
+import { RouteContext } from "@pera1/react";
+
+function CurrentPath() {
+  const route = React.use(RouteContext);
+  if (!route) {
+    throw new Error("Used outside a Router.");
+  }
+  return <p>{route.urlPath}</p>;
+}
+```
+
+## Throws [#throws]
+
+Using a hook without its context provider throws `RouteContextMissingError` or `RouterContextMissingError`. Reading a context directly with `use` returns `null`. Checking for `null` is the caller's responsibility.
+
+## Related [#related]
+
+- [useRouteContext](/packages/react/reference/use-route-context)
+- [useRouterContext](/packages/react/reference/use-router-context)
+- [createRouter](/packages/core/reference/create-router) — Contents of `RouterSnapshot`

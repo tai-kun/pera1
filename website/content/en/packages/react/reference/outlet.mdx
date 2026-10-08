@@ -1,0 +1,53 @@
+---
+title: Outlet
+description: "Placeholder that renders the matched child route inside the parent layout."
+---
+
+`Outlet` is a placeholder that marks where a child route is displayed in a nested route structure. Place it in the parent layout component where the child should appear.
+
+```tsx
+import { Outlet } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function Outlet(): React.ReactElement | null;
+```
+
+## Returns [#returns]
+
+Returns the `outlet` of the `RouteContext` for the current route. Returns `null` when no deeper child route matches.
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouteContextMissingError` | Rendered where `RouteContext` is not provided, such as outside `Router` |
+
+## Usage [#usage]
+
+```tsx
+import { Outlet } from "@pera1/react";
+
+function ContactsLayout() {
+  return (
+    <section>
+      <h2>Contacts</h2>
+      <Outlet />
+    </section>
+  );
+}
+```
+
+Assigning the `/contacts` layout route to this layout renders list and detail screens at the `Outlet` position. Nesting is decided by prefix matching on path patterns. See [Routing](/guides/routing) for details.
+
+## Notes [#notes]
+
+- Even when the matched route has no `component`, the child `outlet` still renders as-is. A route without `component` works as a pass-through layout for its children.
+- Rendering `Outlet` more than once from the same route's `component` duplicates the child tree. Render the child in exactly one place.
+
+## Related [#related]
+
+- [Router](/packages/react/reference/router) — Rendering the route hierarchy
+- [Contexts](/packages/react/reference/contexts) — Shape of the provided values

@@ -1,0 +1,175 @@
+---
+title: IEngine
+description: "Summarizes the 4-method contract engines implement, with argument and return types."
+---
+
+`IEngine` is the contract connecting `createRouter` to a routing engine. An engine observes browser history and navigation, and translates URL changes into route state. The default implementation is [NavigationApiEngine](/packages/core/reference/navigation-api-engine).
+
+This page describes the 4 methods of `IEngine` followed by the related types in the `IEngine` namespace. See [Custom engines](/guides/custom-engines) for an implementation example.
+
+## Signature [#signature]
+
+```ts
+interface IEngine<TComponent = any> {
+  init(args: IEngine.InitArgs<TComponent>): IEngine.InitReturn<TComponent>;
+  start(args: IEngine.StartArgs<TComponent>): IEngine.StartReturn;
+  submit(args: IEngine.SubmitArgs): void;
+  navigate(args: IEngine.NavigateArgs): void;
+}
+```
+
+`TComponent` is the type of the component to render, such as `React.ComponentType` for React. Choose it to match your binding.
+
+## Method contract [#contract]
+
+| Method | When it is called | Role |
+| --- | --- | --- |
+| `init` | On router creation | Synchronously returns the state for the current URL. |
+| `start` | On start | Starts event subscription and optionally returns a stop function. |
+| `submit` | On form submission | Handles submitted data. |
+| `navigate` | On programmatic navigation | Handles navigation. |
+
+Loaders needed for the initial view are started inside `init`. Since it is a synchronous method, do not await completion before returning. Register the resulting `NinjaPromise` values in `loaderDataStore`.
+
+The return value of `start` is `IStopEngine` or `void`. When a stop function is returned, it is used to unsubscribe and abort in-progress actions and loaders.
+
+`submit` and `navigate` have no return value. State updates are reported through the `update` function received in `start`.
+
+## InitArgs [#init-args]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `routes` | `readonly Route<TComponent>[]` | Routes after normalization and specificity sorting. |
+| `loaderDataStore` | `Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>` | Loader results per history entry. |
+| `getSignal` | `() => AbortSignal` | Gets the signal to abort initialization. |
+
+`InitReturn<TComponent>` is `RouterState<TComponent> | null`. Return state when there is a matching route and a valid history entry, otherwise `null`.
+
+## StartArgs [#start-args]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `routes` | `readonly Route<TComponent>[]` | Normalized routes. |
+| `actionDataStore` | `Map<HistoryEntryId, Map<ActionFunction, NinjaPromise<unknown>>>` | Action results per history entry. |
+| `loaderDataStore` | `Map<HistoryEntryId, Map<LoaderFunction, NinjaPromise<unknown>>>` | Loader results per history entry. |
+| `update` | `{ (): void; (state: RouterState<TComponent> \| null): void }` | Notifies the UI of state. |
+| `getSignal` | `() => AbortSignal` | Gets the signal to abort observation. |
+
+`StartReturn` is `IStopEngine | void`. The returned stop function is called when `createRouter` stops.
+
+## Two forms of `update` [#update]
+
+`update` has two forms. Its role changes with the call form.
+
+| Form | Meaning |
+| --- | --- |
+| `update()` | Requests a re-render while keeping the current state. |
+| `update(newState)` | Reports new state. `null` means unmatched. |
+
+The no-argument call is used for loading UI when an action starts, for example. The action result itself is registered in the store, and the view receives the async result via `React.use` or similar.
+
+## SubmitArgs [#submit-args]
+
+`SubmitArgs` is a discriminated union on `type`. `FORM_DATA` corresponds to an HTTP POST, and `URL_SEARCH_PARAMS` to a GET-equivalent query update.
+
+```ts
+type SubmitArgs =
+  | {
+      type: "FORM_DATA";
+      target: ReadonlyFormData;
+      action: string;
+    }
+  | {
+      type: "URL_SEARCH_PARAMS";
+      target: ReadonlyURLSearchParams;
+      action: string;
+      history: "replace" | "push";
+    };
+```
+
+| Property | `FORM_DATA` | `URL_SEARCH_PARAMS` | Contents |
+| --- | --- | --- | --- |
+| `target` | `ReadonlyFormData` | `ReadonlyURLSearchParams` | Data to submit. |
+| `action` | Present | Present | Submission target URL path. |
+| `history` | Absent | Present | `"push"` appends, `"replace"` overwrites. |
+
+## NavigateArgs [#navigate-args]
+
+`NavigateArgs` is also a discriminated union. `type` splits it into `LINK` and `MOVE`. `LINK` is an explicit address, `MOVE` is a relative move within the history stack.
+
+| Property | `LINK` | `MOVE` | Contents |
+| --- | --- | --- | --- |
+| `to` | `STATIC` or `DYNAMIC` | Absent | Navigation target. |
+| `history` | Present | Absent | `"push"` appends, `"replace"` overwrites. |
+| `delta` | Absent | Present | Number of steps to move through history. |
+
+`LINK`'s `to` has 2 forms. `STATIC` passes a full path string as `path`. `DYNAMIC` passes a function to `patch(path: RoutePath)` that partially rewrites the current URL.
+
+```ts
+engine.navigate({
+  type: "LINK",
+  to: { type: "STATIC", path: "/contacts/42" },
+  history: "push",
+});
+
+engine.navigate({ type: "MOVE", delta: -1 });
+```
+
+## IStopEngine [#istop-engine]
+
+```ts
+interface IStopEngine {
+  (): void;
+}
+```
+
+Unsubscribes and aborts in-progress async work. Implement it so calling it twice is not an error.
+
+## RouterState [#routerstate]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `entry` | `HistoryEntry` | Currently active history entry. |
+| `routes` | `readonly [MatchedRoute<TComponent>, ...MatchedRoute<TComponent>[]]` | Matched routes. A tuple guaranteeing at least one entry. |
+
+`routes` is ordered from the most specific child to the parent. Walking it in reverse when rendering wraps children in parents.
+
+## Implementing an engine [#implementing]
+
+```ts no-run
+import type { IEngine } from "@pera1/core";
+
+const engine: IEngine = {
+  init({ routes, loaderDataStore, getSignal }) {
+    // Match the current URL, start loaders, and return { entry, routes }
+  },
+  start({ update, getSignal }) {
+    // Subscribe to events and call update on each change
+    return () => {
+      // Unsubscribe and abort in-progress work
+    };
+  },
+  submit(args) {
+    // Handle FORM_DATA or URL_SEARCH_PARAMS
+  },
+  navigate(args) {
+    // Handle LINK or MOVE
+  },
+};
+```
+
+See [Custom engines](/guides/custom-engines) for a more complete example.
+
+## Notes [#notes]
+
+- Do not `await` inside `init`. Only start loaders; leave waiting to the UI.
+- `createRouter` owns the data stores. Engines update the passed-in `Map` and keep no cache of their own.
+- Calling `update()` with no arguments does not change state. Only a re-render occurs.
+- When `start` returns no stop function, no engine-side cleanup is called. Since the signal from `getSignal()` aborts on stop, subscriptions can also be released via the signal.
+
+## Related [#related]
+
+- [createRouter](/packages/core/reference/create-router) — The caller of engines
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — Default implementation
+- [Custom engines](/guides/custom-engines) — Implementation example
+- [Navigation](/guides/navigation) — How to navigate

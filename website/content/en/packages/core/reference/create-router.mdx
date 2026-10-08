@@ -1,0 +1,85 @@
+---
+title: createRouter
+description: "Controller that connects route definitions to an engine and provides subscription and snapshots."
+---
+
+`createRouter` bridges declarative route definitions and an imperative engine, producing a controller that bundles subscription, snapshots, and lifecycle management. The React binding's `Router` also uses this function internally, making it the foundation for custom UI bindings and custom engines.
+
+```ts
+import { createRouter } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+function createRouter<TComponent = any>(
+  args: CreateRouterArgs<TComponent>,
+): RouterController<TComponent>;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `engine` | `IEngine<TComponent>` | Yes | Engine that performs routing. Pass `NavigationApiEngine` or a custom engine. |
+| `routes` | `readonly RouteDefinition<string, TComponent>[]` | Yes | Application route definitions. Accepts both object and module forms. |
+
+## Return value [#returns]
+
+The return value is a `RouterController<TComponent>`.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `start` | `() => () => void` | Starts the engine's event subscription and returns a stop function. |
+| `subscribe` | `(cb: () => void) => () => void` | Registers a state-change subscription and returns an unsubscribe function. |
+| `getRoutes` | `() => readonly MatchedRoute<TComponent>[] \| undefined` | Returns the currently matched route hierarchy, or `undefined` when unmatched. |
+| `getSnapshot` | `() => RouterSnapshot` | Returns the router's current state. The object reference is stable. |
+
+## `RouterSnapshot` contents [#snapshot]
+
+The object returned by `getSnapshot()`. Its reference is fixed at creation time; only `currentEntry` is updated on navigation.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `submit` | `(args: IEngine.SubmitArgs) => void` | Delegates submission to the engine. |
+| `navigate` | `(args: IEngine.NavigateArgs) => void` | Delegates navigation to the engine. |
+| `currentEntry` | `HistoryEntry` | Currently active history entry. |
+| `actionDataStore` | `ReadonlyMap<HistoryEntryId, ReadonlyMap<ActionFunction, NinjaPromise<unknown>>>` | Action results per history entry. |
+| `loaderDataStore` | `ReadonlyMap<HistoryEntryId, ReadonlyMap<LoaderFunction, NinjaPromise<unknown>>>` | Loader results per history entry. |
+
+## Lifecycle [#lifecycle]
+
+1. Calling `createRouter` normalizes and sorts the route definitions, then calls `engine.init` synchronously. Initial-load loaders are started here.
+2. Calling `start()` invokes `engine.start`, and the engine subscribes to events. When the engine settles state, it notifies the controller through the returned `update` function, which propagates a re-render to all `subscribe` subscribers.
+3. Calling the stop function stops the engine and aborts in-progress work.
+
+```ts no-run
+import { createRouter } from "@pera1/core";
+
+const controller = createRouter({ engine, routes });
+const stop = controller.start();
+
+const unsubscribe = controller.subscribe(() => {
+  render(controller.getRoutes());
+});
+
+// On unmount
+unsubscribe();
+stop();
+```
+
+:::note
+`start()` can be called multiple times. The internal `AbortController` is recreated on each stop, so calling `start()` again runs with a fresh abort signal. Calling `stop()` twice is not an error.
+:::
+
+## Notes [#notes]
+
+- When the `routes` reference changes, the result is the same as recreating the router. When used from React, `Router` includes `routes` in its `useMemo` dependencies, so passing a new array on every render discards the cache.
+- Treat the return value of `getSnapshot()` as read-only. Mutating it directly does not notify subscribers.
+- The engine updates `loaderDataStore` inside `init`, but the store itself is managed by the controller.
+
+## Related [#related]
+
+- [Router](/packages/react/reference/router) — Usage from React
+- [IEngine](/packages/core/reference/engine) — Engine contract
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — Default engine

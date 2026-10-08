@@ -1,0 +1,55 @@
+---
+title: useRoutePath
+description: "Reads the current URL as a mutable RoutePath."
+---
+
+`useRoutePath` returns the `RoutePath` for the current history entry's URL. Use it when you want to build or parse URLs under normalized rules.
+
+```tsx
+import { useRoutePath } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useRoutePath(): ReadonlyRoutePath;
+```
+
+## Returns [#returns]
+
+Returns a `ReadonlyRoutePath` created from `router.currentEntry.url` with `useMemo`. The same instance is reused until the URL changes.
+
+```ts
+interface ReadonlyRoutePath {
+  readonly pathname: string;
+  readonly search: string;
+  readonly searchParams: ReadonlyURLSearchParams;
+  readonly hash: string;
+  toString(): string;
+  clone(): RoutePath;
+}
+```
+
+`search` is always sorted, and consecutive or trailing slashes are removed. To modify it, `clone()` it first.
+
+## Usage [#usage]
+
+```tsx
+import { useRoutePath } from "@pera1/react";
+
+function CurrentLocation() {
+  const path = useRoutePath();
+  return <p>{path.pathname}</p>;
+}
+```
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouterContextMissingError` | `RouterContext` is not provided |
+
+## Related [#related]
+
+- [Navigation](/guides/navigation#route-path) — Using `RoutePath`
+- [useNavigate](/packages/react/reference/use-navigate) — Navigations that take a `RoutePath`

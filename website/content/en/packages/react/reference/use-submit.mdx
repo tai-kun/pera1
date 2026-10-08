@@ -1,0 +1,89 @@
+---
+title: useSubmit
+description: "Submits data from outside a form, triggering actions or loaders."
+---
+
+`useSubmit` returns a function that submits data from outside a form. Passing `FormData` runs the POST-equivalent action; passing `URLSearchParams` refetches loaders as the GET equivalent.
+
+```tsx
+import { useSubmit } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useSubmit(): SubmitFunction;
+
+interface SubmitFunction {
+  (target: ReadonlyFormData, options?: SubmitPostOptions): void;
+  (target: ReadonlyURLSearchParams, options?: SubmitGetOptions): void;
+  (
+    target: ReadonlyURLSearchParams | ReadonlyFormData,
+    options?: SubmitGetOptions | SubmitPostOptions,
+  ): void;
+}
+```
+
+## Options [#options]
+
+| Option | Applies to | Type | Description |
+| --- | --- | --- | --- |
+| `action` | Both | `string` | Overrides the submission target. Defaults to the current route's `urlPath`. |
+| `replace` | GET only | `boolean` | `true` overwrites history instead of pushing. |
+
+```ts
+type SubmitPostOptions = {
+  action?: string;
+};
+
+type SubmitGetOptions = {
+  action?: string;
+  replace?: boolean;
+};
+```
+
+## Returns [#returns]
+
+Returns a `SubmitFunction`. The default submission target uses the `useFormAction()` value. Type detection is delegated to `toSubmitArgs` in `@pera1/core`, which checks for `FormData` at runtime and dispatches to the matching engine method.
+
+## Usage [#usage]
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function DeleteButton({ id }: { id: string }) {
+  const submit = useSubmit();
+
+  return (
+    <button
+      type="button"
+      onClick={() => {
+        const formData = new FormData();
+        formData.set("intent", "delete");
+        submit(formData, { action: `/contacts/${id}` });
+      }}
+    >
+      Delete
+    </button>
+  );
+}
+```
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouteContextMissingError` | `RouteContext` for the default submission target is not provided |
+| `RouterContextMissingError` | `RouterContext` is not provided |
+
+## Notes [#notes]
+
+- The returned function is wrapped in `useCallback` and has a stable reference.
+- `toSubmitArgs` treats anything other than `FormData` as `URLSearchParams`. Pass native instances of either type.
+- `FormData` may contain `File` entries. Internally a hidden form is created temporarily and submitted as multipart/form-data.
+
+## Related [#related]
+
+- [useFormAction](/packages/react/reference/use-form-action) — Reading the submission target
+- [Mutations](/guides/mutations) — Action and form flow
+- [Navigation](/guides/navigation) — Where `useSubmit` fits

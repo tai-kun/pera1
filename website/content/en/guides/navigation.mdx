@@ -1,0 +1,229 @@
+---
+title: Navigation
+description: "When to use links, useNavigate, and useSubmit, and how history works."
+---
+
+There are three ways to navigate: links, imperative navigation with `useNavigate`, and data submission with `useSubmit`. This page explains when to use each, plus history and URL handling.
+
+## Plain `<a>` is enough for links [#links]
+
+There is no dedicated component for internal links. Writing `<a href="/contacts/42">` delivers the click to the router as a Navigation API `navigate` event, transitioning without a full page reload.
+
+```tsx
+<a href={`/contacts/${contact.id}`}>{contact.name}</a>
+```
+
+These navigations are not intercepted; the browser's default behavior applies:
+
+- Links to external origins
+- Hash-only changes (jumps to `#section`)
+- Download links (`download` attribute)
+- Page reloads
+
+Links with `target="_blank"` opening a new tab also keep default behavior.
+
+## Navigate programmatically [#use-navigate]
+
+To navigate after button clicks or completed work, use `useNavigate`. It takes four argument shapes.
+
+```tsx
+import { useNavigate } from "@pera1/react";
+
+function Actions() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      {/* Specify a path as a string */}
+      <button onClick={() => navigate("/contacts")}>To list</button>
+
+      {/* Replace only part of the current URL */}
+      <button onClick={() => navigate({ search: "?page=2" })}>Next page</button>
+
+      {/* Manipulate RoutePath directly */}
+      <button onClick={() => navigate((path) => path.searchParams.set("sort", "name"))}>
+        Sort by name
+      </button>
+
+      {/* Move back / forward in history */}
+      <button onClick={() => navigate(-1)}>Back</button>
+    </>
+  );
+}
+```
+
+The second, object form inherits unspecified parts from the current URL. The third, function form receives a `RoutePath` so you can freely rewrite `pathname`, `search`, and `hash`.
+
+| Argument | Behavior |
+| --- | --- |
+| `string` | Navigate to that path |
+| `{ pathname?, search?, hash? }` | Replace only the specified parts |
+| `(path: RoutePath) => void` | Build freely from the current URL |
+| `number` | Move relatively in the history stack (`-1` goes back) |
+
+Passing `replace: true` overwrites the current entry instead of adding history. Use it when users shouldn't step back one by one, like search-condition updates.
+
+```tsx
+navigate("/contacts?page=2", { replace: true });
+```
+
+## Submit data to navigate [#use-submit]
+
+`useNavigate` only changes the URL; `useSubmit` submits data then navigates. `FormData` runs an action (POST); `URLSearchParams` refetches loaders (GET).
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function Toolbar() {
+  const submit = useSubmit();
+
+  return (
+    <>
+      <button
+        onClick={() => {
+          const formData = new FormData();
+          formData.set("intent", "archive");
+          submit(formData);
+        }}
+      >
+        Archive
+      </button>
+
+      <button
+        onClick={() => {
+          const params = new URLSearchParams();
+          params.set("view", "grid");
+          submit(params, { replace: true });
+        }}
+      >
+        Grid view
+      </button>
+    </>
+  );
+}
+```
+
+The `action` option overrides the destination. When omitted, it submits to the current route's `urlPath` (params filled with real values).
+
+```tsx
+submit(formData, { action: "/contacts/42" });
+```
+
+## Handle URLs with `RoutePath` [#route-path]
+
+Use `RoutePath` to build and parse URLs. It collapses consecutive slashes, strips trailing slashes, and sorts queries automatically. This prevents wasted caches or infinite loops from URL spelling variations.
+
+```ts
+import { RoutePath } from "@pera1/core";
+
+const path = new RoutePath("/contacts///42/?b=2&a=1#profile");
+path.pathname; // "/contacts/42"
+path.search; // "?a=1&b=2"
+path.hash; // "#profile"
+path.toString(); // "/contacts/42?a=1&b=2#profile"
+
+path.searchParams.set("page", "3");
+path.toString(); // "/contacts/42?a=1&b=2&page=3#profile"
+```
+
+With `useRoutePath`, components can get a read-only `RoutePath` for the current URL.
+
+```tsx
+import { useRoutePath } from "@pera1/react";
+
+function CurrentLocation() {
+  const path = useRoutePath();
+  return <p>{path.pathname}</p>;
+}
+```
+
+## Hash and scroll [#hash]
+
+Links changing only `#section` are not intercepted; the browser scrolls normally. Changing the hash with `useNavigate` intercepts the transition itself, but scroll control stays with the browser.
+
+## Show pending state [#pending]
+
+Read transition progress declaratively with `useNavigation`. Its `state` is `"idle"`, `"loading"` (loaders running on GET), or `"submitting"` (action running on POST). It relies on the engine notifying a re-render when the action starts; after loaders complete the hook returns to `"idle"` on its own.
+
+```tsx
+import { useNavigation } from "@pera1/react";
+
+function PendingBar() {
+  const navigation = useNavigation();
+  if (navigation.state === "idle") {
+    return null;
+  }
+  return <p role="status">{navigation.state === "submitting" ? "Submitting…" : "Loading…"}</p>;
+}
+```
+
+This differs from a `Suspense` fallback. Fallbacks are “placeholder” for delayed data; this is “in-progress” for the whole transition. Inside `Suspense` it gets replaced by the fallback and disappears, so always place it outside `Suspense` (on the layout side). Granularity guidance:
+
+- Full page switches: fill with a coarse `<Suspense fallback>` right under the layout.
+- Delayed sections like part of a list: wrap just that section in a small `<Suspense>` to reduce flicker.
+- Whole-transition progress: use `useNavigation` outside `Suspense`.
+
+## Scroll restoration [#scroll-restoration]
+
+The default leaves it to the browser. `NavigationApiEngine` passes no `scroll` / `focusReset` to `intercept()` and lets hash changes, downloads, and reloads through, so scroll and focus keep browser default behavior.
+
+Opt in when you need scrolling to top.
+
+```tsx
+<BrowserRouter routes={routes} scrollRestoration />
+```
+
+`scrollRestoration` is a `Router` and `BrowserRouter` prop accepting `true` or a `ScrollBehavior` (`"auto"`, `"instant"`, `"smooth"`). It scrolls to top whenever the history entry changes. Hashed URLs and initial render are left to the browser. It doesn't restore positions on back/forward. For finer control, use the `useScrollRestoration(true)` hook with the same behavior directly in a layout.
+
+```tsx
+import { useScrollRestoration } from "@pera1/react";
+
+function AppLayout() {
+  useScrollRestoration(true);
+  return <Outlet />;
+}
+```
+
+## Focus management [#focus]
+
+Post-navigation focus also defaults to the browser. On tab switches or pagination, focus stays on `body` and keyboard users get lost. The recommended pattern is making the heading programmatically focusable with `tabIndex={-1}` and moving focus to it whenever displayed content changes. Don't steal focus on initial render.
+
+```tsx
+function SearchPage() {
+  const headingRef = React.useRef<HTMLHeadingElement>(null);
+  const isFirstRender = React.useRef(true);
+
+  React.useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
+    headingRef.current?.focus();
+  }, [q, page]);
+
+  return (
+    <section aria-labelledby="search-heading">
+      <h3 id="search-heading" ref={headingRef} tabIndex={-1}>
+        Search
+      </h3>
+      {/* ... */}
+    </section>
+  );
+}
+```
+
+The `blog` search page (`examples/blog/src/pages/search.tsx`) is an example. Add `aria-live="polite"` to the result count so screen readers announce changes.
+
+## How history works [#history]
+
+Each transition creates a Navigation API history entry, and pera1 keeps data per entry. Going “back” restores the same URL's loader results from cache. Whether to refetch is controlled by `shouldReload` in [Data loading](/guides/data-loading).
+
+`navigate(-1)` and `navigate(1)` move only when a matching entry exists in the history stack. Out-of-range requests are ignored, not errors.
+
+## Move to external URLs [#external]
+
+To go to an external site, use a plain `<a href="https://...">`. `useNavigate` targets in-app routing and doesn't handle external URLs.
+
+## Next steps [#next]
+
+Failed transitions are covered in [Error handling](/guides/error-handling); per-screen lazy loading in [Code splitting](/guides/code-splitting).

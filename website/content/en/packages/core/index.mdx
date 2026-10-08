@@ -1,0 +1,83 @@
+---
+title: "@pera1/core"
+description: "Summarizes the role of the UI-independent router core, its export entry points, and design principles."
+---
+
+`@pera1/core` is the router core of pera1. It handles normalization and matching of route definitions, execution of loaders and actions, per-history-entry data management, and integration with engines. It does not depend on React, so bindings for other UI frameworks and fake engines for testing can use it the same way.
+
+## Installation [#install]
+
+```package-install
+npm i @pera1/core valibot
+```
+
+`valibot` is a peer dependency used for runtime validation. When you use `@pera1/react`, the core is installed automatically.
+
+## Entry points [#entry-points]
+
+The package has 3 entry points. In most cases the root `@pera1/core` is all you need.
+
+| Import | Contents |
+| --- | --- |
+| `@pera1/core` | Router, matching, loaders, actions, engines, errors, types |
+| `@pera1/core/core` | Core routing APIs (`createRouter`, `matchRoutes`, and more) |
+| `@pera1/core/engines` | Engine interfaces and `NavigationApiEngine` |
+
+## Main APIs [#api]
+
+### Router [#router]
+
+| API | Description |
+| --- | --- |
+| [`createRouter`](/packages/core/reference/create-router) | Connects route definitions to an engine and provides subscription and snapshots |
+| [`RouterController`](/packages/core/reference/create-router) | Type of the controller returned by `createRouter` |
+| [`RouterSnapshot`](/packages/core/reference/create-router) | Snapshot of the router's current state |
+
+### Route definitions and matching [#routing]
+
+| API | Description |
+| --- | --- |
+| [`RouteDefinition` and related types](/packages/core/reference/route-definitions) | Types for route definitions, loaders, actions, and parameters |
+| [`matchRoutes`](/packages/core/reference/routes) | Collects the route hierarchy matching a URL |
+| [`RoutePatternUtils`](/packages/core/reference/route-pattern-utils) | Parsing, generating, and replacing path patterns |
+| [`RoutePath`](/packages/core/reference/route-path) | Normalization and manipulation of paths, queries, and hashes |
+
+### Data fetching and mutations [#data]
+
+| API | Description |
+| --- | --- |
+| [`initLoaders` / `startLoaders`](/packages/core/reference/loaders) | Concurrent loader startup and refetch decisions |
+| [`startAction`](/packages/core/reference/actions) | Action selection and execution |
+| [`selectLoaderData` / `selectActionData`](/packages/core/reference/router-store) | Selecting data from a snapshot |
+| [`redirect` / `RedirectResponse`](/packages/core/reference/redirects) | Redirects from actions |
+| [`RouteRequest`](/packages/core/reference/route-request) | Abstraction over GET / POST requests |
+
+### Engines [#engines]
+
+| API | Description |
+| --- | --- |
+| [`IEngine`](/packages/core/reference/engine) | Interface engines must implement, plus related types |
+| [`NavigationApiEngine`](/packages/core/reference/navigation-api-engine) | Default engine using the Navigation API |
+
+### Utility APIs [#utilities]
+
+| API | Description |
+| --- | --- |
+| [`toNavigateArgs`](/packages/core/reference/navigation-utils) | Normalizes `useNavigate` arguments for engines |
+| [`toSubmitArgs`](/packages/core/reference/submit-utils) | Normalizes `useSubmit` arguments for engines |
+| [`HistoryEntryIdSchema` and more](/packages/core/reference/schemas) | Validation schemas for history entries |
+| [`formDataToHTMLFormElement`](/packages/core/reference/form-data) | Converts read-only form data into a DOM form |
+| [Error classes](/packages/core/reference/errors) | Error types and message customization |
+| [Read-only types](/packages/core/reference/readonly-types) | `ReadonlyURL`, `ReadonlyFormData`, and more |
+
+## Design principles [#principles]
+
+- **Synchronous `init`**: Engine initialization is synchronous. Information needed for the initial render is returned immediately, while async data fetching is wrapped in `NinjaPromise` and registered in the store.
+- **Stable references**: Router snapshots have stable references; only `currentEntry` changes. Subscribers pick out what they need with selectors.
+- **Per-history-entry cache**: Data is kept per history entry ID, and data for discarded entries is removed automatically.
+- **Failures as data**: Exceptions from loaders and actions are kept as `rejected` `NinjaPromise` values; presentation decisions are left to the UI.
+
+## Next steps [#next]
+
+- [@pera1/react overview](/packages/react)
+- [API Reference](/packages/core/reference/create-router)

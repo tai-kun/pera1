@@ -1,0 +1,60 @@
+---
+title: "@pera1/react"
+description: "Components, hooks, and contexts for React 19."
+---
+
+`@pera1/react` is the binding that connects the `@pera1/core` router to React. Router state is subscribed with `useSyncExternalStore`, so components only re-render when the slice they read changes.
+
+## Installation [#install]
+
+```package-install
+npm i @pera1/react react react-dom valibot
+```
+
+Requires React 19, `react-dom`, and `valibot`. Server-side rendering is not supported; it is designed to run in the browser.
+
+## Components [#components]
+
+| Component | Description |
+| --- | --- |
+| [`BrowserRouter`](/packages/react/reference/browser-router) | Entry point that starts the router with the Navigation API engine |
+| [`Router`](/packages/react/reference/router) | Generic router that accepts any engine |
+| [`Outlet`](/packages/react/reference/outlet) | Renders a child route inside the parent route layout |
+
+## Hooks [#hooks]
+
+| Hook | Description |
+| --- | --- |
+| [`useLoaderData`](/packages/react/reference/use-loader-data) | Subscribes to loader results for the current route hierarchy |
+| [`useActionData`](/packages/react/reference/use-action-data) | Subscribes to the action result of the current history entry |
+| [`useNavigate`](/packages/react/reference/use-navigate) | Navigates programmatically |
+| [`useSubmit`](/packages/react/reference/use-submit) | Submits form data or queries |
+| [`useParams`](/packages/react/reference/use-params) | Reads parameters of the current route |
+| [`useFormAction`](/packages/react/reference/use-form-action) | Reads the form submission target URL |
+| [`useRoutePath`](/packages/react/reference/use-route-path) | Reads the current URL as a `RoutePath` |
+| [`useRouteContext`](/packages/react/reference/use-route-context) | Reads context information for the current route |
+| [`useRouterContext`](/packages/react/reference/use-router-context) | Subscribes to router state with a selector |
+
+## Contexts [#contexts]
+
+Contexts are also exposed for building low-level hooks and custom components.
+
+| API | Description |
+| --- | --- |
+| [`RouteContext`](/packages/react/reference/contexts) | Provides route information for the current level |
+| [`RouterContext`](/packages/react/reference/contexts) | Provides the router subscription function and ref |
+
+## Error messages [#errors]
+
+pera1 errors ship with Japanese messages. The display language can be switched with valibot's global config.
+
+```ts
+import { setGlobalConfig } from "valibot";
+
+setGlobalConfig({ lang: "ja" });
+```
+
+## Next steps [#next]
+
+- [@pera1/core overview](/packages/core)
+- [API Reference](/packages/react/reference/browser-router)

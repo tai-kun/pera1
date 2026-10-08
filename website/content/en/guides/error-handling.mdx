@@ -1,0 +1,170 @@
+---
+title: Error Handling
+description: "Where failures go, how to compose error boundaries, and how to build a 404 page."
+---
+
+Error handling in pera1 separates "where you throw" from "where you catch". Loaders and actions only throw failures, and error boundaries handle the display. This page explains where failures go, how to compose error boundaries, the error types, and environment-caused errors.
+
+## Loader failures reach the error boundary [#loader-errors]
+
+Exceptions thrown by a loader are held as a `NinjaPromise` rejection. If a component passes it to `React.use`, React detects the rejection and delivers it to the nearest error boundary. No special handling is needed on the loader side.
+
+```tsx
+function ContactPage() {
+  const contact = React.use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+```
+
+Even when you `await` instead of using `use`, a rejection still surfaces as an exception. Either way, failure display can be centralized in error boundaries.
+
+## Catch everything in an error boundary [#error-boundary]
+
+Place a React error boundary outside the root to handle loader, action, and lazy-loading failures in one place.
+
+```tsx
+import * as React from "react";
+
+class AppErrorBoundary extends React.Component<
+  { children: React.ReactNode },
+  { error: unknown }
+> {
+  state = { error: null as unknown };
+
+  static getDerivedStateFromError(error: unknown) {
+    return { error };
+  }
+
+  render() {
+    if (this.state.error) {
+      return (
+        <div role="alert">
+          <p>Something went wrong.</p>
+          <pre>{String(this.state.error)}</pre>
+        </div>
+      );
+    }
+    return this.props.children;
+  }
+}
+```
+
+`Router` does not handle async rejections itself, so whether to rethrow is up to your app design. If you want the rest of the screen to keep rendering when one list item fails, wrap the screen in small error boundaries.
+
+## Action failures stay on the original screen [#action-errors]
+
+When an action throws, the navigation is not committed and the app stays on the original URL. The action data of the new history entry becomes rejected, and it reaches the error boundary from the component that calls `use` on it.
+
+For problems the user can fix (such as invalid input), return `{ error: "..." }` instead of throwing. You can show the message on the same screen without replacing the whole screen with an error boundary.
+
+```tsx
+async function updateContactAction({ request }: ActionFunctionArgs) {
+  const name = String(request.formData.get("name") ?? "").trim();
+  if (name === "") {
+    return { error: "Please enter a name." };
+  }
+  await updateContact(name);
+  return { error: null };
+}
+```
+
+See [Mutations](/guides/mutations#consume) for the display-side implementation. When to throw versus return is summarized in [Displaying mutation failures](/guides/mutations#errors).
+
+## Main error classes [#errors]
+
+Every error thrown by pera1 extends `ErrorBase` and keeps context in `meta` alongside `message`. You can import the following classes from `@pera1/core`.
+
+| Class | When it is thrown |
+| --- | --- |
+| `NavigationApiNotSupportedError` | Created a `NavigationApiEngine` in a browser without the Navigation API |
+| `LoaderConditionError` | `shouldReload` returned a Promise or a non-boolean value |
+| `LoaderDataNotFoundError` | Called `useLoaderData` in a level that has no loader |
+| `RouterContextMissingError` | Called a router hook outside `<Router>` |
+| `RouteContextMissingError` | Used `useRouteContext` or `<Outlet>` outside the route hierarchy |
+| `UnexpectedValidationError` | A history entry returned by the Navigation API had an unexpected shape |
+| `UnreachableError` | Entered a branch that should be unreachable (a library bug) |
+
+Seeing `UnreachableError` is a sign of a bug. `LoaderConditionError` and `LoaderDataNotFoundError` are implementation mistakes, and `NavigationApiNotSupportedError` is an environment issue.
+
+## Replacing error messages [#messages]
+
+pera1 registers Japanese and English messages for its main errors. Use the valibot global config to switch the display language.
+
+```ts
+import { setGlobalConfig } from "valibot";
+
+setGlobalConfig({ lang: "ja" });
+```
+
+To replace the wording with your own, use `setErrorMessage`. Pass three arguments: the error class, the message (or a function receiving `meta`), and the language code.
+
+```ts
+import { LoaderDataNotFoundError, setErrorMessage } from "@pera1/core";
+
+setErrorMessage(
+  LoaderDataNotFoundError,
+  ({ loader }) => `Could not find a result for loader ${loader?.name ?? "unknown"}.`,
+  "ja",
+);
+```
+
+## Showing a 404 [#not-found]
+
+To show a 404 page when no route matches, pass it to the `notFoundComponent` of `Router` / `BrowserRouter`. This is the primary API.
+
+```tsx
+import { BrowserRouter } from "@pera1/react";
+
+function NotFoundPage() {
+  return (
+    <div>
+      <h2>Page not found</h2>
+      <p>
+        <a href="/">Back to home</a>
+      </p>
+    </div>
+  );
+}
+
+createRoot(document.getElementById("root")!).render(
+  <BrowserRouter routes={routes} notFoundComponent={NotFoundPage} />,
+);
+```
+
+`notFoundComponent` renders only on a true mismatch (a URL that matches no route definition). On a mismatch without `notFoundComponent` and without a wildcard definition, `Router` renders `null` and logs a warning in development mode.
+
+Inside `NotFoundPage`, you can use `window.location` to show which URL was requested. `useRoutePath` may be unavailable on the initial unmatched render because the history entry is not yet finalized.
+
+### Wildcard (`/*`) is a legacy approach [#not-found-wildcard]
+
+Previously there was no dedicated 404 API, so the workaround was to define a least-specific wildcard route as a fallback.
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  // Legacy: an explicit `/*` definition.
+  // For new code, use `notFoundComponent`.
+  { path: "/*", component: NotFoundPage },
+];
+```
+
+`/*` matches every URL, but because it has the lowest specificity, only URLs left over after other routes win reach it. An explicit `/*` definition can coexist with `notFoundComponent`; in that case the normal `/*` match wins and `notFoundComponent` is not used. Since `/*` can sit in the middle of a match chain, it requires a pass-through branch that shows the 404 only when `useRouteContext().outlet` is `null`, so prefer `notFoundComponent` for new code.
+
+## Detect environment errors at startup [#detect-early]
+
+In an environment without the Navigation API, `BrowserRouter` throws `NavigationApiNotSupportedError` on render. Either catch it in the app-wide error boundary or check for `window.navigation` before startup and show guidance.
+
+```tsx
+if (!("navigation" in window)) {
+  // Show guidance for unsupported browsers
+}
+```
+
+:::note
+pera1 does not support SSR, so never run code that references `window` on the server. If you use SSR, confine the router to a client-only component.
+:::
+
+## Next steps [#next]
+
+Lazy-loading screens adds one more layer to load-failure handling. [Code splitting](/guides/code-splitting) explains the combination with `Suspense`.

@@ -1,0 +1,88 @@
+---
+title: useNavigate
+description: "Returns a function that navigates or moves through history programmatically."
+---
+
+`useNavigate` returns a function that navigates on triggers other than links, such as a button click or the completion of async work. No dedicated `<Link>` component is provided; use a plain `<a>` for regular links.
+
+```tsx
+import { useNavigate } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useNavigate(): NavigateFunction;
+
+interface NavigateFunction {
+  (to: NavigateTo, options?: NavigateOptions): void;
+  (delta: number): void;
+}
+```
+
+## Arguments [#arguments]
+
+`NavigateFunction` accepts four argument forms.
+
+| Argument | Behavior |
+| --- | --- |
+| `string` | Navigates to that path. |
+| `{ pathname?, search?, hash? }` | Replaces only the given parts of the current URL. |
+| `(path: RoutePath) => void` | Builds the URL freely from the current URL. |
+| `number` | Moves relatively within the history stack. `-1` goes back one entry. |
+
+```ts
+type NavigateTo =
+  | string
+  | { pathname?: string; search?: string; hash?: string }
+  | ((route: RoutePath) => void);
+
+type NavigateOptions = {
+  replace?: boolean;
+};
+```
+
+Passing `replace: true` overwrites the current entry instead of pushing a new history entry.
+
+## Returns [#returns]
+
+Returns a `NavigateFunction`. It delegates argument normalization to `toNavigateArgs` in `@pera1/core`, converting arguments into the form passed to the engine.
+
+## Usage [#usage]
+
+```tsx
+import { useNavigate } from "@pera1/react";
+
+function Actions() {
+  const navigate = useNavigate();
+
+  return (
+    <>
+      <button onClick={() => navigate("/contacts")}>List</button>
+      <button onClick={() => navigate({ search: "?page=2" })}>Next page</button>
+      <button onClick={() => navigate((path) => path.searchParams.set("sort", "name"))}>
+        Sort by name
+      </button>
+      <button onClick={() => navigate(-1)}>Back</button>
+    </>
+  );
+}
+```
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `RouterContextMissingError` | `RouterContext` is not provided |
+
+## Notes [#notes]
+
+- The returned function is wrapped in `useCallback`. Its reference is stable unless dependencies change, so it can be placed in a `useEffect` dependency list as-is.
+- Object-form and function-form navigations are skipped when the built URL equals the current one, avoiding redundant history entries.
+- `useNavigate` is for in-app routing. Use `<a>` for external URLs.
+
+## Related [#related]
+
+- [Navigation](/guides/navigation) — Links and history handling
+- [useSubmit](/packages/react/reference/use-submit) — Submitting data with navigation
+- [useRoutePath](/packages/react/reference/use-route-path) — Working with the current URL

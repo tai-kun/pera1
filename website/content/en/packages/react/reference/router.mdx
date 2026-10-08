@@ -1,0 +1,94 @@
+---
+title: Router
+description: "Component that takes an engine and route definitions, and manages lifecycle and state subscriptions."
+---
+
+`Router` is a provider component that bridges declarative route definitions and an imperative engine. The state management itself is delegated to [`createRouter`](/packages/core/reference/create-router) in `@pera1/core`; this component only handles the React binding.
+
+For browsers, `BrowserRouter` is usually enough. Use `Router` directly when you want to pick the engine yourself or pass a mock engine in tests.
+
+```tsx
+import { Router } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function Router(props: RouterProps): React.ReactElement | null;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `engine` | `IEngine<React.ComponentType<{}>>` | Yes | Engine that performs routing. |
+| `routes` | `readonly RouterRouteDefinition[]` | Yes | Route definitions for the application. |
+| `notFoundComponent` | `React.ComponentType<{}> \| undefined` | No | Fallback rendered on no match. |
+| `scrollRestoration` | `boolean \| ScrollBehavior \| undefined` | No | Opt-in to scroll to the top after navigation. Defaults to browser behavior. |
+
+## Route definition type [#route-definition]
+
+`RouterRouteDefinition` is a union of the object form and the module form.
+
+```ts
+type RouterRouteDefinition = RouterRouteDefinitionObject | RouterRouteDefinitionModule;
+```
+
+Both forms accept the same properties.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `path` | `string` | Path pattern to match. |
+| `index` | `boolean \| undefined` | Whether this is an index route used only on exact matches. |
+| `component` | `React.ComponentType<{}> \| undefined` | Component rendered for the route. |
+| `loader` | `{ (args: any): unknown } \| undefined` | Function that fetches data needed for the screen. |
+| `action` | `{ (args: any): unknown } \| undefined` | Action function that updates data. |
+| `shouldReload` | `{ (args: any): boolean } \| undefined` | Function that decides whether to refetch the loader. |
+
+The module form can omit `component`. In that case the `default` export is used, and `component` takes precedence when both are present.
+
+```tsx
+import * as contactRoute from "./routes/contact.js";
+
+const routes = [{ path: "/contacts/:id", ...contactRoute }];
+```
+
+See [Routing](/guides/routing) for path patterns and specificity rules.
+
+## Rendering [#rendering]
+
+`Router` creates `createRouter` with `useMemo`. On mount it calls `start()` inside `useEffect`. On unmount, the stop function returned by `start()` is called, disposing the engine subscription and in-flight work.
+
+The current match is subscribed with `useSyncExternalStore`. Matches arrive ordered from the most specific child to the parent, so `Router` reverses them to build parent-to-child order. Each route is wrapped in its own `RouteContext`, rendering its `component` when present, or the child `outlet` as-is otherwise.
+
+When no route matches, `Router` renders `null`. To show a 404 page, define a wildcard route. See [Routing](/guides/routing#not-found) for details.
+
+## Parent-child action and loader [#inheritance]
+
+When a child route has no `action` or `loader`, it inherits the parent's. A child definition takes precedence, hiding the parent's from the child. This rule decides which functions `useActionData` and `useLoaderData` read.
+
+## Usage [#usage]
+
+```tsx no-run
+import { NavigationApiEngine } from "@pera1/core";
+import { Router } from "@pera1/react";
+
+const engine = new NavigationApiEngine();
+
+createRoot(document.getElementById("root")!).render(
+  <Router engine={engine} routes={routes} />,
+);
+```
+
+`BrowserRouter` does the same thing internally as this example.
+
+## Notes [#notes]
+
+- `engine` and `routes` are `useMemo` dependencies. Changing either reference recreates the router and drops the loader cache. Keep `routes` at module scope.
+- `Router` takes no children. The screen structure is decided by `routes` alone.
+
+## Related [#related]
+
+- [BrowserRouter](/packages/react/reference/browser-router) — Default entry point using the Navigation API
+- [Outlet](/packages/react/reference/outlet) — Inserting child routes
+- [createRouter](/packages/core/reference/create-router) — Controller used internally

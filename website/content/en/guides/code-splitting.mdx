@@ -1,0 +1,109 @@
+---
+title: Code Splitting
+description: "How to lazily load screens with React.lazy and where to place Suspense."
+---
+
+As your app grows, you don't want screens that aren't needed for the initial render to end up in a single bundle. This page explains how to lazily load screen components and what to watch for in pera1 route definitions.
+
+## You can't pass `React.lazy` directly [#why-wrapper]
+
+`component` expects a function or an ES module whose `default` export is a function. What `React.lazy` returns is a component-like object, not a function. Passing it directly to `component` is treated as "no component". When using `React.lazy`, prepare a small function that wraps it in `Suspense`.
+
+```tsx
+import * as React from "react";
+
+function lazyPage(importer: () => Promise<{ default: React.ComponentType }>) {
+  const Lazy = React.lazy(importer);
+  return function LazyPage() {
+    return (
+      <React.Suspense fallback={<p>Loading…</p>}>
+        <Lazy />
+      </React.Suspense>
+    );
+  };
+}
+
+const routes = [
+  { path: "/", component: HomePage },
+  {
+    path: "/reports",
+    component: lazyPage(() => import("./pages/reports.js")),
+  },
+];
+```
+
+`lazyPage` takes an import function and returns a component that lazily loads the `default` export. Even if `importer` is recreated on every render, `React.lazy` keeps the first result, so this is not a problem.
+
+## Where to place the loading UI [#suspense-placement]
+
+When `Suspense` sits in a per-route wrapper, only that screen switches to the fallback. If you don't want the layout (header or navigation) to switch, place `Suspense` around the `Outlet` instead of the layout.
+
+```tsx
+function RootLayout() {
+  return (
+    <>
+      <Header />
+      <main>
+        <React.Suspense fallback={<p>Loading…</p>}>
+          <Outlet />
+        </React.Suspense>
+      </main>
+    </>
+  );
+}
+```
+
+In this case, you can drop the `React.lazy` wrapper and call `lazy()` directly for the screen component.
+
+When a lazy component suspends, the nearest `Suspense` (here, the one wrapping the `Outlet`) shows the fallback.
+
+```tsx
+const ReportsPage = React.lazy(() => import("./pages/reports.js"));
+
+const routes = [
+  { path: "/reports", component: () => <ReportsPage /> },
+];
+```
+
+## Loaders can be lazy-loaded too [#lazy-loaders]
+
+Not only screens — loaders dedicated to a screen can be split as well. A dynamic import inside the loader function is the simplest approach.
+
+```tsx
+async function reportsLoader({ request }: LoaderFunctionArgs) {
+  const { loadReports } = await import("./loaders/reports.js");
+  return loadReports(request.signal);
+}
+```
+
+Loader caching is managed by function reference, so keep `reportsLoader` at module scope to keep the reference stable. Re-wrapping the dynamically imported function on every call defeats the cache.
+
+## Splitting route definitions into modules [#route-modules]
+
+To split the route definitions themselves across files, use the module form. Placing the component in the default export lets you omit `component`.
+
+```tsx routes/reports.tsx
+export default function ReportsPage() {
+  return <h2>Reports</h2>;
+}
+```
+
+```tsx routes.tsx
+import * as reportsRoute from "./routes/reports.js";
+
+const routes = [{ path: "/reports", ...reportsRoute }];
+```
+
+The module form doesn't use `React.lazy` automatically. Lazy-load components with `lazyPage` or `Suspense` as described above.
+
+## Lazy-loading caveats [#caveats]
+
+Before adopting lazy loading, check these three points:
+
+- A lazily loaded screen's loader runs separately from the component load. If you don't want to delay data fetching, design loaders to run first via [loaders](/guides/data-loading).
+- Failed chunks are not retried automatically. On a network error, provide a retry path in the error boundary.
+- Splitting too aggressively adds many small requests on each navigation and hurts perceived performance. Start by splitting at large screen boundaries, then go finer only when needed.
+
+## Next steps [#next]
+
+For error display in lazily loaded screens, see [Error handling](/guides/error-handling). To implement the routing foundation yourself, continue to [Custom engines](/guides/custom-engines).

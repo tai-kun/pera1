@@ -1,0 +1,98 @@
+---
+title: RouteRequest
+description: "Describes the GET / POST request structure passed to loaders and actions."
+---
+
+`RouteRequest` is the entity for `request` passed to loaders and actions. It distinguishes GET and POST by type. It can be converted to a web-standard `Request`. Loaders receive a GET instance, actions receive a POST instance.
+
+```ts
+import { RouteRequest } from "@pera1/core";
+import type { RouteGetRequest, RoutePostRequest } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+class RouteRequest {
+  static new(method: "GET", url: ReadonlyURL, signal: AbortSignal): RouteGetRequest;
+  static new(
+    method: "POST",
+    url: ReadonlyURL,
+    signal: AbortSignal,
+    formData: ReadonlyFormData,
+  ): RoutePostRequest;
+
+  constructor(method: "GET", url: ReadonlyURL, signal: AbortSignal);
+  constructor(method: "POST", url: ReadonlyURL, signal: AbortSignal, formData: ReadonlyFormData);
+}
+
+interface RouteGetRequest {
+  readonly method: "GET";
+  readonly url: ReadonlyURL;
+  readonly signal: AbortSignal;
+  readonly formData: null;
+  toRequest(init?: RequestInit): Request;
+}
+
+interface RoutePostRequest {
+  readonly method: "POST";
+  readonly url: ReadonlyURL;
+  readonly signal: AbortSignal;
+  readonly formData: ReadonlyFormData;
+  toRequest(init?: RequestInit): Request;
+}
+```
+
+## Creation [#new]
+
+`RouteRequest.new` is a factory method whose return type narrows by method. It narrows to `RouteGetRequest` or `RoutePostRequest`, so normally use this. You can also use `new RouteRequest(...)`, but the `method` type becomes a `"GET" | "POST"` union.
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `method` | `"GET" \| "POST"` | Yes | HTTP method. Loaders use `"GET"`, actions use `"POST"`. |
+| `url` | `ReadonlyURL` | Yes | Readonly request target URL. |
+| `signal` | `AbortSignal` | Yes | Signal for aborting async work. |
+| `formData` | `ReadonlyFormData` | POST only | Form data to send. Not needed for GET. |
+
+## Properties [#properties]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `method` | `"GET" \| "POST"` | HTTP method. |
+| `url` | `ReadonlyURL` | Request target URL. |
+| `signal` | `AbortSignal` | Abort signal passed at creation. |
+| `formData` | `ReadonlyFormData \| null` | Submitted form data for POST, always `null` for GET. |
+
+## toRequest [#to-request]
+
+`toRequest(init?)` generates a Fetch API `Request` from the instance data. Specifying `body`, `method`, or `signal` in `init` overrides the instance defaults. Other properties are passed through to `Request` as-is.
+
+```ts no-run
+const request = RouteRequest.new("GET", new URL("https://example.com/api"), signal);
+
+const response = await fetch(
+  request.toRequest({ headers: { accept: "application/json" } }),
+);
+```
+
+For POST, `formData` becomes the `Request` body as-is.
+
+```ts no-run
+const request = RouteRequest.new("POST", new URL("https://example.com/users"), signal, formData);
+
+await fetch(request.toRequest());
+```
+
+## Notes [#notes]
+
+- GET `formData` is always `null`.
+- Passing `body` to a GET `toRequest` makes the `Request` constructor throw a `TypeError`.
+- Aborting the `signal` passed at creation also aborts the converted `Request`'s `signal`.
+
+## Related [#related]
+
+- [createRouter](/packages/core/reference/create-router) — Starting loaders and actions
+- [redirect](/packages/core/reference/redirects) — Redirects from actions
+- [selectActionData and selectLoaderData](/packages/core/reference/router-store) — Getting execution results

@@ -1,0 +1,67 @@
+---
+title: formDataToHTMLFormElement
+description: "Builds a hidden submit form from read-only form data."
+---
+
+`formDataToHTMLFormElement` builds a hidden `HTMLFormElement` with the contents of a `ReadonlyFormData` packed into `<input>` elements. `NavigationApiEngine` uses it internally when submitting `FormData`, so data containing `File` values can be sent as multipart/form-data.
+
+```ts
+import { formDataToHTMLFormElement } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+function formDataToHTMLFormElement(formData: ReadonlyFormData): HTMLFormElement;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `formData` | `ReadonlyFormData` | Yes | Form data to convert. |
+
+## Return value [#returns]
+
+Returns an `HTMLFormElement` with the data packed as child elements. The element's `style.display` is `"none"`, and it is not yet attached to the DOM. The caller appends it to `document.body` or similar when needed.
+
+## Conversion rules [#conversion]
+
+Conversion rules depend on the value type.
+
+| Value | Generated element |
+| --- | --- |
+| String | `<input type="hidden" name="..." value="...">` |
+| `File` | `<input type="file" name="...">` (sets `files` via `DataTransfer`) |
+
+Entry order follows `FormData` iteration order. Multiple values with the same name each become a separate `<input>`.
+
+```ts no-run
+import { formDataToHTMLFormElement } from "@pera1/core";
+
+const formData = new FormData();
+formData.set("keyword", "pera1");
+formData.set("thumbnail", file);
+
+const form = formDataToHTMLFormElement(formData);
+form.method = "POST";
+form.action = "/search";
+document.body.append(form);
+form.submit();
+```
+
+## Relationship to useSubmit [#use-submit]
+
+When `FormData` is passed to `useSubmit`, [toSubmitArgs](/packages/core/reference/submit-utils) converts it into a `FORM_DATA` argument, and `NavigationApiEngine` builds and submits a hidden form with this function. Placing the form in the DOM is fully handled inside the engine, so application code rarely needs to call it directly.
+
+## Notes [#notes]
+
+- Requires `document` and `DataTransfer`, so it only works in DOM environments. It cannot be called during server-side rendering or in Node.js.
+- All non-`File` values are treated as strings. Numbers and booleans are already strings once placed in `FormData`.
+- A `File`'s name and size are preserved in `input.files` via `DataTransfer`.
+
+## Related [#related]
+
+- [toSubmitArgs](/packages/core/reference/submit-utils) — Converts `FormData` into submit arguments
+- [useSubmit](/packages/react/reference/use-submit) — Hook that submits from React
+- [createRouter](/packages/core/reference/create-router) — Engine integration

@@ -1,0 +1,67 @@
+---
+title: selectActionData and selectLoaderData
+description: "Selectors that pick action and loader results out of snapshots."
+---
+
+`selectActionData` and `selectLoaderData` are pure selector functions that retrieve data from the router snapshot. The React bindings `useActionData` and `useLoaderData` call these internally. They do not depend on any framework. The same logic can therefore be shared from Solid.js bindings or tests.
+
+```ts
+import { selectActionData, selectLoaderData } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+function selectActionData(
+  snapshot: Pick<RouterSnapshot, "currentEntry" | "actionDataStore">,
+  action: ActionFunction | undefined,
+): NinjaPromise<unknown> | undefined;
+
+function selectLoaderData(
+  snapshot: Pick<RouterSnapshot, "currentEntry" | "loaderDataStore">,
+  loader: LoaderFunction | undefined,
+): NinjaPromise<unknown> | undefined;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `snapshot` | `Pick<RouterSnapshot, ...>` | Yes | Result of `getSnapshot()` from the controller returned by `createRouter`. |
+| `action` / `loader` | `ActionFunction \| undefined`, `LoaderFunction \| undefined` | Yes | Target function to retrieve. Passing `undefined` returns `undefined`. |
+
+The first argument is not the whole `RouterSnapshot` but a `Pick` of only the needed properties. Tests can therefore pass a minimal object as-is.
+
+## Returns [#returns]
+
+| Condition | Return value |
+| --- | --- |
+| Function is `undefined` | `undefined` |
+| No data for the current history entry | `undefined` |
+| Executed or executing | `NinjaPromise<unknown>` |
+
+A `NinjaPromise` is not necessarily resolved. Since it is thenable, the basic pattern is to pass it to `React.use` in the UI, leaving pending state to `Suspense` and rejection to an error boundary. It is `undefined` only when it has never run.
+
+```ts no-run
+import { selectLoaderData } from "@pera1/core";
+
+const snapshot = controller.getSnapshot();
+const data = selectLoaderData(snapshot, loader);
+
+if (data) {
+  // Pass as a thenable to async primitives in the UI layer
+  // In React, React.use(data) connects to Suspense and error boundaries
+}
+```
+
+## Notes [#notes]
+
+- Neither function mutates state. They only return the existing `NinjaPromise` from the store without creating a new value.
+- Data is held per history entry ID. Only `snapshot.currentEntry.id` is used for matching.
+- When `action` or `loader` is not a function, they return `undefined` without touching the store.
+
+## Related [#related]
+
+- [useLoaderData](/packages/react/reference/use-loader-data) — Subscribe to loader results from React
+- [useActionData](/packages/react/reference/use-action-data) — Subscribe to action results from React
+- [createRouter](/packages/core/reference/create-router) — Origin of snapshots and stores

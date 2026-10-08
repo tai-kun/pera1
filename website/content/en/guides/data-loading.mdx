@@ -1,0 +1,212 @@
+---
+title: Data loading
+description: "Loader declaration, per-history-entry caching, and refetch conditions, with practical examples."
+---
+
+Fetch screen data by declaring a loader function on the route. This page explains how to write loaders, when they run, caching and refetch rules, and how components receive the result.
+
+## Declare loaders on routes [#declaring]
+
+A loader is a function passed as the `loader` property. It receives `params` extracted from the pattern and a `request` representing the GET request.
+
+```tsx
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function contactLoader({ params, request }: LoaderFunctionArgs) {
+  const id = params["id"];
+  if (id === undefined) {
+    throw new Error("Missing id.");
+  }
+  const response = await fetch(`/api/contacts/${id}`, { signal: request.signal });
+  if (!response.ok) {
+    throw new Error("Failed to fetch the contact.");
+  }
+  return response.json();
+}
+
+const routes = [
+  { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
+];
+```
+
+Since a route definition's `path` widens to `string`, `params` values arrive as `string | undefined`. Check existence before use.
+
+`request` is the GET version of `RouteRequest`. It has `url`, `signal`, and `formData` (always `null`), and `toRequest()` converts it to a standard Web `Request`. Pass `signal` to `fetch` so rapid transitions abort stale requests.
+
+## Loaders run in three situations [#when]
+
+**Initial render**: `initLoaders` starts every matched route's loader at once. Deep and shallow routes run together, so children never wait on parents. All loaders share one `request` object.
+
+**GET navigation**: `startLoaders` compares routes before and after the transition and decides per loader whether to reuse the cache or re-run. The new state is notified to the UI without waiting for loaders, so the screen immediately renders in a loading state. The browser tab keeps its loading indicator until all loaders finish.
+
+**After POST**: once the action completes, destination loaders run. Refetching after a mutation is safe, so the `shouldReload` default is always `true`. See [Mutations](/guides/mutations) for details.
+
+## Results are cached per history entry [#cache]
+
+Loader results are cached by history entry ID plus loader function. Returning to the same entry with a cache proceeds to the `shouldReload` check.
+
+The cache is used only when the loader function is the same reference as before. An inline function in the route definition counts as a different function each time the definition is recreated. Define loaders at module scope.
+
+```tsx
+// Good: stable reference
+async function listLoader() {
+  return listContacts();
+}
+
+// Bad: a different function each time the definition is recreated
+const routes = [{ path: "/contacts", loader: async () => listContacts() }];
+```
+
+## `shouldReload` decides refetching [#should-reload]
+
+Without `shouldReload`, a GET refetches only when one of these holds:
+
+- When the query string changed (`?page=1` to `?page=2`, etc.)
+- When the route wasn't in the pre-transition hierarchy
+- When `params` for the same pattern changed (`/posts/1` to `/posts/2`, etc.)
+
+Going back to the same URL with the browser back button matches none of these, so the cache is reused with no refetch.
+
+`prevParams` receives the previous `params` for the same path string, symmetric per level. So dynamic routes don't need manual comparisons like `currentParams["id"] !== prevParams["id"]`. The default (`defaultShouldReload`) already detects `params` changes.
+
+To change the behavior, pass `shouldReload`. Its argument is a discriminated union with different shapes for GET and POST.
+
+```tsx
+const routes = [
+  {
+    path: "/dashboard",
+    component: DashboardPage,
+    loader: dashboardLoader,
+    shouldReload({ currentUrl, prevUrl, defaultShouldReload, triggerMethod }) {
+      if (triggerMethod === "GET" && currentUrl.hash !== prevUrl.hash) {
+        return false;
+      }
+      return defaultShouldReload;
+    },
+  },
+];
+```
+
+| Property | GET | POST | Description |
+| --- | --- | --- | --- |
+| `triggerMethod` | `"GET"` | `"POST"` | Refetch trigger |
+| `currentUrl` / `prevUrl` | Yes | Yes | URLs before and after the transition |
+| `currentParams` / `prevParams` | Yes | Yes | Params before and after the transition |
+| `formData` | No | Yes | Submitted form data |
+| `actionData` | No | Yes | Previous action result |
+| `defaultShouldReload` | Yes | Yes | Default decision |
+
+`shouldReload` must synchronously return a boolean. Returning a Promise or a non-boolean rejects that loader's result with `LoaderConditionError`. A thrown error becomes the rejection reason as-is.
+
+## Receive data in components [#consume]
+
+In components, receive the result with `useLoaderData` and pass it to `React.use`. Pass the loader function type as the type argument to type the resolved value.
+
+```tsx
+import * as React from "react";
+
+function ContactPage() {
+  const contact = React.use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+
+function Layout() {
+  return (
+    <React.Suspense fallback={<p>Loading…</p>}>
+      <Outlet />
+    </React.Suspense>
+  );
+}
+```
+
+While loading, it suspends and shows the nearest `Suspense` fallback. Loader exceptions go straight to the error boundary, so components need no failure-checking code. See [Error handling](/guides/error-handling) for wiring error boundaries.
+
+## Guard with a `redirect` return [#redirect]
+
+To move to another screen conditionally — e.g. sending unauthenticated users to login — return a `redirect` result from the loader as-is. Symmetrically with action `redirect`s, the engine navigates automatically. Standard auth-guard plumbing (`redirectTo` passing and validation) lives in the [`@pera1/core` guard helpers](/guides/auth), so write:
+
+```tsx
+import { redirectToLogin } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function dashboardLoader({ request }: LoaderFunctionArgs) {
+  const user = getCurrentUser();
+  if (!user) {
+    return redirectToLogin(request);
+  }
+  return { user };
+}
+```
+
+Redirects work sync or async. On GET navigation, post-action refetch, or initial render, the engine detects it when the loader completes and moves to the destination. It navigates with `replace` to avoid extra history entries, so the back button never returns to the guarded page.
+
+To just normalize a bare path (`/app` → `/app/dashboard`), don't branch in the loader. It auto-redirects to a child `index: true`. See [Routing](/guides/routing#index-redirect). Returning `redirect()` by pathname in a loader caches the result and reuses it on child navigation, freezing the screen.
+
+No render-side branching is needed. Redirects are treated as never-resolving promises and never expose `RedirectResponse` to components.
+
+```tsx
+import { useLoaderData } from "@pera1/react";
+import * as React from "react";
+
+function DashboardPage() {
+  const data = React.use(useLoaderData<typeof dashboardLoader>());
+  return <h2>Welcome, {data.user.name}.</h2>;
+}
+```
+
+## Use a parent loader from children [#inheritance]
+
+When a child route has no loader, `useLoaderData` inherits the parent route's loader. Useful for sharing a parent-fetched list across child pages.
+
+```tsx
+function ContactsLayout() {
+  return (
+    <section>
+      <Outlet />
+    </section>
+  );
+}
+
+function ContactsPage() {
+  // Receives the loader result from parent /contacts
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
+  // ...
+}
+```
+
+If the child has a loader, it wins and the parent loader becomes invisible to child components. When you need both, fetch the parent data inside the child loader or consolidate in the parent loader.
+
+## Errors when there is no loader [#not-found]
+
+`useLoaderData` throws `LoaderDataNotFoundError` when the current route hierarchy has no loader. Same when called outside `Router`. Check for a missing loader.
+
+## Refetch on query changes [#query]
+
+When search criteria live in the query string, update them by passing `URLSearchParams` to `useSubmit`. A changed query triggers the default refetch, so no `shouldReload` is needed.
+
+```tsx
+function SearchBox() {
+  const submit = useSubmit();
+
+  return (
+    <form
+      onSubmit={(event) => {
+        event.preventDefault();
+        const formData = new FormData(event.currentTarget);
+        const params = new URLSearchParams();
+        params.set("q", String(formData.get("q") ?? ""));
+        submit(params, { replace: true });
+      }}
+    >
+      <input name="q" />
+      <button type="submit">Search</button>
+    </form>
+  );
+}
+```
+
+See [Navigation](/guides/navigation) for `useSubmit` details.
+
+## Next steps [#next]
+
+Mutating fetched data is covered in [Mutations](/guides/mutations). Rendering loader failures is covered in [Error handling](/guides/error-handling).

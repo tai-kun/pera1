@@ -1,0 +1,102 @@
+---
+title: useLoaderData
+description: "Hook that subscribes to the loader result for reading with React.use."
+---
+
+`useLoaderData` subscribes to the loader result tied to the current route hierarchy. Passing the returned `NinjaPromise` to `React.use` suspends while loading and returns the resolved value on completion.
+
+```tsx
+import { useLoaderData } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function useLoaderData<TData = unknown>(): LoaderData<TData>;
+```
+
+## Type parameters [#type-parameters]
+
+| Name | Default | Description |
+| --- | --- | --- |
+| `TData` | `unknown` | Type of the loader function, or the resolved data type. Passing a function type derives the data type from its return value. |
+
+```ts
+type FulfilledLoaderData<TData> = Awaited<
+  TData extends (...args: any) => infer TReturn ? TReturn : TData
+>;
+
+type LoaderData<TData> = NinjaPromise<FulfilledLoaderData<TData>>;
+```
+
+Pass a function like `useLoaderData<typeof loader>()`, or a data type directly like `useLoaderData<LoaderData<Contact>>()`.
+
+## Returns [#returns]
+
+A `NinjaPromise` representing the loader result tied to the current history entry. Since `NinjaPromise` is a thenable, it can be passed to `React.use` as-is.
+
+| State | Behavior when passed to `React.use` |
+| --- | --- |
+| Pending | Suspends and shows the nearest `Suspense` fallback. |
+| Fulfilled | Returns the resolved value. |
+| Rejected | Throws the rejection reason, caught by the nearest error boundary. |
+
+## Usage [#usage]
+
+Set up `Suspense` on the layout side, and pass the hook result to `use` in the component that consumes the data.
+
+```tsx
+import { Outlet, useLoaderData } from "@pera1/react";
+import * as React from "react";
+
+function Layout() {
+  return (
+    <React.Suspense fallback={<p>Loading…</p>}>
+      <Outlet />
+    </React.Suspense>
+  );
+}
+
+function ContactPage() {
+  const contact = React.use(useLoaderData<typeof contactLoader>());
+  return <h2>{contact.name}</h2>;
+}
+```
+
+## Throws [#throws]
+
+| Error | Condition |
+| --- | --- |
+| `LoaderDataNotFoundError` | No loader in the current route hierarchy, or called outside `Router` |
+| `RouterContextMissingError` | `RouterContext` is not provided in the component tree |
+
+## Inheriting the parent loader [#inheritance]
+
+When a child route has no loader, it inherits the parent route's loader. Data fetched in the parent can be shared across multiple child pages.
+
+```tsx
+const routes = [
+  { path: "/", index: true, component: HomePage },
+  { path: "/", component: RootLayout },
+  { path: "/contacts", index: true, component: ContactsPage },
+  {
+    path: "/contacts",
+    component: ContactsLayout,
+    loader: contactsLoader,
+  },
+];
+
+function ContactsPage() {
+  // Result of the loader attached to the /contacts layout
+  const contacts = React.use(useLoaderData<typeof contactsLoader>());
+  // ...
+}
+```
+
+When the child has its own loader, the child takes precedence and the parent loader is hidden from the child.
+
+## Related [#related]
+
+- [Data loading guide](/guides/data-loading) — Declaring loaders and controlling refetching
+- [useActionData](/packages/react/reference/use-action-data) — Subscribing to action results
+- [selectLoaderData](/packages/core/reference/router-store) — Framework-agnostic selection logic

@@ -1,0 +1,88 @@
+---
+title: matchRoutes
+description: "matchRoutes, which collects the matching route hierarchy for a URL, and the resulting MatchedRoute type."
+---
+
+`matchRoutes` matches a normalized route array against a URL and collects every matched route. For one URL, it returns routes from child to parent as an array. `createRouter` and [NavigationApiEngine](/packages/core/reference/navigation-api-engine) use this function to resolve the current URL's route hierarchy.
+
+## Signature [#signature]
+
+```ts
+function matchRoutes<TComponent = any>(
+  routes: readonly Route<TComponent>[],
+  url: ReadonlyURL,
+): readonly [MatchedRoute<TComponent>, ...MatchedRoute<TComponent>[]] | null;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `routes` | `readonly Route<TComponent>[]` | Routes already normalized and sorted by specificity. |
+| `url` | `ReadonlyURL` | URL to match. A standard `URL` is acceptable. |
+
+The `routes` that `createRouter` passes to the engine are already normalized and sorted. For custom engines, pass that array as-is. When using `matchRoutes` standalone, prepare an array with the same preprocessing.
+
+## Returns [#returns]
+
+When matched routes exist, it returns a readonly tuple of `MatchedRoute<TComponent>` with one or more elements. When nothing matches, it returns `null`.
+
+`MatchedRoute` is a normalized `Route` plus two properties.
+
+| Property | Type | Description |
+| --- | --- | --- |
+| `params` | `RouteParams` | Params extracted from the URL. |
+| `urlPath` | `string` | Actual path with params embedded back into the pattern. |
+
+It also inherits `Route` properties such as `path`, `index`, `loader`, and `action` as-is.
+
+## Usage [#usage]
+
+Example where three route levels match `/contacts/42`. Pass the `Route` array normalized by `createRouter` as `routes`.
+
+```ts no-run
+import { matchRoutes } from "@pera1/core";
+
+const matched = matchRoutes(routes, new URL("https://example.com/contacts/42"));
+
+for (const route of matched ?? []) {
+  console.log(route.path, route.params, route.urlPath);
+}
+// /contacts/:id { id: "42" } /contacts/42
+// /contacts     {}           /contacts
+// /             {}           /
+```
+
+`urlPath` is the path with params filled in with actual values. It is useful for choosing an action submission target or a form `action`.
+
+## Matching rules [#matching-rules]
+
+Only the path portion of the URL is used for matching. `/search?query=1#hash` matches the same as `/search`, and the presence of a trailing slash is ignored.
+
+The route array is sorted by descending specificity. The detailed order is:
+
+1. Static segments (`/contacts`)
+2. Suffixed params (`/:title.mp4`)
+3. Named params (`/:id`)
+4. Optional params (`/:id?`)
+5. Wildcards (`/*`)
+6. Optional wildcards (`/*?`)
+
+With equal specificity, more segments come first. When still equal, lexicographic string order applies. For example, when `/users/me` and `/users/:id` are candidates, `/users/me` is matched first. Since both match the URL, both are included in the result, with the leading `/users/me` as the child and `/users/:id` as the parent.
+
+Keeping overlapping patterns as parent-child without excluding them is characteristic of this function. Specificity rules are covered in [Routing](/guides/routing).
+
+## Notes [#notes]
+
+- The returned array order directly reflects the order of the passed `routes`. Via `createRouter`, it is child-to-parent in descending specificity.
+- Queries and hashes do not affect matching. Use `shouldReload` to refetch on query changes.
+- This function does not run loaders. Data fetching is handled by [initLoaders](/packages/core/reference/loaders).
+- It returns `null` even when the route array is empty.
+
+## Related [#related]
+
+- [RouteDefinition](/packages/core/reference/route-definitions) — Route definitions and `Route` types
+- [initLoaders / startLoaders](/packages/core/reference/loaders) — Run loaders of matched routes
+- [startAction](/packages/core/reference/actions) — Select an action from matched routes
+- [NavigationApiEngine](/packages/core/reference/navigation-api-engine) — Uses this function on navigation
+- [Routing](/guides/routing) — All rules for path patterns and specificity

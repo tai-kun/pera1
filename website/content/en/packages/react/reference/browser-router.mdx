@@ -1,0 +1,71 @@
+---
+title: BrowserRouter
+description: "Entry point that starts the router with the default Navigation API engine."
+---
+
+`BrowserRouter` is the entry point for starting SPA routing in the browser. It creates a `NavigationApiEngine` internally and passes it to `Router` along with the route definitions.
+
+```tsx
+import { BrowserRouter } from "@pera1/react";
+```
+
+## Signature [#signature]
+
+```ts
+function BrowserRouter(props: BrowserRouterProps): React.ReactElement;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `routes` | `readonly RouterRouteDefinition[]` | Yes | Route definitions for the application. |
+| `notFoundComponent` | `React.ComponentType<{}> \| undefined` | No | Fallback rendered when no route matches. |
+| `scrollRestoration` | `boolean \| ScrollBehavior \| undefined` | No | Opt-in to scroll to the top after navigation. Defaults to browser behavior. |
+
+The route definition type is described in [Router](/packages/react/reference/router#route-definition).
+
+## Internals [#internals]
+
+The engine is created with `useSingleton`. `useSingleton` runs the factory exactly once on the first render and returns the same instance on subsequent renders. Unlike `useMemo`, the cache is never discarded by React, so the engine is never recreated.
+
+```tsx no-run
+// Same structure as the BrowserRouter implementation
+const engine = useSingleton(() => new NavigationApiEngine());
+return <Router engine={engine} routes={routes} />;
+```
+
+## Environments without Navigation API [#unsupported]
+
+The `NavigationApiEngine` constructor throws `NavigationApiNotSupportedError` when the `Navigation API` is not available in the runtime. Because `BrowserRouter` creates the engine during the first render, this error is thrown during rendering. Catch it with an error boundary or swap in a different engine.
+
+To choose the engine yourself, use [Router](/packages/react/reference/router). The replacement steps are described in [Custom engines](/guides/custom-engines).
+
+## Usage [#usage]
+
+```tsx
+import { BrowserRouter } from "@pera1/react";
+import * as React from "react";
+import { createRoot } from "react-dom/client";
+
+import { routes } from "./routes.js";
+
+createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <BrowserRouter routes={routes} />
+  </React.StrictMode>,
+);
+```
+
+## Notes [#notes]
+
+- Keep `routes` at module scope or another stable location; do not recreate it on every render. A changed reference makes `Router` recreate the router and drops the loader cache.
+- There is no dedicated component for internal links. Plain `<a>` and `<form>` elements reach the router through the Navigation API.
+- With `scrollRestoration`, the page scrolls to the top after navigation. Hash navigations and the initial render are left to the browser. See [Navigation](/guides/navigation#scroll-restoration) for details.
+- Render the pending-navigation indicator with [`useNavigation`](/guides/navigation#pending) outside `Suspense`.
+
+## Related [#related]
+
+- [Router](/packages/react/reference/router) — Generic version that accepts any engine
+- [Routing](/guides/routing) — Route definitions and path patterns
+- [Custom engines](/guides/custom-engines) — Replacing the engine

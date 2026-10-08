@@ -1,0 +1,48 @@
+---
+title: Packages
+description: "Describes the roles of the packages that make up pera1 and how to choose what to install."
+---
+
+pera1 consists of a framework-independent core, bindings for each UI framework, and plugins for build tools. The only binding currently provided is for React.
+
+<CardGroup cols={2}>
+  <Card title="@pera1/core" href="/packages/core" icon="box">
+    Routing, matching, loaders, actions, and engine implementation. UI-independent.
+  </Card>
+  <Card title="@pera1/react" href="/packages/react" icon="atom">
+    `BrowserRouter`, `Outlet`, and hooks for React 19. Connects core to React.
+  </Card>
+  <Card title="@pera1/vite-plugin" href="/packages/vite-plugin" icon="zap">
+    Vite plugin that generates route definitions and route types from your file structure.
+  </Card>
+</CardGroup>
+
+## Which to install [#which]
+
+For React apps, install `@pera1/react`. `@pera1/core` is included automatically as a dependency.
+
+```package-install
+npm i @pera1/react react react-dom valibot
+```
+
+To define routes from your file structure, add `@pera1/vite-plugin` as a dev dependency.
+
+```package-install
+npm i -D @pera1/vite-plugin
+```
+
+Install `@pera1/core` standalone only when you use the core alone (for custom UI bindings or custom engines).
+
+```package-install
+npm i @pera1/core valibot
+```
+
+## Versions [#versions]
+
+Each package is versioned independently. See the [GitHub repository](https://github.com/tai-kun/pera1) for changelogs and latest versions.
+
+## Next steps [#next]
+
+- [@pera1/core overview](/packages/core)
+- [@pera1/react overview](/packages/react)
+- [@pera1/vite-plugin overview](/packages/vite-plugin)

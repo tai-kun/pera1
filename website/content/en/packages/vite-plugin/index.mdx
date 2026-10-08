@@ -1,0 +1,132 @@
+---
+title: "@pera1/vite-plugin"
+description: "Vite plugin that generates route definitions and route types from the file and directory structure."
+---
+
+`@pera1/vite-plugin` is a Vite plugin that turns the file structure under `src/pages` into routing. At build time it generates route definitions and serves them as `virtual:pera1/routes`, along with route types each route file can import from `./+types/<filename>`.
+
+Instead of hand-writing the route definition array, adding a page as a file adds a route. Route discovery keeps watching while the dev server runs, following file additions, changes, and deletions.
+
+## Installation [#install]
+
+```package-install
+npm i -D @pera1/vite-plugin
+```
+
+`vite` and `@pera1/core` are peer dependencies. Apps using `@pera1/react` already get `@pera1/core` as a dependency, so no extra install is normally needed. Requires Node.js 22.17 or later for `fs.globSync`.
+
+## Setup [#setup]
+
+Add `pera1()` to the Vite config. It can be combined with other plugins such as `react()`.
+
+```ts vite.config.ts
+import pera1 from "@pera1/vite-plugin";
+import react from "@vitejs/plugin-react";
+import { defineConfig } from "vite";
+
+export default defineConfig({
+  plugins: [pera1(), react()],
+});
+```
+
+On the app side, load `routes` from the virtual module and pass it to `BrowserRouter`. No need to import a hand-written route definition array.
+
+```tsx src/main.tsx
+import { BrowserRouter } from "@pera1/react";
+import { createRoot } from "react-dom/client";
+import { routes } from "virtual:pera1/routes";
+
+createRoot(document.getElementById("root")!).render(<BrowserRouter routes={routes} />);
+```
+
+To enable types for the virtual module, add `@pera1/vite-plugin/client` to `types` in `tsconfig.json`.
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "types": ["vite/client", "@pera1/vite-plugin/client"]
+  }
+}
+```
+
+## File conventions [#conventions]
+
+The structure of `src/pages` maps directly to URLs. Special filenames are as follows.
+
+| File                   | Route                            | Description                                                              |
+| ---------------------- | -------------------------------- | ------------------------------------------------------------------------ |
+| `_layout.tsx`          | Path of that directory           | Layout route. Has sibling routes as children, displayed with `Outlet`.   |
+| `_index.tsx`           | Path of that directory (`index`) | Index route.                                                             |
+| `$id.tsx`              | `/:id`                           | Named parameter.                                                         |
+| `$.tsx`                | `/*`                             | Wildcard. Used for 404 pages and similar.                                |
+| Other files            | Filename as-is                   | Regular route.                                                           |
+| Directories starting with `_` | Not present in the URL    | Pathless directory.                                                      |
+
+```text
+src/pages/
+├── _layout.tsx            -> /
+├── _index.tsx             -> / (index)
+├── about.tsx              -> /about
+├── sitemap[.]xml.tsx      -> /sitemap.xml
+├── blog/
+│   ├── _layout.tsx        -> /blog
+│   ├── _index.tsx         -> /blog (index)
+│   ├── $postId.tsx        -> /blog/:postId
+│   └── $.tsx              -> /blog/*
+└── _auth/                 -> not present in the URL
+    ├── login.tsx          -> /login
+    └── signup.tsx         -> /signup
+```
+
+Which files are included is decided by the `include` and `exclude` glob patterns. See [File conventions](/packages/vite-plugin/reference/file-conventions) for details.
+
+## Route types [#typegen]
+
+A route file can import `Route` from the `+types` directory in the same location. `Route.Path`, `Route.Params`, `Route.LoaderArgs`, `Route.ActionArgs`, and more are available.
+
+```tsx src/pages/contacts/$id.tsx
+import type { Route } from "./+types/$id";
+
+export async function loader({ params }: Route.LoaderArgs) {
+  // params is { readonly id: string }.
+  return findContact(params.id);
+}
+
+export function Component() {
+  const params = useParams<Route.Path>();
+  // ...
+}
+```
+
+Types are generated into `.pera1/types` and resolved as if they sat next to the route file via `rootDirs` in `tsconfig.json`. Configuration and the generation flow are described in [Route types](/packages/vite-plugin/reference/typegen).
+
+```json tsconfig.json
+{
+  "compilerOptions": {
+    "rootDirs": [".", "./.pera1/types"]
+  },
+  "include": ["src", ".pera1/types"]
+}
+```
+
+## Type generation and CLI [#cli]
+
+While the dev server runs, file additions, changes, and deletions are detected and types are regenerated automatically. When only typechecking, generate with the CLI before `tsc`.
+
+```json package.json
+{
+  "scripts": {
+    "typecheck": "pera1-vite typegen && tsc --noEmit"
+  }
+}
+```
+
+A `.gitignore` that ignores everything below the output directory is also emitted, so you do not need to edit the repository's `.gitignore`.
+
+## Next steps [#next]
+
+- [Plugin options](/packages/vite-plugin/reference/plugin-options)
+- [File conventions](/packages/vite-plugin/reference/file-conventions)
+- [Route types](/packages/vite-plugin/reference/typegen)
+- [CLI](/packages/vite-plugin/reference/cli)
+- [@pera1/core overview](/packages/core)

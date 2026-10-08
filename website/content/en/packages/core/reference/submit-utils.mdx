@@ -1,0 +1,87 @@
+---
+title: toSubmitArgs
+description: "Conversion function that routes useSubmit arguments into engine submission arguments."
+---
+
+`toSubmitArgs` converts `FormData` or `URLSearchParams` received by `useSubmit` into the engine's `IEngine.SubmitArgs`. It determines which data it is at runtime. Callers do not need to branch.
+
+```ts
+import { toSubmitArgs } from "@pera1/core";
+```
+
+## Signature [#signature]
+
+```ts
+function toSubmitArgs(
+  target: ReadonlyURLSearchParams | ReadonlyFormData,
+  formAction: string,
+  options?: SubmitGetOptions | SubmitPostOptions,
+): IEngine.SubmitArgs;
+```
+
+## Arguments [#arguments]
+
+| Property | Type | Required | Description |
+| --- | --- | --- | --- |
+| `target` | `ReadonlyURLSearchParams \| ReadonlyFormData` | Yes | Form data to send, or search query. |
+| `formAction` | `string` | Yes | Default form action path for the current route. |
+| `options` | `SubmitGetOptions \| SubmitPostOptions` | No | Overrides the destination or history handling. |
+
+## Options [#options]
+
+Use `SubmitPostOptions` when sending `FormData`, and `SubmitGetOptions` when sending `URLSearchParams`. Both accept `action`, and only the GET side has `replace`.
+
+| Property | Type | Applies to | Default | Description |
+| --- | --- | --- | --- | --- |
+| `action` | `string` | Both | `formAction` | Overrides the submission destination URL path. |
+| `replace` | `boolean` | GET only | `false` | When `true`, overwrites the current history; when `false` or omitted, appends a new entry. |
+
+## Returns [#returns]
+
+The return value is `IEngine.SubmitArgs`, split into two shapes depending on the `target` entity.
+
+| Input | Returned args |
+| --- | --- |
+| `FormData` | `{ type: "FORM_DATA", target, action }` |
+| `URLSearchParams` | `{ type: "URL_SEARCH_PARAMS", target, action, history }` |
+
+`FORM_DATA` starts an action as the POST equivalent, and `URL_SEARCH_PARAMS` starts loaders as the GET equivalent. `history` is `"push"` or `"replace"`, and is included only on the GET side.
+
+## Usage [#usage]
+
+The `submit` function received from `useSubmit` calls this function internally. Callers just pass the data they want to send as-is.
+
+```tsx
+import { useSubmit } from "@pera1/react";
+
+function SearchBox() {
+  const submit = useSubmit();
+
+  function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    submit(new FormData(event.currentTarget));
+  }
+
+  function resetQuery() {
+    submit(new URLSearchParams(), { replace: true });
+  }
+
+  return (
+    <form onSubmit={handleSubmit}>
+      <input name="q" />
+      <button type="submit">Search</button>
+    </form>
+  );
+}
+```
+
+## Notes [#notes]
+
+- Detection uses `instanceof` on `FormData`. Although the `target` type is readonly, the runtime value must be a real `FormData`.
+- `replace` exists only on the GET-side option `SubmitGetOptions`. History handling cannot be specified on the POST side.
+
+## Related [#related]
+
+- [useSubmit](/packages/react/reference/use-submit) — Hook that performs submission from React
+- [formDataToHTMLFormElement](/packages/core/reference/form-data) — Generates a submittable form from FormData
+- [createRouter](/packages/core/reference/create-router) — Snapshot's `submit` method
