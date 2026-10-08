@@ -253,6 +253,19 @@ jobs:
             message="release: $first_tag"
           fi
 
+          # 複数同時時は集約用タグ v$VERSION を使い、Release はそれに紐づける。
+          # 単件時は先頭（唯一）のパッケージタグを使う。
+          if [ "$count" -gt 1 ]; then
+            release_tag="v$VERSION"
+
+            if git ls-remote --exit-code --tags origin "refs/tags/$release_tag" >/dev/null 2>&1; then
+              echo "::error::タグ $release_tag がすでに存在します。"
+              exit 1
+            fi
+          else
+            release_tag="$first_tag"
+          fi
+
           list_delim="RELEASE_LIST_EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           msg_delim="RELEASE_MSG_EOF_${GITHUB_RUN_ID}_${GITHUB_RUN_ATTEMPT}"
           {
@@ -262,6 +275,7 @@ jobs:
             echo "count=$count"
             echo "non_private=$non_private_count"
             echo "first_tag=$first_tag"
+            echo "release_tag=$release_tag"
             echo "version=$VERSION"
             echo "message<<$msg_delim"
             echo "$message"
@@ -413,6 +427,8 @@ jobs:
         if: steps.packages.outputs.count != '0' && inputs.dry-run != true
         env:
           LIST: ${{ steps.packages.outputs.list }}
+          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
+          RELEASE_TAG: ${{ steps.packages.outputs.release_tag }}
         run: |
           tags=()
           while IFS=$'\t' read -r _ name version; do
@@ -424,6 +440,12 @@ jobs:
             git tag -a "$tag" -m "$tag"
             tags+=("$tag")
           done <<< "$LIST"
+
+          # 複数同時時は集約用タグも作成し、アトミック push に含める。
+          if [ "${RELEASE_COUNT:-1}" -gt 1 ] && [ -n "${RELEASE_TAG:-}" ]; then
+            git tag -a "$RELEASE_TAG" -m "$RELEASE_TAG"
+            tags+=("$RELEASE_TAG")
+          fi
 
           if [ "${#tags[@]}" -eq 0 ]; then
             echo "::notice::作成するタグがありません。"
@@ -437,8 +459,18 @@ jobs:
         if: steps.packages.outputs.count != '0' && inputs.dry-run != true
         env:
           LIST: ${{ steps.packages.outputs.list }}
+          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
+          RELEASE_TAG: ${{ steps.packages.outputs.release_tag }}
+          RELEASE_VERSION: ${{ steps.packages.outputs.version }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          # 複数同時時は集約用タグ v$VERSION に1つだけ作成する。
+          # 単件時はパッケージタグに作成する。
+          if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
+            gh release create "$RELEASE_TAG" --title "v$RELEASE_VERSION" --notes-file "$RUNNER_TEMP/release-changelog.md"
+            exit 0
+          fi
+
           while IFS=$'\t' read -r _ name version; do
             if [ -z "$name" ]; then
               continue
@@ -474,10 +506,16 @@ jobs:
         if: success() && steps.packages.outputs.count != '0' && inputs.dry-run != true
         env:
           LIST: ${{ steps.packages.outputs.list }}
+          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
+          RELEASE_TAG: ${{ steps.packages.outputs.release_tag }}
         run: |
           {
             echo "## リリース結果"
             echo ""
+            if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
+              echo "Release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$RELEASE_TAG （$RELEASE_COUNT 件分を1つに集約）"
+              echo ""
+            fi
             while IFS=$'\t' read -r _ name version; do
               if [ -z "$name" ]; then
                 continue
@@ -486,7 +524,9 @@ jobs:
               tag="$name@$version"
               echo "- $tag"
               echo "  - npm: https://www.npmjs.com/package/$name/v/$version"
-              echo "  - release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag"
+              if [ "${RELEASE_COUNT:-1}" -le 1 ]; then
+                echo "  - release: https://github.com/$GITHUB_REPOSITORY/releases/tag/$tag"
+              fi
             done <<< "$LIST"
           } >> "$GITHUB_STEP_SUMMARY"
 
@@ -496,6 +536,11 @@ jobs:
           LIST: ${{ steps.packages.outputs.list }}
           MESSAGE: ${{ steps.packages.outputs.message }}
           CHANGELOG: ${{ steps.changelog.outputs.changelog }}
+          FIRST_TAG: ${{ steps.packages.outputs.first_tag }}
+          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
+          RELEASE_TAG: ${{ steps.packages.outputs.release_tag }}
+          RELEASE_VERSION: ${{ steps.packages.outputs.version }}
+          NON_PRIVATE: ${{ steps.packages.outputs.non_private }}
         run: |
           {
             echo "## ドライラン結果（公開は行いません）"
@@ -518,9 +563,41 @@ jobs:
             echo "$MESSAGE"
             echo '```'
             echo ""
+            echo "### 作成するタグ"
+            echo ""
+            while IFS=$'\t' read -r _ name version; do
+              if [ -z "$name" ]; then
+                continue
+              fi
+
+              echo "- $name@$version"
+            done <<< "$LIST"
+            if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
+              echo "- $RELEASE_TAG （集約用）"
+            fi
+            echo ""
+            if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
+              echo "Release は $RELEASE_TAG に1つ集約（タイトル: v$RELEASE_VERSION）"
+            else
+              echo "Release は $RELEASE_TAG に作成"
+            fi
+            echo ""
             echo "### CHANGELOG 追記内容"
             echo ""
             echo "$CHANGELOG"
+            echo ""
+            echo "### デバッグ情報"
+            echo ""
+            echo "- first_tag: $FIRST_TAG"
+            echo "- release_tag: $RELEASE_TAG"
+            if [ "${RELEASE_COUNT:-1}" -gt 1 ]; then
+              echo "- release_title: v$RELEASE_VERSION"
+            else
+              echo "- release_title: $RELEASE_TAG"
+            fi
+            echo "- version: $RELEASE_VERSION"
+            echo "- count: $RELEASE_COUNT"
+            echo "- non_private: $NON_PRIVATE"
           } >> "$GITHUB_STEP_SUMMARY"
           echo "::notice::ドライランのため、コミット・タグ・Release・npm 公開は行いませんでした。"
 
@@ -551,11 +628,26 @@ jobs:
         if: failure() || cancelled()
         env:
           LIST: ${{ steps.packages.outputs.list }}
+          RELEASE_COUNT: ${{ steps.packages.outputs.count }}
+          RELEASE_TAG: ${{ steps.packages.outputs.release_tag }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           if [ -z "${LIST:-}" ]; then
             echo "::notice::公開対象がないため削除をスキップします。"
             exit 0
+          fi
+
+          # Release は集約用タグ（単件時はパッケージタグ）に1つのみ。
+          if [ -n "${RELEASE_TAG:-}" ]; then
+            if gh release view "$RELEASE_TAG" >/dev/null 2>&1; then
+              echo "$RELEASE_TAG の Release を削除します。"
+
+              if ! gh release delete "$RELEASE_TAG" --yes --cleanup-tag; then
+                echo "::warning::$RELEASE_TAG の Release 削除に失敗しました。手動で確認してください。"
+              fi
+            else
+              echo "::notice::Release $RELEASE_TAG は存在しないため削除をスキップします。"
+            fi
           fi
 
           while IFS=$'\t' read -r _ name version; do
@@ -568,16 +660,10 @@ jobs:
             if ! git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
               echo "::notice::$tag はリモートに存在しないため削除をスキップします。"
             else
-              echo "$tag を削除します。"
+              echo "$tag のタグを削除します。"
 
-              if ! gh release delete "$tag" --yes --cleanup-tag; then
-                echo "::warning::$tag の Release 削除に失敗しました。手動で確認してください。"
-              fi
-
-              if git ls-remote --exit-code --tags origin "refs/tags/$tag" >/dev/null 2>&1; then
-                if ! git push origin ":refs/tags/$tag"; then
-                  echo "::warning::$tag のリモートタグ削除に失敗しました。手動で確認してください。"
-                fi
+              if ! git push origin ":refs/tags/$tag"; then
+                echo "::warning::$tag のリモートタグ削除に失敗しました。手動で確認してください。"
               fi
             fi
 
@@ -585,6 +671,23 @@ jobs:
               git tag -d "$tag" || echo "::warning::$tag のローカルタグ削除に失敗しました。"
             fi
           done <<< "$LIST"
+
+          # 複数同時時の集約用タグも削除する（Release 削除の --cleanup-tag 済みならスキップされる）。
+          if [ "${RELEASE_COUNT:-1}" -gt 1 ] && [ -n "${RELEASE_TAG:-}" ]; then
+            if ! git ls-remote --exit-code --tags origin "refs/tags/$RELEASE_TAG" >/dev/null 2>&1; then
+              echo "::notice::$RELEASE_TAG はリモートに存在しないため削除をスキップします。"
+            else
+              echo "$RELEASE_TAG のタグを削除します。"
+
+              if ! git push origin ":refs/tags/$RELEASE_TAG"; then
+                echo "::warning::$RELEASE_TAG のリモートタグ削除に失敗しました。手動で確認してください。"
+              fi
+            fi
+
+            if git rev-parse "$RELEASE_TAG" >/dev/null 2>&1; then
+              git tag -d "$RELEASE_TAG" || echo "::warning::$RELEASE_TAG のローカルタグ削除に失敗しました。"
+            fi
+          fi
 
       - name: "失敗時に release コミットを取り消し"
         if: (failure() || cancelled()) && steps.commit.outputs.committed == 'true'
