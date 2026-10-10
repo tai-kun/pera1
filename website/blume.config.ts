@@ -23,7 +23,7 @@ export default defineConfig({
   description: `Documentation for ${PROJET_NAME}`,
   deployment: {
     site: `https://${GITHUB_OWNER}.github.io`,
-    base: "/pera1",
+    base: `/${GITHUB_REPO}`,
   },
   navigation: {
     repo: `https://github.com/${GITHUB_OWNER}/${GITHUB_REPO}`,
