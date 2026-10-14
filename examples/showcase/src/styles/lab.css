@@ -1,0 +1,510 @@
+/**
+ * lab.css — ルーター実験室 (Lab) の見た目（DADS 準拠）
+ *
+ * 実験装置らしさは残しつつ、装飾のグラデーション・ピル型の影・極小文字はやめる。
+ * 見出しは DADS「見出し」のチップ（左の青縦線）で装飾し、本文・UI は 16px 基準、
+ * コードのみ Mono 14px（領域制約がある場合の例外）を用いる。
+ */
+
+.lab-shell {
+  display: grid;
+  gap: var(--space-4);
+  min-width: 0;
+}
+
+.lab-shell > *,
+.lab-page,
+.lab-page > * {
+  min-width: 0;
+}
+
+.lab-header {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-5);
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-bottom: 4px solid var(--dads-blue-900);
+  border-radius: var(--radius-md);
+}
+
+.lab-header .page-title,
+.lab-header h2 {
+  margin-block: 0;
+}
+
+.lab-header .page-lead {
+  margin-block: 0;
+}
+
+/* Lab 内の横断ナビ：現在地は塗り＋太字＋aria-current で示す（色だけに頼らない）。 */
+.lab-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.lab-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 16px;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  white-space: nowrap;
+  text-decoration: none;
+  border: 2px solid transparent;
+  border-radius: var(--radius-sm);
+}
+
+.lab-nav a:visited {
+  color: #000000;
+}
+
+.lab-nav a:hover {
+  color: var(--dads-link);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.lab-nav a.is-active {
+  color: #ffffff;
+  font-weight: 700;
+  background-color: var(--dads-blue-900);
+  border-color: var(--dads-blue-900);
+  text-decoration: none;
+}
+
+.lab-nav a.is-active:visited {
+  color: #ffffff;
+}
+
+.lab-page {
+  display: grid;
+  gap: var(--space-4);
+}
+
+/* 実験セクション：DADS 見出しのチップ（青の縦線）で節の開始を強調する。 */
+.lab-section {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.lab-section > .card-title,
+.lab-section > h3,
+.lab-section > h2 {
+  margin-block: 0;
+  padding-left: var(--space-3);
+  border-left: 4px solid var(--dads-blue-900);
+}
+
+.lab-note {
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  line-height: 1.7;
+  overflow-wrap: anywhere;
+}
+
+.lab-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  color: var(--dads-blue-1100);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background-color: var(--dads-blue-50);
+  border: 1px solid var(--dads-blue-900);
+  border-radius: var(--radius-full);
+}
+
+/* --------------------------------------------------------------------------
+   操作 / 結果
+   -------------------------------------------------------------------------- */
+
+.lab-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: end;
+  padding: var(--space-3);
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.lab-controls .field {
+  flex: 1 1 260px;
+  min-width: 0;
+}
+
+.lab-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+/* 結果パネル：左の青帯＋見出し文言で「結果」であることを示す。 */
+.lab-result {
+  display: grid;
+  gap: var(--space-1);
+  min-width: 0;
+  padding: var(--space-3);
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-left: 4px solid var(--dads-blue-900);
+  border-radius: var(--radius-sm);
+}
+
+.lab-result > * {
+  min-width: 0;
+}
+
+.lab-result dt,
+.lab-result .lab-result-label {
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.lab-output {
+  max-width: 100%;
+  max-height: 320px;
+  margin: 0;
+  padding: var(--space-3);
+  overflow: auto;
+  color: #000000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+  word-break: break-all;
+  background-color: var(--dads-gray-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+/* キーと値の表 */
+.kv-table {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  overflow: hidden;
+  background-color: #ffffff;
+  border: 1px solid var(--dads-gray-700);
+  border-radius: var(--radius-sm);
+}
+
+.kv-table > div {
+  display: grid;
+  grid-template-columns: minmax(140px, 220px) minmax(0, 1fr);
+  gap: var(--space-3);
+  padding: var(--space-2) var(--space-3);
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.kv-table > div:last-child {
+  border-bottom: none;
+}
+
+.kv-table dt {
+  color: var(--dads-gray-800);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.kv-table dd {
+  margin: 0;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+@media (max-width: 767px) {
+  .kv-table > div {
+    grid-template-columns: minmax(0, 1fr);
+    gap: var(--space-1);
+  }
+}
+
+/* --------------------------------------------------------------------------
+   インスペクター / API マップ
+   -------------------------------------------------------------------------- */
+
+.inspector-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+  gap: var(--space-3);
+}
+
+.inspector-grid .card {
+  min-width: 0;
+}
+
+.api-map td:first-child,
+.api-map th:first-child {
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  white-space: nowrap;
+}
+
+/* --------------------------------------------------------------------------
+   コードブロック
+   -------------------------------------------------------------------------- */
+
+.code-block {
+  display: grid;
+  margin: 0;
+  overflow: hidden;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.code-block figcaption {
+  padding: var(--space-2) var(--space-3);
+  color: var(--dads-gray-800);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+  background-color: var(--dads-gray-50);
+  border-bottom: 1px solid var(--color-border);
+}
+
+.code-block pre {
+  max-height: 20rem;
+  margin: 0;
+  background-color: #ffffff;
+  border: none;
+  border-radius: 0;
+}
+
+.code-block code {
+  color: #000000;
+  background: none;
+  border: none;
+  font-size: 0.875rem;
+}
+
+/* --------------------------------------------------------------------------
+   メモリーエンジン（自作ミニアプリ）
+   -------------------------------------------------------------------------- */
+
+.memory-shell {
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+}
+
+.memory-toolbar {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.memory-toolbar code {
+  font-size: 0.875rem;
+}
+
+.memory-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+
+.memory-nav button {
+  min-height: 44px;
+  padding: 8px 16px;
+  color: var(--dads-link);
+  font-size: 1rem;
+  line-height: 1.5;
+  background-color: #ffffff;
+  border: 2px solid var(--dads-link);
+  border-radius: var(--radius-full);
+}
+
+.memory-nav button:hover {
+  background-color: var(--dads-blue-50);
+  text-decoration: underline;
+}
+
+.memory-page {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.memory-page h4 {
+  margin: 0;
+}
+
+.memory-loading,
+.lazy-fallback {
+  padding: var(--space-3);
+  color: var(--dads-yellow-1200);
+  font-size: 1rem;
+  line-height: 1.7;
+  background-color: var(--dads-warning-bg);
+  border: 2px dashed var(--dads-warning-border);
+  border-radius: var(--radius-sm);
+}
+
+.memory-result {
+  margin: 0;
+  color: var(--dads-success-text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.memory-entries {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.memory-entry {
+  display: flex;
+  gap: var(--space-2);
+  align-items: center;
+  padding: var(--space-1) var(--space-3);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.memory-entry code {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  background: none;
+  border: none;
+}
+
+.memory-entry.is-current {
+  border-color: var(--dads-blue-900);
+  border-left: 4px solid var(--dads-blue-900);
+}
+
+/* --------------------------------------------------------------------------
+   グラフ / ストレス表示（値の読み取りは数値テキストが正本。色は補助）
+   -------------------------------------------------------------------------- */
+
+.bar-chart {
+  display: flex;
+  gap: 2px;
+  align-items: end;
+  height: 120px;
+  padding: var(--space-3);
+  overflow: hidden;
+  background-color: #ffffff;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.bar {
+  flex: 1 1 0;
+  min-width: 0;
+  background-color: var(--dads-blue-900);
+  border-radius: 2px 2px 0 0;
+}
+
+.stress-result {
+  padding: var(--space-3);
+  overflow-wrap: anywhere;
+  color: #000000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  background-color: var(--dads-gray-50);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+}
+
+.stress-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: var(--space-3);
+}
+
+/* --------------------------------------------------------------------------
+   エラー表示
+   -------------------------------------------------------------------------- */
+
+.error-card {
+  display: grid;
+  gap: var(--space-2);
+  min-width: 0;
+  padding: var(--space-4);
+  background-color: var(--dads-error-bg);
+  border: 2px solid var(--dads-error-border);
+  border-radius: var(--radius-sm);
+}
+
+.error-card > * {
+  min-width: 0;
+}
+
+.error-card .error-text,
+.error-card .error-name {
+  margin: 0;
+  color: var(--dads-error-text);
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  overflow-wrap: anywhere;
+}
+
+.error-card .error-message {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* --------------------------------------------------------------------------
+   限界ページ
+   -------------------------------------------------------------------------- */
+
+@media (max-width: 767px) {
+  .lab-header {
+    padding: var(--space-4) var(--space-3);
+  }
+
+  .memory-shell {
+    padding: var(--space-3);
+  }
+
+  .lab-controls {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  .bar-chart {
+    height: 80px;
+    gap: 0;
+  }
+}

@@ -1,0 +1,1133 @@
+/*
+ * pera1 ショーケース アプリ本体のスタイル（DADS 準拠）
+ *
+ * 参照: コンポーネント「ボタン」「カード」「テーブル」「パンくずナビゲーション」
+ * 「ヘッダーコンテナ」、基本デザイン「レイアウト」「エレベーション」「余白」
+ *
+ * 原則:
+ * - 背景は白、文字は黒。境界はボーダーで確保し（3:1 以上）、影だけに頼らない。
+ * - 既定の面はエレベーション 0（影なし）。影はヘッダー等の浮き面に最小限のみ。
+ * - グラデーションの装飾・ガラス質・浮き上がりアニメは使わない。
+ * - ブレークポイントは 768px（DADS 設定例: 768px 未満＝モバイル・タブレット）。
+ * - ターゲットサイズ: ボタン 44px 以上、インラインリンク 24px 以上。
+ */
+
+/* ==========================================================================
+   アプリ全体の骨格
+   ========================================================================== */
+
+.app {
+  display: flex;
+  flex-direction: column;
+  min-height: 100vh;
+  background-color: #ffffff;
+}
+
+/* スキップリンク（キーボード利用者が本文へ直行できるようにする） */
+.skip-link {
+  position: absolute;
+  top: -100px;
+  left: 16px;
+  z-index: 100;
+  padding: 12px 24px;
+  color: #000000;
+  font-weight: 700;
+  background-color: var(--dads-focus-outer);
+  border: 2px solid #000000;
+  border-radius: var(--radius-sm);
+}
+
+.skip-link:focus-visible {
+  top: 8px;
+}
+
+.main {
+  flex: 1;
+  width: 100%;
+  max-width: 1024px;
+  margin-inline: auto;
+  padding: var(--space-5) var(--space-4) var(--space-6);
+}
+
+/* 縦積みと横並びの基本レイアウト */
+.stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-4);
+}
+
+.cluster {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+/* 一覧とフォームの主従 2 カラム。768px 未満では 1 カラム（DADS ブレークポイント）。 */
+.split-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.6fr) minmax(0, 1fr);
+  gap: var(--space-4);
+  align-items: start;
+}
+
+.split-grid > * {
+  min-width: 0;
+}
+
+/* ==========================================================================
+   ヘッダー / ナビゲーション（ヘッダーコンテナ + 水平メニュー）
+   ========================================================================== */
+
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+  background-color: #ffffff;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.app-header-inner {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  width: 100%;
+  max-width: 1024px;
+  margin-inline: auto;
+  padding: var(--space-3) var(--space-4);
+}
+
+.app-brand {
+  font-size: 1.125rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+  text-decoration: none;
+  color: #000000;
+}
+
+.app-brand:visited {
+  color: #000000;
+}
+
+.app-brand:hover {
+  color: var(--dads-link);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+/* 水平メニュー: 下線の有無と太さで現在地を示し、色だけに頼らない。 */
+.app-nav {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1);
+  margin-inline-end: auto;
+}
+
+.app-nav a {
+  display: inline-flex;
+  align-items: center;
+  min-height: 44px;
+  padding: 8px 12px;
+  border-bottom: 4px solid transparent;
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 400;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.app-nav a:visited {
+  color: #000000;
+}
+
+.app-nav a:hover {
+  color: var(--dads-link);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+.app-nav a[aria-current="page"] {
+  border-bottom-color: var(--dads-link);
+  color: #000000;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+/* レイアウト内のサブナビ */
+.sub-nav {
+  margin-inline-end: 0;
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: var(--space-1);
+}
+
+.user-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+}
+
+.user-chip form {
+  display: inline-flex;
+  margin: 0;
+}
+
+.user-name {
+  font-size: 1rem;
+  white-space: nowrap;
+}
+
+/* 遷移中の進行表示。色の変化だけでなく文言でも状態を伝える。 */
+.pending-bar {
+  margin: 0;
+  padding: 8px 16px;
+  text-align: center;
+  font-size: 0.875rem;
+  line-height: 1.5;
+  color: #ffffff;
+  background-color: var(--dads-blue-900);
+  border-top: 4px solid var(--dads-blue-900);
+}
+
+/* ==========================================================================
+   フッター
+   ========================================================================== */
+
+.footer {
+  padding: var(--space-5) var(--space-4);
+  border-top: 1px solid var(--color-border);
+  background-color: var(--dads-gray-50);
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+.footer p {
+  margin: var(--space-1) 0;
+}
+
+/* ==========================================================================
+   見出しとカード
+   ========================================================================== */
+
+/* ページ見出し（Std-32B-150 相当）。h1 と組み合わせて使う。 */
+.page-title {
+  margin: 0;
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.01em;
+}
+
+/* ショルダー・サブタイトルに相当する導入文 */
+.page-lead {
+  max-width: 52rem;
+  margin: var(--space-2) 0 0;
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/*
+ * カード: 白背景＋外周ボーダー必須（背景とのコントラスト 3:1 以上）。
+ * 影だけ・薄すぎる境界は不可（カード使い方「外周」節の悪い例）。
+ */
+.card {
+  min-width: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+}
+
+.card-title {
+  margin: 0 0 var(--space-2);
+  font-size: 1.25rem;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+/* リンク付きタイトルには下線を付与する（カード使い方「タイトル」節）。 */
+.card-title a {
+  color: var(--dads-link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.muted {
+  color: var(--dads-gray-700);
+}
+
+/* ==========================================================================
+   ボタン（塗り＝プライマリー / アウトライン＝セカンダリー / テキスト＝ターシャリー）
+   重要度の違いは色だけでなく形状（塗り・枠・下線）で区別する。
+   ========================================================================== */
+
+.button {
+  appearance: none;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-height: 48px;
+  min-width: 44px;
+  padding: 12px 24px;
+  border: 2px solid var(--dads-link);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--dads-link);
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  text-decoration: none;
+  cursor: pointer;
+}
+
+.button:visited {
+  color: var(--dads-link);
+}
+
+.button:hover:not(:disabled) {
+  background-color: var(--dads-blue-50);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.2em;
+}
+
+.button:active:not(:disabled) {
+  background-color: var(--dads-blue-100);
+}
+
+/* プライマリー（塗り）: 画面内で原則 1 つまで */
+.button-primary {
+  border-color: var(--dads-blue-900);
+  background-color: var(--dads-blue-900);
+  color: #ffffff;
+}
+
+.button-primary:visited {
+  color: #ffffff;
+}
+
+.button-primary:hover:not(:disabled) {
+  background-color: var(--dads-blue-1000);
+  border-color: var(--dads-blue-1000);
+  color: #ffffff;
+}
+
+.button-primary:active:not(:disabled) {
+  background-color: var(--dads-blue-1100);
+  border-color: var(--dads-blue-1100);
+}
+
+/* ターシャリー（テキスト）: 中断・取消などの重要度低アクション用 */
+.button-ghost {
+  border-color: transparent;
+  background-color: transparent;
+  color: var(--dads-link);
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.button-ghost:visited {
+  color: var(--dads-link);
+}
+
+.button-ghost:hover:not(:disabled) {
+  border-color: var(--dads-link);
+  background-color: var(--dads-blue-50);
+}
+
+/* 危険アクション: 意味は色相＋文言で伝え、ラベルは白 4.5:1 を確保 */
+.button-danger {
+  border-color: var(--dads-error-border);
+  background-color: var(--dads-error-border);
+  color: #ffffff;
+}
+
+.button-danger:visited {
+  color: #ffffff;
+}
+
+.button-danger:hover:not(:disabled) {
+  background-color: var(--dads-red-1100);
+  border-color: var(--dads-red-1100);
+}
+
+/* 無効化は多用せず、理由の文言を近傍に添えること（ボタン使い方節）。 */
+.button:disabled {
+  border-color: var(--dads-gray-420);
+  background-color: var(--dads-gray-100);
+  color: var(--dads-gray-700);
+  text-decoration: none;
+  cursor: not-allowed;
+}
+
+/* デスクトップは「完了・次へ」を右寄せ、「戻る・取消」を左寄せ（配置の考え方）。 */
+.button-group {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+@media (768px <= width) {
+  .button-group {
+    flex-direction: row-reverse;
+  }
+
+  .button-group .button-tertiary {
+    margin-right: auto;
+  }
+}
+
+/* ==========================================================================
+   バッジ / チップ（14px 未満は使わない。本文・UI は 16px 基準）
+   状態は色＋文言で伝え、テキスト 4.5:1・枠 3:1 を満たす濃さにする。
+   ========================================================================== */
+
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25em;
+  min-height: 24px;
+  padding: 4px 12px;
+  border: 1px solid var(--dads-gray-700);
+  border-radius: var(--radius-full);
+  background-color: var(--dads-gray-50);
+  color: var(--dads-gray-800);
+  font-size: 0.875rem;
+  font-weight: 700;
+  line-height: 1.5;
+  letter-spacing: 0.02em;
+  white-space: nowrap;
+}
+
+.badge-info {
+  border-color: var(--dads-blue-900);
+  background-color: var(--dads-blue-50);
+  color: var(--dads-blue-1100);
+}
+
+.badge-success {
+  border-color: var(--dads-success-border);
+  background-color: var(--dads-success-bg);
+  color: var(--dads-green-1100);
+}
+
+.badge-warning {
+  border-color: var(--dads-warning-border);
+  background-color: var(--dads-warning-bg);
+  color: var(--dads-yellow-1200);
+}
+
+.badge-danger {
+  border-color: var(--dads-error-border);
+  background-color: var(--dads-error-bg);
+  color: var(--dads-red-1100);
+}
+
+.chip {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 2px solid var(--dads-link);
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+  color: var(--dads-link);
+  font-size: 1rem;
+  line-height: 1.5;
+  text-decoration: none;
+}
+
+.chip:visited {
+  color: var(--dads-link);
+}
+
+.chip:hover {
+  background-color: var(--dads-blue-50);
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+}
+
+.chip-active,
+.chip[aria-current="page"] {
+  border-color: var(--dads-blue-900);
+  background-color: var(--dads-blue-900);
+  color: #ffffff;
+  font-weight: 700;
+  text-decoration: none;
+}
+
+.chip-active:visited,
+.chip[aria-current="page"]:visited {
+  color: #ffffff;
+}
+
+/* ==========================================================================
+   フォーム
+   ========================================================================== */
+
+.form-stack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.form-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+}
+
+.field {
+  display: flex;
+  flex: 1 1 12rem;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+  color: #000000;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.field-hint {
+  margin: 0;
+  color: var(--dads-gray-700);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.input,
+.select,
+.textarea {
+  width: 100%;
+  min-height: 48px;
+  padding: 12px 16px;
+  border: 1px solid var(--dads-gray-700);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: #000000;
+  font-family: var(--font-sans);
+  font-size: 1rem;
+  line-height: 1.5;
+}
+
+.textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+/* フォーカスは DADS の二重リング（base.css の :focus-visible に準拠）。入力欄の
+   既定アウトラインを消す場合は必ず代替の可視フォーカスを残す。 */
+.input:focus-visible,
+.select:focus-visible,
+.textarea:focus-visible {
+  outline: 2px solid #000000;
+  outline-offset: 2px;
+  box-shadow: 0 0 0 4px var(--dads-focus-outer);
+}
+
+.field input[type="file"] {
+  padding: 12px;
+}
+
+.error-text {
+  margin: 0;
+  color: var(--dads-error-text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.success-text {
+  margin: 0;
+  color: var(--dads-success-text);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+/* ==========================================================================
+   一覧 / テーブル / パンくず（テーブルは黒い境界＋太字ヘッダーで判別）
+   ========================================================================== */
+
+/* パンくず: ヘッダーと見出しの間に配置し、改行できる仕様にする。 */
+.breadcrumb {
+  margin: 0;
+  padding: 0;
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.breadcrumb ol {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.breadcrumb li {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 24px;
+}
+
+.breadcrumb [aria-current="page"] {
+  color: #000000;
+  text-decoration: none;
+  font-weight: 700;
+}
+
+.list {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list-item {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 44px;
+  padding: var(--space-2) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.list-item:last-child {
+  border-bottom: none;
+}
+
+/* 横長の表はラッパー自身にスクロールさせ、ページ全体の横溢れを防ぐ。
+   影（スクロールシャドー）で「横に動かせる」ことを示す（DADS テーブル節）。
+   ラッパーは div[tabindex=0][role=region] としてキーボード操作可能にする。 */
+.table-wrap {
+  max-width: 100%;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  background:
+    linear-gradient(to right, #ffffff 30%, rgb(255 255 255 / 0)),
+    linear-gradient(to left, #ffffff 30%, rgb(255 255 255 / 0)) 100% 0,
+    radial-gradient(farthest-side at 0 50%, rgb(0 0 0 / 0.25), transparent),
+    radial-gradient(farthest-side at 100% 50%, rgb(0 0 0 / 0.25), transparent)
+      100% 0;
+  background-repeat: no-repeat;
+  background-size:
+    40px 100%,
+    40px 100%,
+    14px 100%,
+    14px 100%;
+  background-attachment: local, local, scroll, scroll;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 1rem;
+  line-height: 1.5;
+  /* ラッパーのスクロールシャドーが透けるよう、表自体の地色は付けない。 */
+  background-color: transparent;
+}
+
+.table caption {
+  padding: 0 0 var(--space-2);
+  color: var(--dads-gray-800);
+  text-align: left;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.table th {
+  padding: 12px;
+  border-bottom: 2px solid #000000;
+  background-color: var(--dads-gray-50);
+  color: #000000;
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.5;
+  text-align: left;
+  vertical-align: top;
+}
+
+.table td {
+  padding: 12px;
+  border-bottom: 1px solid var(--color-border);
+  vertical-align: top;
+}
+
+.table tbody tr:hover {
+  background-color: var(--dads-blue-50);
+}
+
+.empty-state {
+  padding: var(--space-5);
+  border: 1px dashed var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  line-height: 1.7;
+  text-align: center;
+}
+
+/* ==========================================================================
+   統計カード / ツールバー
+   ========================================================================== */
+
+.stat-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(10rem, 1fr));
+  gap: var(--space-3);
+}
+
+.stat-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+}
+
+.stat-value {
+  font-size: 2rem;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #000000;
+}
+
+.stat-label {
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+.toolbar {
+  display: flex;
+  position: relative;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: #ffffff;
+}
+
+/* ツールバー内の進行表示はフロー外オーバーレイにし、高さ変動させない。 */
+.toolbar-progress {
+  position: absolute;
+  left: var(--space-3);
+  right: var(--space-3);
+  bottom: 6px;
+  pointer-events: none;
+}
+
+/* ==========================================================================
+   プロジェクト / タスク
+   ========================================================================== */
+
+.color-dot {
+  flex: none;
+  width: 1rem;
+  height: 1rem;
+  border: 1px solid var(--dads-gray-700);
+  border-radius: 50%;
+}
+
+.project-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.project-header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+/* 進捗は色＋数値文言で伝える（色だけに頼らない）。 */
+.progress {
+  height: 0.75rem;
+  overflow: hidden;
+  border: 1px solid var(--dads-gray-700);
+  border-radius: var(--radius-full);
+  background-color: #ffffff;
+}
+
+.progress > span {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  background-color: var(--dads-blue-900);
+}
+
+.task-list {
+  display: flex;
+  flex-direction: column;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.task-row {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-3) 0;
+  border-bottom: 1px solid var(--color-border);
+}
+
+.task-row:last-child {
+  border-bottom: none;
+}
+
+.task-main {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 0;
+}
+
+.task-title {
+  color: var(--dads-link);
+  font-weight: 700;
+  text-decoration: underline;
+  text-underline-offset: 0.2em;
+}
+
+.task-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.task-actions form {
+  margin: 0;
+}
+
+/* 単なる名前–値の組はテーブルではなく説明リストで表す。 */
+.detail-list {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  gap: var(--space-2) var(--space-4);
+  margin: 0;
+}
+
+.detail-list dt {
+  color: var(--dads-gray-800);
+  font-size: 1rem;
+  font-weight: 700;
+  line-height: 1.7;
+}
+
+.detail-list dd {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.7;
+}
+
+/* ==========================================================================
+   エラー表示 / 読み込み表示（重要度は枠＋見出し＋文言で伝える）
+   ========================================================================== */
+
+.error-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  border: 2px solid var(--dads-error-border);
+  border-radius: var(--radius-md);
+  background-color: var(--dads-error-bg);
+}
+
+.error-panel h1,
+.error-panel h2 {
+  margin: 0;
+  color: var(--dads-error-text);
+}
+
+.error-detail {
+  margin: 0;
+  padding: var(--space-3);
+  overflow-wrap: anywhere;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background-color: #ffffff;
+  color: #000000;
+  font-family: var(--font-mono);
+  font-size: 0.875rem;
+  line-height: 1.5;
+  white-space: pre-wrap;
+}
+
+.page-loading {
+  margin: 0;
+  padding: var(--space-6) var(--space-4);
+  color: var(--dads-gray-800);
+  text-align: center;
+}
+
+/* ==========================================================================
+   レスポンシブ（768px 未満は 1 カラム・縦積み）
+   スマホでは「押せる・読める・迷わない」を優先し、以下を切り替える。
+   - 見出しと余白を一段 compact にする（狭い画面での可読性確保）
+   - ヘッダーのナビは折り返さず横スクロール 1 行にする
+     （sticky ヘッダーを薄く保ち、本文領域を確保する）
+   - フォームの主ボタンとツールバーの実行ボタンは全幅にする
+     （DADS ボタン配置のモバイル向け縦積み。親指で狙いやすくする）
+   - 統計カードは 2 列を維持し、情報の見比べやすさを保つ
+   * ========================================================================== */
+
+@media (max-width: 767px) {
+  .main {
+    padding: var(--space-4) var(--space-3) var(--space-5);
+  }
+
+  .page-title {
+    font-size: 1.5rem;
+  }
+
+  .card {
+    padding: var(--space-3);
+  }
+
+  .app-header-inner {
+    gap: var(--space-2);
+    padding: var(--space-2) var(--space-3);
+  }
+
+  .app-nav {
+    order: 3;
+    width: 100%;
+    margin-inline-end: 0;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  /* 項目を縮ませず、はみ出す分は横スクロールで辿れるようにする。 */
+  .app-nav a {
+    flex: none;
+  }
+
+  /* 開発者向けnavは単独行で縦占有させず、2列目の右側に収める。 */
+  .app-nav[aria-label="開発者向け"] {
+    width: auto;
+    order: 2;
+  }
+
+  .user-chip {
+    max-width: 100%;
+    flex-wrap: wrap;
+    margin-inline-start: auto;
+  }
+
+  .split-grid {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .stat-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .toolbar > .button,
+  .form-stack > .button {
+    width: 100%;
+  }
+
+  .form-row {
+    flex-direction: column;
+    align-items: stretch;
+  }
+
+  /* 狭幅ではセル内余白を詰め、スクロール量を減らす（DADS Dense の考え方）。 */
+  .table th,
+  .table td {
+    padding: 8px;
+  }
+
+  .detail-list {
+    grid-template-columns: minmax(0, 1fr);
+    gap: 0;
+  }
+
+  .detail-list dd {
+    margin-bottom: var(--space-2);
+  }
+
+  .error-panel {
+    padding: var(--space-4) var(--space-3);
+  }
+}
+
+/* ==========================================================================
+   読み込み中の骨格表示（スケルトン）と進行状態の細いバー
+   （ポップコーン UI: 必要な領域だけを骨格で保ち、全体置き換えを避ける）
+   ========================================================================== */
+
+/* 支援技術だけに伝えるテキスト（定番の clip 手法）。 */
+.visually-hidden {
+  position: absolute !important;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+/* 骨格の灰色の塊。DADS gray-100/200 のシマーで「読み込み中」を示す。 */
+.skeleton {
+  display: block;
+  min-height: 1em;
+  border-radius: 4px;
+  background-color: var(--dads-gray-100);
+  background-image: linear-gradient(
+    100deg,
+    var(--dads-gray-100) 40%,
+    var(--dads-gray-200) 50%,
+    var(--dads-gray-100) 60%
+  );
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.2s ease-in-out infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% {
+    background-position: 200% 0;
+  }
+
+  100% {
+    background-position: -200% 0;
+  }
+}
+
+/* 進行状態の細いバー（ヘッダー下に静置し、押し下げを最小化する）。 */
+.pending-bar {
+  display: block;
+  height: 4px;
+  margin: 0;
+  padding: 0;
+  overflow: hidden;
+  background-color: var(--dads-gray-100);
+  background-image: none;
+  border: none;
+  border-top: none;
+  color: inherit;
+  text-align: left;
+  font-size: 0;
+  line-height: 0;
+}
+
+.pending-bar-fill {
+  display: block;
+  height: 100%;
+  width: 30%;
+  background-color: var(--dads-blue-900);
+  border-radius: inherit;
+  animation: pending-bar-slide 1s ease-in-out infinite;
+}
+
+/* idle 時も高さは同じまま確保し、背景だけ透明にしてガタつきを防ぐ。 */
+.pending-bar[data-state="idle"] {
+  background-color: transparent;
+}
+
+.pending-bar-fill[hidden] {
+  visibility: hidden;
+}
+
+@keyframes pending-bar-slide {
+  0% {
+    transform: translateX(-100%);
+  }
+
+  100% {
+    transform: translateX(350%);
+  }
+}
+
+/* タスク一覧カード上の薄い進行表示（領域限定のプログレス）。 */
+.pending-bar-inline {
+  display: block;
+  height: 4px;
+  margin: var(--space-2) 0 0;
+  padding: 0;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background-color: var(--dads-gray-100);
+}
+
+.pending-bar-inline > .pending-bar-fill {
+  width: 30%;
+}
+
+.toolbar-progress .pending-bar-inline {
+  margin: 0;
+}
+
+/* モーション配慮: base.css の全体停止に加え、明示的に静止色にする。 */
+@media (prefers-reduced-motion: reduce) {
+  .skeleton {
+    animation: none;
+    background-image: none;
+    background-color: var(--dads-gray-100);
+  }
+
+  .pending-bar-fill {
+    animation: none;
+    width: 100%;
+    transform: none;
+  }
+}
+
+/* 強制カラーモードでは境界が消えないよう輪郭を残す。 */
+@media (forced-colors: active) {
+  .skeleton {
+    background: none;
+    background-color: Canvas;
+    background-image: none;
+    border: 1px solid ButtonText;
+    forced-color-adjust: none;
+  }
+
+  .pending-bar,
+  .pending-bar-inline {
+    border: 1px solid ButtonText;
+  }
+
+  .pending-bar-fill {
+    background-color: Highlight;
+    forced-color-adjust: none;
+  }
+}
