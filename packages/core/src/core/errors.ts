@@ -160,7 +160,7 @@ export class UnreachableError extends ErrorBase<UnreachableErrorMeta> {
   }
 }
 
-/*#__PURE__*/ setErrorMessage(
+setErrorMessage(
   UnreachableError,
   (meta) =>
     "value" in meta
@@ -222,7 +222,7 @@ export class NavigationApiNotSupportedError extends ErrorBase<undefined> {
   }
 }
 
-/*#__PURE__*/ setErrorMessage(
+setErrorMessage(
   NavigationApiNotSupportedError,
   "現在の環境では Navigation API がサポートされていません",
   "ja",
@@ -255,7 +255,7 @@ export class LoaderConditionError extends ErrorBase<LoaderConditionErrorMeta> {
   }
 }
 
-/*#__PURE__*/ setErrorMessage(
+setErrorMessage(
   LoaderConditionError,
   ({ returnValue }) =>
     isThenable(returnValue)
@@ -283,7 +283,7 @@ export class RouterContextMissingError extends ErrorBase<undefined> {
   }
 }
 
-/*#__PURE__*/ setErrorMessage(
+setErrorMessage(
   RouterContextMissingError,
   "RouterContext が見つかりません。アプリを <Router /> で囲むのを忘れていませんか？",
   "ja",
@@ -308,7 +308,7 @@ export class RouteContextMissingError extends ErrorBase<undefined> {
   }
 }
 
-/*#__PURE__*/ setErrorMessage(
+setErrorMessage(
   RouteContextMissingError,
   "RouteContext が見つかりません。アプリを <Router /> で囲むのを忘れていませんか？",
   "ja",
@@ -341,7 +341,7 @@ export class LoaderDataNotFoundError extends ErrorBase<LoaderDataNotFoundErrorMe
   }
 }
 
-/*#__PURE__*/ setErrorMessage(
+setErrorMessage(
   LoaderDataNotFoundError,
   ({ loader }) =>
     loader
@@ -375,7 +375,7 @@ export class RoutePatternMismatchError extends ErrorBase<RoutePatternMismatchErr
   }
 }
 
-/*#__PURE__*/ setErrorMessage(
+setErrorMessage(
   RoutePatternMismatchError,
   ({ route, target }) => `対象パス "${target}" がパターン "${route}" と一致しません`,
   "ja",

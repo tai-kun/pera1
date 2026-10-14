@@ -106,6 +106,50 @@ function areParamsEqual(a: RouteParams, b: RouteParams): boolean {
 }
 
 /**
+ * 拒否されたキャッシュが中断 (abort) に起因するかどうかを判定します。
+ *
+ * `fetch` の中断は `AbortError` という名前の例外で拒否されるため、名前で識別します。
+ * クロスレルムの `DOMException` でも判定できるよう、`instanceof` ではなく形状で見ます。
+ *
+ * @param data 判定対象のローダーキャッシュです。
+ * @returns 中断による拒否のときに `true` を返します。
+ */
+function isAbortRejection(data: NinjaPromise<unknown>): boolean {
+  if (data.status !== "rejected") {
+    return false;
+  }
+
+  const reason: unknown = data.reason;
+
+  return (
+    typeof reason === "object" &&
+    reason !== null &&
+    "name" in reason &&
+    (reason as { readonly name?: unknown }).name === "AbortError"
+  );
+}
+
+/**
+ * キャッシュとして再利用できる候補だけを返します。
+ *
+ * 中断で拒否されたキャッシュは再利用せず、ローダーを再実行して画面を回復させます。
+ * 中断以外の失敗は「失敗はデータとして扱う」方針どおり、エラーバウンダリーへの通知に
+ * 使うためキャッシュを再利用します。
+ *
+ * @param data 再利用候補のローダーキャッシュです。
+ * @returns 再利用できるキャッシュ、または再利用できない場合は `undefined` です。
+ */
+function toReusableCache(
+  data: NinjaPromise<unknown> | undefined,
+): NinjaPromise<unknown> | undefined {
+  if (data === undefined || isAbortRejection(data)) {
+    return undefined;
+  }
+
+  return data;
+}
+
+/**
  * 画面遷移やデータ更新の発生に伴い、現在マッチしているルートのローダー関数群を精査する関数です。
  *
  * キャッシュの再利用または読み込みを動的に判定し、実行します。
@@ -153,6 +197,11 @@ export default function startLoaders(
   // 遷移前の履歴 ID に紐づくローダーデータのキャッシュマップをストアから取得します。
   const prevLoaderDataMap: ReadonlyMap<LoaderFunction, NinjaPromise<unknown>> | undefined =
     loaderDataStore.get(prevEntry.id);
+  // 履歴の戻る・進むでは、移動先のエントリー自身が以前の表示で保持していたキャッシュも
+  // 再利用の候補にします。移動前のルート鎖に含まれないローダー (子ルート固有のもの) は
+  // ここでしかヒットせず、毎回の再実行を防ぎます。
+  const currentEntryCache: ReadonlyMap<LoaderFunction, NinjaPromise<unknown>> | undefined =
+    loaderDataStore.get(currentEntry.id);
   const currentLoaderDataMap = new Map<LoaderFunction, NinjaPromise<unknown>>();
   const rawPromises: NinjaPromise<unknown>[] = [];
   const request = RouteRequest.new("GET", currentEntry.url, signal);
@@ -169,8 +218,12 @@ export default function startLoaders(
     }
 
     // 過去に同じローダー関数が実行され、かつそのキャッシュデータが存在するかをチェックします。
-    const prevLoaderData = prevLoaderDataMap?.get(currentLoader);
-    if (!prevLoaderData) {
+    // 移動前のキャッシュを優先し、なければ移動先エントリー自身のキャッシュへフォールバックします。
+    // 中断 (abort) で拒否されたキャッシュは再利用せず、失敗が固定化しないよう再実行して回復させます。
+    const cachedLoaderData =
+      toReusableCache(prevLoaderDataMap?.get(currentLoader)) ??
+      toReusableCache(currentEntryCache?.get(currentLoader));
+    if (!cachedLoaderData) {
       log.debug("ローダーを新規起動します（path: {path}）", { path: currentRoute.path });
       const raw = NinjaPromise.try(function executeLoader() {
         return currentLoader({
@@ -262,7 +315,7 @@ export default function startLoaders(
             log.debug("ローダーのキャッシュを再利用します（path: {path}）", {
               path: currentRoute.path,
             });
-            data = prevLoaderData;
+            data = cachedLoaderData;
             break;
           }
           default: {

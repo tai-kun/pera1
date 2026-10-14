@@ -158,12 +158,24 @@ function fileToSegment(basename: string): string {
  * ディレクトリー名を URL のパスセグメントへ変換します。
  *
  * `_` で始まるディレクトリーは、URL に現れないパスレスディレクトリーとして空文字を返します。
+ * それ以外の `$` で始まるディレクトリーは、ファイルと同じく名前付きパラメーター
+ * (`$id` -> `:id`) またはワイルドカード (`$` -> `*`) になります。
  *
  * @param name ディレクトリー名です。
  * @returns URL のパスセグメントです。
  */
 function directoryToSegment(name: string): string {
-  return name.startsWith("_") ? "" : unescapeName(name);
+  if (name.startsWith("_")) {
+    return "";
+  }
+
+  if (!name.startsWith(DYNAMIC_PREFIX)) {
+    return unescapeName(name);
+  }
+
+  const inner = unescapeName(name.slice(DYNAMIC_PREFIX.length));
+
+  return inner === "" ? WILDCARD_SEGMENT : `:${inner}`;
 }
 
 /**
@@ -418,6 +430,7 @@ function convertDirectory(
  * - `_layout.tsx` は、そのディレクトリーのレイアウトルートになり、同じ階層のルートを子に持ちます。
  * - `$id.tsx` は、名前付きパラメーターの `:id` になります。
  * - `$.tsx` は、ワイルドカードの `*` になります。
+ * - `$id/` ディレクトリーは、名前付きパラメーターの `:id` を持つ中間パスになります。
  * - その他のファイル名とディレクトリー名は、そのままパスセグメントになります。
  * - `_` で始まるディレクトリーは、URL に現れないパスレスディレクトリーになります（`_layout` は置けません）。
  *

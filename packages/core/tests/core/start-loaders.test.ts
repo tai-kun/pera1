@@ -751,6 +751,242 @@ describe("境界値およびエッジケースの振る舞い", () => {
   });
 });
 
+describe("移動先エントリー自身のキャッシュのフォールバック", () => {
+  test("prevEntry にキャッシュがなくても currentEntry の fulfilled キャッシュを再利用する", ({
+    expect,
+    signal,
+  }) => {
+    // 準備
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("new-data"));
+    const cachedPromise = NinjaPromise.resolve("cached-data");
+
+    const currentDataMap = new Map();
+    currentDataMap.set(mockLoader, cachedPromise);
+
+    const dataStore = new Map();
+    dataStore.set("entry-2", currentDataMap); // 移動先エントリー自身にだけキャッシュがある。
+
+    const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(false);
+    const route = {
+      path: "/destination-cache",
+      loader: mockLoader,
+      shouldReload: mockShouldReload,
+    };
+    const args: any = {
+      prevRoutes: [route],
+      currentRoutes: [route],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証: shouldReload の結果が false なら再実行せず、移動先エントリーのキャッシュを引き継ぐ。
+    expect(mockShouldReload).toHaveBeenCalledOnce();
+    expect(mockLoader).not.toHaveBeenCalled();
+
+    const storedPromise = dataStore.get("entry-2")?.get(mockLoader);
+    expect(storedPromise).toBe(cachedPromise);
+  });
+
+  test("currentEntry 側の中断で拒否されたキャッシュは再利用せず再実行する", async ({
+    expect,
+    signal,
+  }) => {
+    // 準備
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("recovered-data"));
+    // fetch の中断は AbortError として拒否されます。
+    const rejectedPromise = NinjaPromise.reject(
+      new DOMException("The operation was aborted.", "AbortError"),
+    );
+
+    const currentDataMap = new Map();
+    currentDataMap.set(mockLoader, rejectedPromise);
+
+    const dataStore = new Map();
+    dataStore.set("entry-2", currentDataMap);
+
+    const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(false);
+    const route = {
+      path: "/destination-rejected",
+      loader: mockLoader,
+      shouldReload: mockShouldReload,
+    };
+    const args: any = {
+      prevRoutes: [route],
+      currentRoutes: [route],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証: 中断による拒否キャッシュは再利用せず、shouldReload を挟まずにローダーを再実行する。
+    expect(mockLoader).toHaveBeenCalledOnce();
+    expect(mockShouldReload).not.toHaveBeenCalled();
+
+    const storedPromise = dataStore.get("entry-2")?.get(mockLoader);
+    expect(storedPromise).not.toBe(rejectedPromise);
+    await expect(storedPromise).resolves.toBe("recovered-data");
+  });
+
+  test("currentEntry 側の中断以外の拒否キャッシュは失敗データとして再利用する", ({
+    expect,
+    signal,
+  }) => {
+    // 準備: 通信障害など中断以外の失敗は「失敗はデータとして扱う」方針でキャッシュします。
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("new-data"));
+    const rejectedPromise = NinjaPromise.reject(new Error("サーバーエラー"));
+
+    const currentDataMap = new Map();
+    currentDataMap.set(mockLoader, rejectedPromise);
+
+    const dataStore = new Map();
+    dataStore.set("entry-2", currentDataMap);
+
+    const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(false);
+    const route = {
+      path: "/destination-failure",
+      loader: mockLoader,
+      shouldReload: mockShouldReload,
+    };
+    const args: any = {
+      prevRoutes: [route],
+      currentRoutes: [route],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証: 再利用されるためローダーは再実行されない。
+    expect(mockShouldReload).toHaveBeenCalledOnce();
+    expect(mockLoader).not.toHaveBeenCalled();
+
+    const storedPromise = dataStore.get("entry-2")?.get(mockLoader);
+    expect(storedPromise).toBe(rejectedPromise);
+  });
+
+  test("prevEntry 側の中断で拒否されたキャッシュも再利用せず再実行する", async ({
+    expect,
+    signal,
+  }) => {
+    // 準備: 遷移前のエントリーにだけ中断されたキャッシュが残っているケースです。
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("recovered-data"));
+    const rejectedPromise = NinjaPromise.reject(
+      new DOMException("The operation was aborted.", "AbortError"),
+    );
+
+    const prevDataMap = new Map();
+    prevDataMap.set(mockLoader, rejectedPromise);
+
+    const dataStore = new Map();
+    dataStore.set("entry-1", prevDataMap);
+
+    const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(false);
+    const route = {
+      path: "/prev-aborted",
+      loader: mockLoader,
+      shouldReload: mockShouldReload,
+    };
+    const args: any = {
+      prevRoutes: [route],
+      currentRoutes: [route],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証: 中断のキャッシュは引き継がず再実行する。
+    expect(mockLoader).toHaveBeenCalledOnce();
+    expect(mockShouldReload).not.toHaveBeenCalled();
+
+    const storedPromise = dataStore.get("entry-2")?.get(mockLoader);
+    expect(storedPromise).not.toBe(rejectedPromise);
+    await expect(storedPromise).resolves.toBe("recovered-data");
+  });
+
+  test("currentEntry 側の pending キャッシュは再利用する", ({ expect, signal }) => {
+    // 準備
+    const mockLoader = vi.fn<LoaderFunction>().mockReturnValue(Promise.resolve("new-data"));
+    const { promise: pendingPromise } = NinjaPromise.withResolvers<string>();
+
+    const currentDataMap = new Map();
+    currentDataMap.set(mockLoader, pendingPromise);
+
+    const dataStore = new Map();
+    dataStore.set("entry-2", currentDataMap);
+
+    const mockShouldReload = vi.fn<ShouldReloadFunction>().mockReturnValue(false);
+    const route = {
+      path: "/destination-pending",
+      loader: mockLoader,
+      shouldReload: mockShouldReload,
+    };
+    const args: any = {
+      prevRoutes: [route],
+      currentRoutes: [route],
+      prevEntry: {
+        id: "entry-1",
+        url: { search: "" },
+      },
+      currentEntry: {
+        id: "entry-2",
+        url: { search: "" },
+      },
+      loaderDataStore: dataStore,
+      signal,
+    };
+
+    // 実行
+    startLoaders(args);
+
+    // 検証: 進行中のキャッシュも再利用の対象になる。
+    expect(mockShouldReload).toHaveBeenCalledOnce();
+    expect(mockLoader).not.toHaveBeenCalled();
+
+    const storedPromise = dataStore.get("entry-2")?.get(mockLoader);
+    expect(storedPromise).toBe(pendingPromise);
+  });
+});
+
 describe("startLoaders の POST 時の currentUrl", () => {
   test("currentUrl が currentEntry.url になる", ({ expect, signal }) => {
     // 準備

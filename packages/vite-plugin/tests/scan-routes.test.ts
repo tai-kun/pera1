@@ -282,3 +282,45 @@ test("拡張子がないファイルもルートに含められる", ({ expect }
   // 検証
   expect(result.map((node) => node.path)).toStrictEqual(["/LICENSE"]);
 });
+
+test("$ で始まるディレクトリーはパラメーターとしてネストできる", ({ expect }) => {
+  // 準備
+  const root = createPages({
+    "projects/_layout.tsx": "export default 1;",
+    "projects/_index.tsx": "export default 1;",
+    "projects/$projectId/_layout.tsx": "export default 1;",
+    "projects/$projectId/_index.tsx": "export default 1;",
+    "projects/$projectId/tasks/$taskId.tsx": "export default 1;",
+  });
+
+  // 実行
+  const result = scanRoutes({
+    root,
+    dir: "pages",
+    include: DEFAULT_INCLUDE,
+    exclude: DEFAULT_EXCLUDE,
+  });
+
+  // 検証
+  function flatten(
+    nodes: readonly RouteNode[],
+  ): readonly { path: string; index: boolean; children: number }[] {
+    return nodes.map((node) => ({
+      path: node.path,
+      index: node.index,
+      children: node.children.length,
+    }));
+  }
+
+  expect(flatten(result)).toStrictEqual([{ path: "/projects", index: false, children: 2 }]);
+  const projects = result[0]!;
+  expect(flatten(projects.children)).toStrictEqual([
+    { path: "/projects", index: true, children: 0 },
+    { path: "/projects/:projectId", index: false, children: 2 },
+  ]);
+  const projectId = projects.children[1]!;
+  expect(flatten(projectId.children)).toStrictEqual([
+    { path: "/projects/:projectId", index: true, children: 0 },
+    { path: "/projects/:projectId/tasks/:taskId", index: false, children: 0 },
+  ]);
+});
