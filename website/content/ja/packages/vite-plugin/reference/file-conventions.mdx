@@ -18,12 +18,18 @@ src/pages/
 │   ├── _index.tsx         -> /blog (index)
 │   ├── $postId.tsx        -> /blog/:postId
 │   └── $.tsx              -> /blog/*
+├── projects/
+│   └── $projectId/        -> /projects/:projectId
+│       ├── _layout.tsx    -> /projects/:projectId
+│       ├── _index.tsx     -> /projects/:projectId (index)
+│       └── tasks/
+│           └── $taskId.tsx -> /projects/:projectId/tasks/:taskId
 └── _auth/                 -> URL には現れない
     ├── login.tsx          -> /login
     └── signup.tsx         -> /signup
 ```
 
-ルート名はファイル名から最後の拡張子を取り除いたものです。`about.tsx` は `/about`、`$postId.tsx` は `:postId` になります。
+ルート名はファイル名から最後の拡張子を取り除いたものです。`about.tsx` は `/about`、`$postId.tsx` は `:postId` になります。`$projectId` のようなディレクトリーも同じく `:projectId` になり、配下にレイアウトや子ルートをネストできます。
 
 ## 特別なファイル名 [#special-files]
 
@@ -34,6 +40,15 @@ src/pages/
 | `$name.<拡張子>`   | `:name`           | 名前付きパラメーターです。                                           |
 | `$.<拡張子>`       | `*`               | ワイルドカードです。404 画面などに使います。                         |
 | その他の名前       | 名前そのまま      | 通常のルートです。                                                   |
+
+## 動的ディレクトリー [#dynamic-directories]
+
+`$` で始まるディレクトリーは、ファイルと同じく名前付きパラメーター (`$id` -> `:id`) またはワイルドカード (`$` -> `*`) になります。パラメーター配下にレイアウトや子ルートをネストするときに使います。
+
+```text
+src/pages/projects/$projectId/_layout.tsx   -> /projects/:projectId
+src/pages/projects/$projectId/_index.tsx    -> /projects/:projectId (index)
+```
 
 `_layout` は同じ階層のルートをまとめるレイアウトになり、`Outlet` で子を表示します。ルート直下の `_layout.tsx` は `/` のレイアウトになります。
 

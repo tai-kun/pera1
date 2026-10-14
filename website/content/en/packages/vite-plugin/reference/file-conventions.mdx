@@ -18,12 +18,18 @@ src/pages/
 │   ├── _index.tsx         -> /blog (index)
 │   ├── $postId.tsx        -> /blog/:postId
 │   └── $.tsx              -> /blog/*
+├── projects/
+│   └── $projectId/        -> /projects/:projectId
+│       ├── _layout.tsx    -> /projects/:projectId
+│       ├── _index.tsx     -> /projects/:projectId (index)
+│       └── tasks/
+│           └── $taskId.tsx -> /projects/:projectId/tasks/:taskId
 └── _auth/                 -> not present in the URL
     ├── login.tsx          -> /login
     └── signup.tsx         -> /signup
 ```
 
-A route name is the filename minus its last extension. `about.tsx` becomes `/about` and `$postId.tsx` becomes `:postId`.
+A route name is the filename minus its last extension. `about.tsx` becomes `/about` and `$postId.tsx` becomes `:postId`. A directory like `$projectId` becomes `:projectId` as well, so you can nest layouts and child routes under a parameter.
 
 ## Special filenames [#special-files]
 
@@ -34,6 +40,15 @@ A route name is the filename minus its last extension. `about.tsx` becomes `/abo
 | `$name.<ext>`      | `:name`           | Named parameter.                                                   |
 | `$.<ext>`          | `*`               | Wildcard. Used for 404 pages and similar.                          |
 | Other names        | Name as-is        | Regular route.                                                     |
+
+## Dynamic directories [#dynamic-directories]
+
+Directories starting with `$` become named parameters (`$id` -> `:id`) or wildcards (`$` -> `*`), just like files. Use them to nest layouts and child routes under a parameter.
+
+```text
+src/pages/projects/$projectId/_layout.tsx   -> /projects/:projectId
+src/pages/projects/$projectId/_index.tsx    -> /projects/:projectId (index)
+```
 
 `_layout` becomes a layout that groups sibling routes, displaying children with `Outlet`. A top-level `_layout.tsx` is the `/` layout.
 

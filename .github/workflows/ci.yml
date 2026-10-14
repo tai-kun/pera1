@@ -107,6 +107,7 @@ jobs:
           - "examples/contacts"
           - "examples/e-commerce"
           - "examples/saas-project"
+          - "examples/showcase"
           - "examples/sns-community"
           - "examples/travel-booking"
     timeout-minutes: 30

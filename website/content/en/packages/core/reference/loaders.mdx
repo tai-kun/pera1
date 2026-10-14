@@ -69,6 +69,10 @@ Loaders that are not functions are skipped. When no previous cache is found, a n
 
 The cache is looked up from the `Map` keyed by `prevEntry.id`, using the loader function itself as the key. Returning to the same history entry reuses the cache through this path.
 
+On back/forward navigations, when nothing is found under `prevEntry.id`, the `Map` for `currentEntry.id` (the destination entry itself) is also a reuse candidate. A child-route loader absent from the previous route hierarchy can reuse the result from the last time that entry was displayed.
+
+A cache rejected by an abort is never reused, whether it lives under `prevEntry.id` or `currentEntry.id`. Carrying an `AbortError` rejection over as a cache would make the failure stick, so the loader runs again and recovers. Rejections other than aborts are cached as described in "failures are treated as data" and drive error boundaries.
+
 Omitting `shouldReload` uses the default decision.
 
 | Trigger | Default decision |
