@@ -58,6 +58,8 @@ pera1 は Navigation API を直接利用します。執筆時点では Chromium 
 
 pera1 はブラウザー専用です。サーバーサイドレンダリング (SSR) には対応していません。
 
+ファイル構成からルートを生成する [@pera1/vite-plugin](/packages/vite-plugin) を使う場合は、Node.js 22.17 以上が必要です。ルート型の生成先に合わせた `tsconfig` の設定は[ルート型](/packages/vite-plugin/reference/typegen#tsconfig)を参照してください。
+
 ## TypeScript の設定例 [#typescript]
 
 最小限の設定例です。DOM の型と ESNext のライブラリーが必要です。

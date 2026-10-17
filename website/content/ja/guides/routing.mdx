@@ -204,18 +204,29 @@ for (const route of matched ?? []) {
 
 ## マッチしなかったときの画面を用意する [#not-found]
 
-`Router` はマッチするルートが 1 つもない場合、何も描画しません。404 画面を表示したい場合は、詳細度が最も低いワイルドカードルートを定義します。
+どのルートにもマッチしない場合に表示する 404 ページは、`Router` / `BrowserRouter` の `notFoundComponent` に渡します。これが一次 API です。
+
+```tsx
+<BrowserRouter routes={routes} notFoundComponent={NotFoundPage} />
+```
+
+`notFoundComponent` が描画されるのは真の未マッチ (どのルート定義にも一致しない URL) のときだけです。`notFoundComponent` を渡さず、ワイルドカードも定義していない状態で未マッチになると、`Router` は `null` を描画し、開発モードでは警告を出します。詳しくは[エラー処理](/guides/error-handling#not-found)を参照してください。
+
+### ワイルドカード (`/*`) はレガシー手段 [#not-found-wildcard]
+
+以前は 404 専用の API がなかったため、もっとも詳細度の低いワイルドカードルートをフォールバックとして定義する回避策を案内していました。
 
 ```tsx
 const routes = [
   { path: "/", index: true, component: HomePage },
   { path: "/", component: RootLayout },
-  { path: "/contacts/:id", component: ContactPage },
+  // レガシー: 明示的な `/*` 定義です。
+  // 新規コードでは `notFoundComponent` を使ってください。
   { path: "/*", component: NotFoundPage },
 ];
 ```
 
-`/*` はどんな URL にもマッチし、他のルートがすべて優先されるため、フォールバックとして機能します。
+`/*` はどんな URL にもマッチし、他のルートがすべて優先されるため、フォールバックとして機能します。明示的な `/*` 定義と `notFoundComponent` の併存も可能で、その場合は `/*` の通常マッチが優先され、`notFoundComponent` は使われません。新規コードでは `notFoundComponent` を推奨します。
 
 ## パラメーターをコンポーネントで受け取る [#use-params]
 

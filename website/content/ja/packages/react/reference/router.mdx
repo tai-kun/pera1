@@ -61,7 +61,9 @@ const routes = [{ path: "/contacts/:id", ...contactRoute }];
 
 現在マッチしているルートは `useSyncExternalStore` で購読します。マッチ結果は詳細度の高い「子から親」の順で届くため、`Router` は反転して「親から子」の順に組み立てます。各ルートは固有の `RouteContext` で包まれ、`component` があればそれを、なければ子の `outlet` をそのまま描画します。
 
-マッチするルートが 1 つもないとき、`Router` は `null` を描画します。404 画面を出したい場合は、ワイルドカードルートを定義してください。詳細は[ルーティング](/guides/routing#not-found)を参照してください。
+マッチするルートが 1 つもないとき、`notFoundComponent` が渡されていればそれを描画します。明示的な `path: "/*"` 定義がある場合は通常のマッチとしてそちらが優先され、`notFoundComponent` は使われません (後方互換のレガシー手段として併存可能です)。どちらもない場合は `null` を描画し、開発モードでは警告を出します。404 の作り方は[エラー処理](/guides/error-handling#not-found)を参照してください。
+
+`scrollRestoration` を付けると遷移後に先頭へスクロールします。ハッシュ付き遷移と初回表示はブラウザーに任せます。内部では `RouterContext` 配下で [`useScrollRestoration`](/packages/react/reference/use-scroll-restoration) を呼びます。詳細は[ナビゲーション](/guides/navigation#scroll-restoration)を参照してください。
 
 ## 親子の action と loader [#inheritance]
 
@@ -91,4 +93,6 @@ createRoot(document.getElementById("root")!).render(
 
 - [BrowserRouter](/packages/react/reference/browser-router) — Navigation API を使う既定の入口
 - [Outlet](/packages/react/reference/outlet) — 子ルートの差し込み
+- [useNavigation](/packages/react/reference/use-navigation) — 遷移状態の購読
+- [useScrollRestoration](/packages/react/reference/use-scroll-restoration) — 遷移後のスクロール
 - [createRouter](/packages/core/reference/create-router) — 内部で使うコントローラー

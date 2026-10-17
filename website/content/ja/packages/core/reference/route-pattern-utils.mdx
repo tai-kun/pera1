@@ -17,6 +17,35 @@ type Optional<T> = { readonly [P in keyof T]?: T[P] | undefined };
 class RoutePatternUtils<const TRoutePattern extends string = string> {
   constructor(routePattern: TRoutePattern, options?: RoutePatternUtilsOptions);
 
+  static match(routePattern: string, target: string | RoutePatternMatchURL, options?: RoutePatternUtilsOptions): boolean;
+  static parse<TRoutePattern extends string>(
+    routePattern: TRoutePattern,
+    target: string | RoutePatternMatchURL,
+    options?: RoutePatternUtilsOptions,
+  ): RouteParams<TRoutePattern>;
+  static parseSafe<TRoutePattern extends string>(
+    routePattern: TRoutePattern,
+    target: string | RoutePatternMatchURL,
+    options?: RoutePatternUtilsOptions,
+  ): RouteParams<TRoutePattern> | null;
+  static inject<TRoutePattern extends string>(
+    routePattern: TRoutePattern,
+    params: Readonly<RouteParams<TRoutePattern>>,
+    options?: RoutePatternUtilsOptions,
+  ): string;
+  static replace<TRoutePattern extends string>(
+    routePattern: TRoutePattern,
+    target: string | RoutePatternMatchURL,
+    params: Optional<RouteParams<TRoutePattern>>,
+    options?: RoutePatternUtilsOptions,
+  ): string;
+  static replaceSafe<TRoutePattern extends string>(
+    routePattern: TRoutePattern,
+    target: string | RoutePatternMatchURL,
+    params: Optional<RouteParams<TRoutePattern>>,
+    options?: RoutePatternUtilsOptions,
+  ): string | null;
+
   readonly route: string;
   readonly pattern: RegExp;
   readonly paramKeys: readonly string[];

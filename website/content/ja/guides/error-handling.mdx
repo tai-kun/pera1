@@ -81,6 +81,7 @@ pera1 が投げるエラーはすべて `ErrorBase` を継承し、`message` に
 | `LoaderDataNotFoundError` | ローダーがない階層で `useLoaderData` を呼んだ |
 | `RouterContextMissingError` | `<Router>` の外でルーターのフックを呼んだ |
 | `RouteContextMissingError` | ルート階層の外で `useRouteContext` や `<Outlet>` を使った |
+| `RoutePatternMismatchError` | `RoutePatternUtils` の `parse` / `replace` がパターン不一致に遭遇した |
 | `UnexpectedValidationError` | Navigation API が返したエントリーの形が想定と違った |
 | `UnreachableError` | 到達しないはずの分岐に入った (ライブラリーの不具合) |
 

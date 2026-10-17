@@ -22,6 +22,7 @@ npm i @pera1/core valibot
 | `@pera1/core` | ルーター、マッチング、ローダー、アクション、エンジン、エラー、型 |
 | `@pera1/core/core` | ルーティングの中核 API (`createRouter`、`matchRoutes` など) |
 | `@pera1/core/engines` | エンジンのインターフェースと `NavigationApiEngine` |
+| `@pera1/core/utils` | 画面非依存のユーティリティー (`redirect`、ガード、`RoutePatternUtils`、`RouteRequest` など。`@pera1/react` からも再エクスポートされます) |
 
 ## 主な API [#api]
 
@@ -48,8 +49,8 @@ npm i @pera1/core valibot
 | --- | --- |
 | [`initLoaders` / `startLoaders`](/packages/core/reference/loaders) | ローダーの並行起動と再取得の判定 |
 | [`startAction`](/packages/core/reference/actions) | アクションの選出と実行 |
-| [`selectLoaderData` / `selectActionData`](/packages/core/reference/router-store) | スナップショットからデータを選択する |
-| [`redirect` / `RedirectResponse`](/packages/core/reference/redirects) | アクションからのリダイレクト |
+| [`selectLoaderData` / `selectActionData` / `selectNavigationState`](/packages/core/reference/router-store) | スナップショットからデータと遷移状態を選択する |
+| [`redirect` / `RedirectResponse`](/packages/core/reference/redirects) | アクションとローダーからのリダイレクト |
 | [`RouteRequest`](/packages/core/reference/route-request) | GET / POST リクエストの抽象化 |
 
 ### エンジン [#engines]
@@ -65,6 +66,7 @@ npm i @pera1/core valibot
 | --- | --- |
 | [`toNavigateArgs`](/packages/core/reference/navigation-utils) | `useNavigate` の引数をエンジン用に正規化する |
 | [`toSubmitArgs`](/packages/core/reference/submit-utils) | `useSubmit` の引数をエンジン用に正規化する |
+| [認証ガード](/packages/core/reference/auth-guard) | `redirectToLogin`、`requireRole`、`sanitizeRedirectTo` によるログイン誘導と認可 |
 | [`HistoryEntryIdSchema` など](/packages/core/reference/schemas) | 履歴エントリーの検証スキーマ |
 | [`formDataToHTMLFormElement`](/packages/core/reference/form-data) | 読み取り専用フォームデータを DOM のフォームに変換する |
 | [エラークラス](/packages/core/reference/errors) | エラーの種類とメッセージの差し替え |

@@ -1,0 +1,112 @@
+---
+title: 認証ガード
+description: "redirectToLogin・requireRole・sanitizeRedirectTo によるログイン誘導と認可のヘルパーです。"
+---
+
+認証ガードのヘルパーは、ログイン必須ページの誘導と、ログイン前後での遷移先の受け渡しに使う関数群です。ローダーの先頭で未認証を検出してログインページへ誘導する往復の定型が集約されているため、各アプリで `redirectTo` の組み立てや検証を自作する必要はありません。使い方の全体像は[認証ガード](/guides/auth)を参照してください。
+
+```ts
+import {
+  REDIRECT_TO_PARAM,
+  loginUrlFor,
+  redirectToLogin,
+  requireRole,
+  sanitizeRedirectTo,
+} from "@pera1/core";
+```
+
+## ログイン前後で遷移先を受け渡す [#redirect-to-param]
+
+```ts
+const REDIRECT_TO_PARAM: "redirectTo";
+```
+
+ログイン前後で遷移先を受け渡すときのパラメーター名です。未認証時のログインページ誘導のクエリーと、ログイン画面の hidden input で同じ名前を使います。
+
+## 安全な遷移先だけを通す [#sanitize-redirect-to]
+
+```ts
+function sanitizeRedirectTo(value: string | null | undefined, fallback?: string): string;
+```
+
+ログイン後の遷移先として安全な同一オリジンパスだけを通します。`/` で始まり 2 文字目が `/` でも `\` でもない値を安全とみなします。検査を通過した場合は元の値をそのまま返し、安全でない値や空の値の場合はフォールバック (未指定なら `/`) を返します。フォールバック自体が安全でない値の場合は `/` を返します。
+
+open redirect 対策として、次の値を弾きます。
+
+- `//evil.com` のようなプロトコル相対 URL
+- `/\evil.com` のようなバックスラッシュ始まり (ブラウザーの正規化で別オリジンに化けるため)
+- パス途中のバックスラッシュや空白・制御文字を含む値
+- `/%2f%2fevil.com` のような符号化や、`/%252f` のような二重符号化による回避
+- タブや改行の除去で `//` に化ける値
+- `https://evil.com` や `javascript:` のような絶対 URL・スキーム付き
+
+クエリー内の正当な符号化 (`/search?q=a%20b` など) は保持されます。
+
+## ログインページの URL を組み立てる [#login-url-for]
+
+```ts
+function loginUrlFor(pathname: string, search?: string, loginPath?: string): string;
+```
+
+未ログイン時にログインページへ誘導するための URL を組み立てます。現在の `pathname` と `search` を `redirectTo` クエリーに符号化して埋め込むため、ログイン後の復帰先が失われません。`loginPath` の既定値は `"/login"`、`search` の既定値は `""` です。ログイン画面では受け取った値を `sanitizeRedirectTo` で検証してから使います。
+
+## 未認証時にログインページへ誘導する [#redirect-to-login]
+
+```ts
+function redirectToLogin(request: AuthGuardRequest, options?: RedirectToLoginOptions): RedirectResponse;
+
+type AuthGuardRequest = {
+  readonly url: {
+    readonly pathname: string;
+    readonly search: string;
+  };
+};
+
+type RedirectToLoginOptions = {
+  readonly loginPath?: string;
+};
+```
+
+未認証時のログインページ誘導を表すレスポンスを作成します。ローダーの先頭で現在のユーザーが存在しないときに返します。ローダーの `request` (`RouteGetRequest`) をそのまま渡せます。`loginPath` の既定値は `"/login"` です。返された `RedirectResponse` はエンジンが回収し、自動的に遷移先へ移動します。
+
+```tsx
+import { redirectToLogin } from "@pera1/core";
+import type { LoaderFunctionArgs } from "@pera1/core";
+
+async function dashboardLoader({ request }: LoaderFunctionArgs) {
+  const user = getCurrentUser();
+  if (!user) {
+    return redirectToLogin(request);
+  }
+  return { user };
+}
+```
+
+## ロールによる認可を宣言する [#require-role]
+
+```ts
+function requireRole<TRole extends string>(
+  request: AuthGuardRequest,
+  user: { readonly role: TRole } | null | undefined,
+  options: RequireRoleOptions<TRole>,
+): RedirectResponse | null;
+
+type RequireRoleOptions<TRole extends string = string> = {
+  readonly roles: readonly TRole[];
+  readonly loginPath?: string;
+  readonly forbiddenPath?: string;
+};
+```
+
+ロールベースの認可を検査し、通過できないときの遷移先を作成します。未認証のときはログインページ誘導を、ロール不一致のときは `forbiddenPath` への遷移を返します。どちらにも当てはまらないときは `null` を返すため、ローダーの先頭で早期リターンに使えます。`loginPath` の既定値は `"/login"`、`forbiddenPath` の既定値は `"/"` です。認可の分岐を各ページに分散させず、レイアウトのローダー単層で使うことを推奨します。
+
+## 注意 [#notes]
+
+- ログイン画面のローダーではクエリーの値を、アクションではフォームの値を、それぞれ `sanitizeRedirectTo` で検証します。アクション側の再検証を省略してはいけません。クエリーはローダー通過後に書き換えられる可能性があり、フォームの値がそのまま信じられる保証はないためです。
+- フォーム側では検証済みの値を hidden input で往復させます。`name` には直接文字列を書かず、`REDIRECT_TO_PARAM` 定数を使います。
+
+## 関連 [#related]
+
+- [認証ガード](/guides/auth) — ログイン誘導と認可の公式パターン
+- [redirect](/packages/core/reference/redirects) — `RedirectResponse` の仕様
+- [データ取得](/guides/data-loading#redirect) — ローダーから `redirect` を返す扱い

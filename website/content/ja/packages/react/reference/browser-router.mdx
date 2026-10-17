@@ -61,11 +61,13 @@ createRoot(document.getElementById("root")!).render(
 
 - `routes` はモジュールスコープなどに置き、レンダリングのたびに作り直さないでください。参照が変わると `Router` がルーターを作り直し、ローダーのキャッシュも失われます。
 - 内部リンクに専用コンポーネントはありません。通常の `<a>` と `<form>` が Navigation API を通じてルーターに届きます。
-- `scrollRestoration` を付けると遷移後に先頭へスクロールします。ハッシュ付き遷移と初回表示はブラウザーに任せます。詳細は[ナビゲーション](/guides/navigation#scroll-restoration)を参照してください。
-- 遷移中の表示は [`useNavigation`](/guides/navigation#pending) を `Suspense` の外側で使います。
+- `scrollRestoration` を付けると遷移後に先頭へスクロールします。ハッシュ付き遷移と初回表示はブラウザーに任せます。詳細は[ナビゲーション](/guides/navigation#scroll-restoration)と [`useScrollRestoration`](/packages/react/reference/use-scroll-restoration) を参照してください。
+- 遷移中の表示は [`useNavigation`](/packages/react/reference/use-navigation) を `Suspense` の外側で使います。使いどころは[ナビゲーション](/guides/navigation#pending)を参照してください。
 
 ## 関連 [#related]
 
 - [Router](/packages/react/reference/router) — 任意のエンジンを受け取る汎用版
+- [useNavigation](/packages/react/reference/use-navigation) — 遷移状態の購読
+- [useScrollRestoration](/packages/react/reference/use-scroll-restoration) — 遷移後のスクロール
 - [ルーティング](/guides/routing) — ルート定義とパスパターン
 - [カスタムエンジン](/guides/custom-engines) — エンジンを差し替える

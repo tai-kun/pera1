@@ -143,7 +143,7 @@ function CurrentLocation() {
 
 ## 遷移中の表示 [#pending]
 
-遷移の進行状況は `useNavigation` で宣言的に取得できます。戻り値の `state` は `"idle"`、`"loading"` (GET でローダー実行中)、`"submitting"` (POST でアクション実行中) のいずれかです。エンジンがアクション開始時に再描画を通知する仕組みを利用しており、ローダーの完了後はフックが自発的に `"idle"` へ戻します。
+遷移の進行状況は `useNavigation` で宣言的に取得できます。戻り値の `state` は `"idle"`、`"loading"` (GET でローダー実行中)、`"submitting"` (POST でアクション実行中) のいずれかです。エンジンがアクション開始時に再描画を通知する仕組みを利用しており、ローダーの完了後はフックが自発的に `"idle"` へ戻します。型の詳細は [`useNavigation`](/packages/react/reference/use-navigation) を参照してください。
 
 ```tsx
 import { useNavigation } from "@pera1/react";
@@ -173,7 +173,7 @@ function PendingBar() {
 <BrowserRouter routes={routes} scrollRestoration />
 ```
 
-`scrollRestoration` は `Router` と `BrowserRouter` のプロパティーで、`true` または `ScrollBehavior` (`"auto"`、`"instant"`、`"smooth"`) を受け付けます。履歴エントリーが変わるたびに先頭へスクロールします。ハッシュ付き URL と初回表示はブラウザーに任せて何もしません。戻る・進むでの位置復元までは行いません。細かい制御が必要な場合は、同じ動作をする `useScrollRestoration(true)` フックをレイアウト内で直接使ってください。
+`scrollRestoration` は `Router` と `BrowserRouter` のプロパティーで、`boolean | ScrollBehavior` を受け付けます。`true` は `behavior: "auto"` での先頭スクロール、文字列は指定した振る舞いでの先頭スクロール、省略・`false` はブラウザー任せです。履歴エントリーが変わるたびに先頭へスクロールします。ハッシュ付き URL と初回表示はブラウザーに任せて何もしません。戻る・進むでの位置復元までは行いません。細かい制御が必要な場合は、同じ動作をする `useScrollRestoration(true)` フックをレイアウト内で直接使ってください。型の詳細は [`useScrollRestoration`](/packages/react/reference/use-scroll-restoration) を参照してください。
 
 ```tsx
 import { useScrollRestoration } from "@pera1/react";

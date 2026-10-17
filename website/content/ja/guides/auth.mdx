@@ -22,7 +22,7 @@ async function dashboardLoader({ request }: LoaderFunctionArgs) {
 }
 ```
 
-ログイン先のパスが `/login` でない場合は、`redirectToLogin(request, { loginPath: "/sign-in" })` のように指定します。クエリー名や組み立て処理を自作する必要はありません。
+ログイン先のパスが `/login` でない場合は、`redirectToLogin(request, { loginPath: "/sign-in" })` のように指定します。クエリー名や組み立て処理を自作する必要はありません。URL の組み立てだけが必要な場合は `loginUrlFor(pathname, search, loginPath)` を使えます。各ヘルパーの引数と既定値は[認証ガードのリファレンス](/packages/core/reference/auth-guard)を参照してください。
 
 ## ガードはレイアウトのローダーに集約する [#layout]
 

@@ -56,10 +56,13 @@ class ValidationErrorBase<
 | `NavigationApiNotSupportedError` | `Pera1NavigationApiNotSupportedError` | Navigation API がサポートされていない | なし |
 | `LoaderConditionError` | `Pera1LoaderConditionError` | `shouldReload` が同期的な真偽値以外を返した | `LoaderConditionErrorMeta`（`{ url, shouldReload, returnValue }`）/ `LoaderConditionErrorArgs` |
 | `LoaderDataNotFoundError` | `Pera1LoaderDataNotFoundError` | ローダーの結果が見つからない | `LoaderDataNotFoundErrorMeta`（`{ loader }`）/ `LoaderDataNotFoundErrorArgs` |
+| `RoutePatternMismatchError` | `Pera1RoutePatternMismatchError` | `RoutePatternUtils` の `parse` / `replace` がパターン不一致に遭遇した | `RoutePatternMismatchErrorMeta`（`{ route, target }`）/ `RoutePatternMismatchErrorArgs` |
 | `RouterContextMissingError` | `Pera1RouterContextMissingError` | `RouterContext` が供給されていない | なし |
 | `RouteContextMissingError` | `Pera1RouteContextMissingError` | `RouteContext` が供給されていない | なし |
 
 `UnexpectedValidationErrorMeta` の `issues` は 1 件以上を保証した `readonly [Issue, ...Issue[]]` です。`Args` 型は、対応する `Meta` 型に `ErrorOptions` を交差した型です。
+
+`RoutePatternMismatchError` は `RoutePatternUtils` の `parse` / `replace` が投げます。値がない場合を想定するときは、例外の代わりに `null` を返す `parseSafe` / `replaceSafe` を使ってください。
 
 ## 日本語メッセージ [#i18n]
 

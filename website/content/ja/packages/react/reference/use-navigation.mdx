@@ -1,0 +1,65 @@
+---
+title: useNavigation
+description: "現在の遷移状態を宣言的に取得するフックです。"
+---
+
+`useNavigation` は、現在の履歴エントリーに紐づくアクションとローダーの状態から、遷移状態 (`"idle"`、`"loading"`、`"submitting"`) を宣言的に取得するフックです。判定ロジック自体は `@pera1/core` の [`selectNavigationState`](/packages/core/reference/router-store) に委譲しています。
+
+```tsx
+import { useNavigation } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useNavigation(): Navigation;
+
+type Navigation = {
+  readonly state: NavigationState;
+};
+
+type NavigationState = "idle" | "loading" | "submitting";
+```
+
+## 状態 [#states]
+
+| 状態 | 意味 |
+| --- | --- |
+| `"idle"` | 進行中の遷移がありません。 |
+| `"loading"` | GET 遷移によりいずれかのローダーが実行中です。 |
+| `"submitting"` | POST によりいずれかのアクションが実行中です。 |
+
+アクションの `pending` が 1 つでもあれば `"submitting"` が優先されます。ローダーの `pending` だけがある場合は `"loading"`、どちらもなければ `"idle"` です。
+
+## 使い方 [#usage]
+
+```tsx
+import { useNavigation } from "@pera1/react";
+
+function PendingBar() {
+  const navigation = useNavigation();
+  if (navigation.state === "idle") {
+    return null;
+  }
+  return <p role="status">{navigation.state === "submitting" ? "送信中…" : "読み込み中…"}</p>;
+}
+```
+
+`Suspense` のフォールバックが遅延データの「穴埋め表示」なのに対し、こちらは遷移全体の「進行中表示」です。`Suspense` の内側に置くとフォールバックに置き換えられて見えなくなるため、必ず `Suspense` の外側 (レイアウト側) に置いてください。粒度の指針は[ナビゲーション](/guides/navigation#pending)を参照してください。
+
+## 例外 [#throws]
+
+| エラー | 条件 |
+| --- | --- |
+| `RouterContextMissingError` | `RouterContext` がコンポーネントツリーに供給されていない |
+
+## 注意 [#notes]
+
+- エンジンがアクション開始時に再描画を通知する仕組みを利用します。ローダーの完了はエンジンからの再通知がないため、フックが `pending` の確定を待って自発的に再描画し、`"loading"` から `"idle"` へ戻します。
+- 戻り値のオブジェクトは `state` が変わるたびに作り直されます。`state` 文字列だけを参照する分には再描画の心配はありません。
+
+## 関連 [#related]
+
+- [ナビゲーション](/guides/navigation#pending) — 遷移中の表示と `Suspense` との使い分け
+- [selectNavigationState](/packages/core/reference/router-store) — フレームワーク非依存の選択ロジック
+- [useLoaderData](/packages/react/reference/use-loader-data) — ローダーの結果を購読する

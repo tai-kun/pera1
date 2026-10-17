@@ -22,14 +22,15 @@ function useLoaderData<TData = unknown>(): LoaderData<TData>;
 | `TData` | `unknown` | ローダー関数の型、または解決後のデータ型です。関数型を渡すと、その戻り値からデータ型を導出します。 |
 
 ```ts
-type FulfilledLoaderData<TData> = Awaited<
-  TData extends (...args: any) => infer TReturn ? TReturn : TData
+type FulfilledLoaderData<TData> = Exclude<
+  Awaited<TData extends (...args: any) => infer TReturn ? TReturn : TData>,
+  RedirectResponse
 >;
 
 type LoaderData<TData> = NinjaPromise<FulfilledLoaderData<TData>>;
 ```
 
-`useLoaderData<typeof loader>()` のように関数を渡すか、`useLoaderData<LoaderData<Contact>>()` のようにデータ型を直接渡します。
+`useLoaderData<typeof loader>()` のように関数を渡すか、`useLoaderData<LoaderData<Contact>>()` のようにデータ型を直接渡します。ローダーが `redirect()` を返した場合はエンジンが自動遷移させ、型レベルでも `RedirectResponse` を取り除きます。
 
 ## 戻り値 [#returns]
 

@@ -29,7 +29,9 @@ $ pera1-vite typegen
 | `--out <path>`     | 型の生成先です。既定は `vite.config` の設定、なければ `.pera1/types` です。                |
 | `-h`, `--help`     | ヘルプを表示します。                                                                       |
 
-`--dir`、`--include`、`--exclude`、`--out` を省略した場合は、プロジェクトの `vite.config.*` を読み込み、`pera1()` に渡されたオプションを引き継ぎます。設定ファイルを読み込めない場合は既定値を使います。
+`--dir`、`--include`、`--exclude`、`--out` を省略した場合は、プロジェクトの `vite.config.*` を読み込み、`pera1()` に渡されたオプションを引き継ぎます。設定ファイルを読み込めない場合は既定値を使います。探索するファイル名は `vite.config.ts`、`vite.config.mts`、`vite.config.js`、`vite.config.mjs`、`vite.config.cts`、`vite.config.cjs` の順です。値の優先順位は CLI の引数、`vite.config` の `pera1()` オプション、既定値の順です。
+
+警告 (プロジェクトルートの外にあるファイルのスキップなど) は標準エラー出力へ出し、生成結果は標準出力へ出します。不明なコマンド、余剰の引数、生成の失敗では終了コード `1` を返します。
 
 ```sh
 pera1-vite typegen --root . --dir app/routes --include "**/*.tsx" --exclude "**/*.test.tsx"

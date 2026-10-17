@@ -13,7 +13,12 @@ description: "ローダーの並行起動、キャッシュの再利用、再取
 function initLoaders(
   routes: readonly Pick<MatchedRoute, "loader" | "params">[],
   request: LoaderInitRequest,
-): Map<LoaderFunction, NinjaPromise<unknown>>;
+): InitializedLoaders;
+
+type InitializedLoaders = {
+  readonly dataMap: Map<LoaderFunction, NinjaPromise<unknown>>;
+  readonly idle: () => Promise<{ readonly redirectTo: RedirectResponse | undefined }>;
+};
 ```
 
 | プロパティー | 型 | 説明 |
@@ -22,9 +27,11 @@ function initLoaders(
 | `request.url` | `HistoryEntryUrl` | 対象の履歴エントリーの URL です。 |
 | `request.signal` | `AbortSignal` | ローダーを中断するシグナルです。 |
 
-戻り値はローダー関数をキー、`NinjaPromise` を値とする `Map` です。マッチしたすべてのローダーは同時に起動するため、親のデータ待ちで子の取得が遅れることはありません。
+戻り値は公開用マップと完了待機処理の組です。`dataMap` はローダー関数をキー、`NinjaPromise` を値とする `Map` で、マッチしたすべてのローダーは同時に起動するため、親のデータ待ちで子の取得が遅れることはありません。`idle()` は全ローダーの完了を待ち、いずれかのローダーが `RedirectResponse` を返した場合は最初に検出されたものを `redirectTo` として返します。エンジンはこの値で自動遷移します。
 
 ローダーに渡す `request` は 1 つだけ作り、すべてのローダーが同じ GET 用の `RouteRequest` を受け取ります。同じ `loader` 関数が複数のルートで使われると、`Map` のキーが重複します。あとから実行した結果で上書きされます。
+
+ローダーが `RedirectResponse` を返した場合、公開用の `dataMap` には解決されないプロミスが格納されます。コンポーネント側へ `RedirectResponse` が露出することはなく、遷移完了までサスペンスを維持します。
 
 ## startLoaders [#start-loaders]
 
@@ -59,7 +66,9 @@ function startLoaders(
 
 | プロパティー | 型 | 説明 |
 | --- | --- | --- |
-| `idle` | `() => Promise<void>` | 今回のフェーズで確定したすべてのローダーの完了を待ちます。 |
+| `idle` | `() => Promise<{ redirectTo: RedirectResponse \| undefined }>` | 今回のフェーズで確定したすべてのローダーの完了を待ち、リダイレクト要求を回収します。 |
+
+いずれかのローダーが `RedirectResponse` を返した場合は、最初に検出されたものを `redirectTo` として返します。呼び出し側 (エンジン) はこの値で自動遷移します。検出された `RedirectResponse` は公開マップには格納されず、コンポーネント側には解決されないプロミスが渡ります。
 
 ## 再取得の判定 [#reload-decision]
 
@@ -77,10 +86,10 @@ function startLoaders(
 
 | きっかけ | 既定の判定 |
 | --- | --- |
-| GET | クエリー文字列が変わったとき、または遷移前のルート階層にそのルートがなかったとき。 |
+| GET | クエリー文字列が変わったとき、遷移前のルート階層にそのルートがなかったとき、または同一パスの `params` 値が変わったとき (`/posts/1` から `/posts/2` など)。 |
 | POST | 常に `true`。更新後は取得し直すのが安全なためです。 |
 
-既定の判定結果は `defaultShouldReload` として `shouldReload` に渡されます。GET では上の 2 条件、POST では常に `true` です。自分で判定を書く場合も、この値をそのまま返すと既定の挙動を保てます。
+既定の判定結果は `defaultShouldReload` として `shouldReload` に渡されます。GET では上の 3 条件のいずれか、POST では常に `true` です。自分で判定を書く場合も、この値をそのまま返すと既定の挙動を保てます。
 
 [shouldReload の引数](/packages/core/reference/route-definitions#should-reload-arguments)は GET と POST で形が異なる判別可能ユニオンです。`triggerMethod` で分岐します。
 
@@ -115,7 +124,10 @@ const started = startLoaders({
   loaderDataStore,
 });
 
-await started.idle();
+const { redirectTo } = await started.idle();
+if (redirectTo) {
+  // エンジンと同様に遷移先へ移動する
+}
 ```
 
 POST 後は第 2 引数を渡します。このとき既定の判定が常に `true` になるため、更新後の一覧が自動で取得し直されます。
@@ -136,7 +148,10 @@ const started = startLoaders(
   },
 );
 
-await started.idle();
+const { redirectTo } = await started.idle();
+if (redirectTo) {
+  // エンジンと同様に遷移先へ移動する
+}
 ```
 
 ## 注意 [#notes]

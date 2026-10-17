@@ -1,0 +1,62 @@
+---
+title: useScrollRestoration
+description: "遷移後に先頭へスクロールするオプトインのフックです。"
+---
+
+`useScrollRestoration` は、遷移後のスクロールをオプトインで先頭へ戻すフックです。既定はブラウザー任せ (何もしません)。`Router` / `BrowserRouter` の `scrollRestoration` プロパティーも、内部ではこのフックを使っています。
+
+```tsx
+import { useScrollRestoration } from "@pera1/react";
+```
+
+## シグネチャ [#signature]
+
+```ts
+function useScrollRestoration(scrollRestoration?: ScrollRestorationOption): void;
+
+type ScrollRestorationOption = boolean | ScrollBehavior;
+```
+
+## 引数 [#arguments]
+
+| 値 | 動作 |
+| --- | --- |
+| 省略・`false` | 何もしません (既定のブラウザー任せ)。 |
+| `true` | 遷移後に先頭へスクロールします (`behavior: "auto"`)。 |
+| `"auto"`・`"instant"`・`"smooth"` | 指定した振る舞いで先頭へスクロールします。 |
+
+有効化すると、履歴エントリー ID の変化 (実質的なページ遷移) のたびに `window.scrollTo({ top: 0, left: 0, behavior })` を実行します。
+
+## 使い方 [#usage]
+
+```tsx
+import { Outlet, useScrollRestoration } from "@pera1/react";
+
+function AppLayout() {
+  useScrollRestoration(true);
+  return <Outlet />;
+}
+```
+
+`Router` / `BrowserRouter` のプロパティーで有効化する方法もあります。どちらも動作は同じです。
+
+```tsx
+<BrowserRouter routes={routes} scrollRestoration />
+```
+
+## 何もしない条件 [#no-op]
+
+次の場合はスクロールしません。
+
+- `scrollRestoration` が省略・`false` のとき
+- 初回マウントのとき (ハッシュ付きでの直接表示を壊さないため)
+- ハッシュ付き URL (`#section`) への遷移のとき (ブラウザーに任せます)
+- `window` がない環境のとき
+
+戻る・進むでの位置復元までは行いません。必要な場合は履歴ごとに位置を保存する自前の実装を検討してください。
+
+## 関連 [#related]
+
+- [ナビゲーション](/guides/navigation#scroll-restoration) — スクロール復元の使いどころ
+- [Router](/packages/react/reference/router) — `scrollRestoration` プロパティーを受け取る汎用版
+- [BrowserRouter](/packages/react/reference/browser-router) — `scrollRestoration` プロパティーを受け取る既定の入口

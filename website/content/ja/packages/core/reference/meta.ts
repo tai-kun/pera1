@@ -14,6 +14,7 @@ export default defineMeta({
     "navigation-utils",
     "submit-utils",
     "redirects",
+    "auth-guard",
     "route-path",
     "route-pattern-utils",
     "route-request",

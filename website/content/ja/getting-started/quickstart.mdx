@@ -72,7 +72,6 @@ import {
   ContactsLayout,
   ContactsPage,
   HomePage,
-  NotFoundPage,
   RootLayout,
 } from "./pages.js";
 
@@ -113,9 +112,10 @@ export const routes = [
     action: createContactAction,
   },
   { path: "/contacts/:id", component: ContactPage, loader: contactLoader },
-  { path: "/*", component: NotFoundPage },
 ];
 ```
+
+404 ページはルート定義ではなく、`BrowserRouter` の `notFoundComponent` に渡します。詳しくは[エラー処理](/guides/error-handling#not-found)を参照してください。
 
 :::warning
 同じ `path` を持つレイアウトと `index` ルートを並べるときは、`index` ルートを先に定義してください。詳細度が同じルートは定義順が保たれるため、`index` を先に書くと「レイアウトの中に一覧」の順でネストします。逆にすると親子が入れ替わり、レイアウトの `Outlet` に一覧が表示されません。
@@ -269,10 +269,11 @@ import * as React from "react";
 import { createRoot } from "react-dom/client";
 
 import { routes } from "./routes.js";
+import { NotFoundPage } from "./pages.js";
 
 createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
-    <BrowserRouter routes={routes} />
+    <BrowserRouter routes={routes} notFoundComponent={NotFoundPage} />
   </React.StrictMode>,
 );
 ```

@@ -86,6 +86,8 @@ src/pages/_auth/signup.tsx  -> /signup
 
 `$.tsx` の `*` は、他のルートがマッチした URL にも前方一致で含まれます。pera1 はマッチしたルートを子から親へ集めるため、`$.tsx` がマッチ鎖の中間に位置することがあります。その場合は `outlet` をそのまま返し、どのルートにも一致しなかったときだけ 404 を表示します。
 
+新規コードで 404 画面を出す場合は、ファイルで `/*` を定義する代わりに `Router` / `BrowserRouter` の `notFoundComponent` を推奨します。詳しくは[エラー処理](/guides/error-handling#not-found)を参照してください。
+
 ```tsx src/pages/$.tsx
 import { useRouteContext } from "@pera1/react";
 
